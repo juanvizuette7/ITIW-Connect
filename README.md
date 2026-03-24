@@ -122,7 +122,9 @@ Enums relevantes:
 
 ## API (Backend) - Endpoints Principales
 
-Base URL local: `http://localhost:4000/api`
+Base URL en desarrollo local: `http://localhost:4000/api`
+
+En produccion, esta URL cambia por tu dominio publico de backend (ejemplo: `https://api.tudominio.com/api`).
 
 ### Auth
 - `POST /auth/register`
@@ -228,7 +230,7 @@ Levantar todo:
 npm run dev
 ```
 
-Si hay conflictos de puertos/caches:
+Si hay conflictos de puertos/caches en desarrollo local:
 
 ```bash
 npm run dev:fresh
@@ -290,8 +292,10 @@ Todos con template HTML y branding ITIW Connect.
 2. Verifica conectividad de red/firewall/VPN
 3. Reinicia backend: `npm run dev:backend`
 
-### `EADDRINUSE` en puertos 3000/4000
+### `EADDRINUSE` en puertos locales (3000/4000 por defecto)
 - Usa: `npm run dev:fresh`
+
+> Nota: en produccion no dependes de estos puertos locales; usas URLs publicas del frontend y backend.
 
 ### Error raro de Next (`Cannot find module './xx.js'` en `.next`)
 - Limpia cache: `npm run dev:clean`
