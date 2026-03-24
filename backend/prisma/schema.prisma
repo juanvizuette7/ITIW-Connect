@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENTE
+  PROFESIONAL
+}
+
+enum ServiceRequestStatus {
+  ACTIVA
+  AGENDADA
+  COMPLETADA
+  CANCELADA
+}
+
+enum QuoteStatus {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+enum JobStatus {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADO
+  CANCELADO
+}
+
+enum JobPaymentStatus {
+  PENDIENTE
+  RETENIDO
+  LIBERADO
+  REEMBOLSADO
+}
+
+enum PaymentStatus {
+  PENDIENTE
+  COMPLETADO
+  FALLIDO
+  REEMBOLSADO
+}
+
+model User {
+  id                    String           @id @default(uuid()) @db.Uuid
+  email                 String           @unique
+  phone                 String           @unique
+  passwordHash          String
+  role                  Role
+  isEmailVerified       Boolean          @default(false)
+  otpCode               String?
+  otpExpiry             DateTime?
+  otpAttempts           Int              @default(0)
+  resetToken            String?
+  resetTokenExpiry      DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  clientProfile         ClientProfile?
+  professionalProfile   ProfessionalProfile?
+  serviceRequestsAsClient ServiceRequest[] @relation("ClientRequests")
+  quotesAsProfessional  Quote[]          @relation("ProfessionalQuotes")
+  jobsAsClient          Job[]            @relation("ClientJobs")
+  jobsAsProfessional    Job[]            @relation("ProfessionalJobs")
+  messages              Message[]
+
+  @@map("users")
+}
+
+model ClientProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  name      String
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("client_profiles")
+}
+
+model ProfessionalProfile {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @unique @db.Uuid
+  name             String
+  bio              String?  @db.VarChar(300)
+  specialties      String[] @default([])
+  hourlyRate       Decimal  @db.Decimal(10, 2)
+  coverageRadiusKm Int      @default(5)
+  avgRating        Decimal  @default(0) @db.Decimal(3, 2)
+  totalJobs        Int      @default(0)
+  verifiedBadge    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("professional_profiles")
+}
+
+model Category {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String           @unique
+  iconUrl         String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  serviceRequests ServiceRequest[]
+
+  @@map("categories")
+}
+
+model ServiceRequest {
+  id          String               @id @default(uuid()) @db.Uuid
+  clientId    String               @db.Uuid
+  categoryId  String               @db.Uuid
+  description String
+  photosUrls  String[]             @default([])
+  status      ServiceRequestStatus @default(ACTIVA)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  client      User                 @relation("ClientRequests", fields: [clientId], references: [id], onDelete: Cascade)
+  category    Category             @relation(fields: [categoryId], references: [id])
+  quotes      Quote[]
+  messages    Message[]
+
+  @@index([clientId])
+  @@index([categoryId])
+  @@index([status])
+  @@map("service_requests")
+}
+
+model Quote {
+  id             String      @id @default(uuid()) @db.Uuid
+  requestId      String      @db.Uuid
+  professionalId String      @db.Uuid
+  amountCop      Float
+  estimatedHours Float
+  message        String
+  status         QuoteStatus @default(PENDIENTE)
+  expiresAt      DateTime
+  createdAt      DateTime    @default(now())
+  request        ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  professional   User        @relation("ProfessionalQuotes", fields: [professionalId], references: [id], onDelete: Cascade)
+  job            Job?
+
+  @@index([requestId])
+  @@index([professionalId])
+  @@index([status])
+  @@map("quotes")
+}
+
+model Job {
+  id               String           @id @default(uuid()) @db.Uuid
+  quoteId          String           @unique @db.Uuid
+  clientId         String           @db.Uuid
+  professionalId   String           @db.Uuid
+  status           JobStatus        @default(PENDIENTE)
+  paymentStatus    JobPaymentStatus @default(PENDIENTE)
+  escrowReleaseAt  DateTime
+  clientConfirmed  Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  quote            Quote            @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  client           User             @relation("ClientJobs", fields: [clientId], references: [id], onDelete: Cascade)
+  professional     User             @relation("ProfessionalJobs", fields: [professionalId], references: [id], onDelete: Cascade)
+  payment          Payment?
+
+  @@index([clientId])
+  @@index([professionalId])
+  @@index([paymentStatus])
+  @@index([status])
+  @@map("jobs")
+}
+
+model Payment {
+  id                    String        @id @default(uuid()) @db.Uuid
+  jobId                 String        @unique @db.Uuid
+  stripePaymentIntentId String
+  amountCop             Float
+  commissionCop         Float
+  netProfessionalCop    Float
+  status                PaymentStatus @default(PENDIENTE)
+  createdAt             DateTime      @default(now())
+  job                   Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("payments")
+}
+
+model Message {
+  id        String         @id @default(uuid()) @db.Uuid
+  requestId String         @db.Uuid
+  senderId  String         @db.Uuid
+  content   String
+  createdAt DateTime       @default(now())
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sender    User           @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([senderId])
+  @@map("messages")
+}

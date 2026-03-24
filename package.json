@@ -1,0 +1,23 @@
+{
+  "name": "itiw-connect",
+  "private": true,
+  "version": "1.0.0",
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  },
+  "scripts": {
+    "install:backend": "npm --prefix backend install",
+    "install:frontend": "npm --prefix frontend install",
+    "kill:ports": "node scripts/kill-ports.js",
+    "clean:frontend": "node -e \"const fs=require('fs');['frontend/.next','frontend/.turbo'].forEach((p)=>{try{fs.rmSync(p,{recursive:true,force:true})}catch(_){}})\"",
+    "setup:backend": "npm --prefix backend install && npm --prefix backend run prisma:generate && npm --prefix backend run prisma:deploy && npm --prefix backend run prisma:seed",
+    "setup:frontend": "npm --prefix frontend install",
+    "dev:clean": "npm run clean:frontend && npm run dev",
+    "dev:fresh": "npm run kill:ports && npm run clean:frontend && npm run dev",
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build"
+  }
+}
