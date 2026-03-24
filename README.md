@@ -1,63 +1,130 @@
-# ITIW Connect
+﻿# ITIW Connect
 
-Marketplace de servicios del hogar en Colombia.
+> Marketplace de servicios del hogar en Colombia.
+> Conecta clientes con profesionales verificados, cotizaciones inteligentes y pagos seguros con escrow.
 
-Estado actual: Sprint 1 y Sprint 2 implementados.
+## Estado Actual
 
-## Stack
+**Sprint 1 + Sprint 2 + Sprint 3 implementados**
 
-- Backend: Node.js + Express + TypeScript
-- Frontend: Next.js 14 + TailwindCSS
-- Base de datos: PostgreSQL (Neon) + Prisma ORM
-- Auth: JWT + bcrypt (12 rounds)
-- Correos: Nodemailer
+- Auth completa con JWT + bcrypt
+- Solicitudes, cotizaciones y score IA basico
+- Jobs, pagos en escrow con Stripe (test/mock), liberacion manual y automatica
+- Chat interno por solicitud (solo participantes)
+- Frontend dark premium en Next.js 14
 
-## Estado del proyecto
+---
 
-- Sprint 1: autenticacion, OTP, recuperacion de contrasena, perfiles, dashboard base.
-- Sprint 2: solicitudes, presupuestos, score IA, notificaciones por correo, pantallas de flujo cliente/profesional.
+## Stack Tecnologico
 
-## Estructura
+### Backend
+- Node.js
+- Express
+- TypeScript
+- Prisma ORM
+- PostgreSQL (Neon)
+- JWT + bcrypt (12 rounds)
+- Nodemailer
+- Stripe (modo test)
+- node-cron
+
+### Frontend
+- Next.js 14 (App Router)
+- React 18
+- TailwindCSS
+- Stripe Elements
+
+---
+
+## Lo Que Ya Hace la Plataforma
+
+### Sprint 1 (Base)
+- Registro/login por rol (`CLIENTE` / `PROFESIONAL`)
+- Verificacion OTP por correo
+- Recuperacion y reset de contrasena
+- Perfiles por rol
+- Dashboard base y rutas protegidas
+
+### Sprint 2 (Marketplace)
+- Crear solicitudes de servicio
+- Profesionales envian cotizaciones (max 5)
+- Cliente acepta cotizacion y crea job
+- Score IA para ordenar cotizaciones:
+
+```text
+score = (avgRating * 0.5) + (totalJobs * 0.3) + ((1 / amountCop) * 0.2)
+```
+
+- Seed de 18 categorias reales
+- Correos de flujo (solicitud creada, nuevo presupuesto, presupuesto aceptado)
+
+### Sprint 3 (Pagos + Chat)
+- Jobs con estado operativo y estado de pago
+- Pago con Stripe en escrow
+- Comision automatica del 10%
+- Confirmacion del cliente para liberar pago
+- Liberacion automatica a las 72 horas por scheduler
+- Chat interno por solicitud/job
+- Correos de pago y mensajes
+
+---
+
+## Arquitectura del Proyecto
 
 ```text
 ITIW_Connect/
   backend/
     prisma/
+      migrations/
+      schema.prisma
+      seed.ts
     src/
+      config/
+      controllers/
+      middlewares/
+      routes/
+      services/
+      utils/
   frontend/
     app/
+      auth/
+      dashboard/
     components/
     lib/
+  scripts/
   package.json
 ```
 
-## Modulos implementados
+---
 
-### Base de datos (Prisma)
+## Base de Datos (Prisma)
 
-Tablas principales:
-
+Modelos principales:
 - `users`
 - `client_profiles`
 - `professional_profiles`
 - `categories`
 - `service_requests`
 - `quotes`
+- `jobs`
+- `payments`
+- `messages`
 
-Enums:
+Enums relevantes:
+- `Role`
+- `ServiceRequestStatus`
+- `QuoteStatus`
+- `JobStatus`
+- `JobPaymentStatus`
+- `PaymentStatus`
 
-- `Role`: `CLIENTE`, `PROFESIONAL`
-- `ServiceRequestStatus`: `ACTIVA`, `AGENDADA`, `COMPLETADA`, `CANCELADA`
-- `QuoteStatus`: `PENDIENTE`, `ACEPTADA`, `RECHAZADA`
+---
 
-Seed actual:
+## API (Backend) - Endpoints Principales
 
-- 18 categorias canonicas de Sprint 2 (Electricidad, Plomeria, Carpinteria, etc.)
+Base URL local: `http://localhost:4000/api`
 
-### Backend API (`/api`)
-
-Auth:
-
+### Auth
 - `POST /auth/register`
 - `POST /auth/login`
 - `POST /auth/verify-otp`
@@ -65,108 +132,106 @@ Auth:
 - `POST /auth/forgot-password`
 - `POST /auth/reset-password`
 
-Perfil:
-
+### Perfil
 - `GET /profile/me` (JWT)
 - `PUT /profile/client` (JWT + CLIENTE)
 - `PUT /profile/professional` (JWT + PROFESIONAL)
 
-Categorias:
-
+### Marketplace
 - `GET /categories`
-
-Solicitudes y presupuestos:
-
-- `POST /requests` (JWT + CLIENTE)
-- `GET /requests` (JWT + CLIENTE)
+- `POST /requests` (CLIENTE)
+- `GET /requests` (CLIENTE)
 - `GET /requests/:id` (JWT)
-- `GET /requests/available` (JWT + PROFESIONAL)
-- `POST /requests/:id/quotes` (JWT + PROFESIONAL, max 5 presupuestos)
-- `PUT /requests/:id/quotes/:quoteId/accept` (JWT + CLIENTE)
+- `GET /requests/available` (PROFESIONAL)
+- `GET /requests/my-quotes` (PROFESIONAL)
+- `POST /requests/:id/quotes` (PROFESIONAL)
+- `PUT /requests/:id/quotes/:quoteId/accept` (CLIENTE)
 
-Score IA de presupuestos:
+### Jobs y Pagos
+- `POST /jobs/:jobId/pay` (CLIENTE)
+- `POST /jobs/:jobId/confirm` (CLIENTE)
+- `GET /jobs` (JWT)
+- `GET /jobs/:jobId` (JWT)
 
-```text
-score = (avgRating * 0.5) + (totalJobs * 0.3) + ((1 / amountCop) * 0.2)
-```
+### Chat
+- `POST /messages/:requestId` (JWT)
+- `GET /messages/:requestId` (JWT)
 
-Los presupuestos se devuelven ordenados de mayor a menor score.
+Health check:
+- `GET /health`
 
-### Frontend (Next.js)
+---
 
-Auth:
+## Frontend - Rutas Implementadas
 
+### Publicas / Auth
+- `/`
 - `/auth/register`
 - `/auth/verify-otp`
 - `/auth/login`
 - `/auth/forgot-password`
 - `/auth/reset-password`
 
-Dashboard:
-
+### Dashboard
 - `/dashboard`
 - `/dashboard/profile`
 - `/dashboard/nueva-solicitud`
 - `/dashboard/mis-solicitudes`
 - `/dashboard/solicitud/[id]`
 - `/dashboard/solicitudes-disponibles`
+- `/dashboard/mis-cotizaciones`
+- `/dashboard/mis-jobs`
+- `/dashboard/job/[jobId]`
+- `/dashboard/job/[jobId]/pagar`
+- `/dashboard/job/[jobId]/chat`
 
-UI:
+---
+
+## UI/UX
 
 - Tema dark premium
-- Fondo principal `#0a1628`
-- Colores `#0f3460` y `#e94560`
-- Fuentes Syne + DM Sans
-- Formato COP en montos (`$185.000 COP`)
+- Fondo principal: `#0a1628`
+- Primario: `#0f3460`
+- Acento: `#e94560`
+- Fuentes: **Syne** (titulos) + **DM Sans** (cuerpo)
+- Montos: formato colombiano (`$185.000 COP`)
+- Responsive mobile + desktop
 
-## Correos automatizados
+---
 
-Se envian correos HTML con branding ITIW Connect para:
+## Configuracion de Entorno
 
-- Creacion de solicitud
-- Nuevo presupuesto recibido
-- Presupuesto aceptado
-- OTP y recuperacion de contrasena
-
-## Variables de entorno
-
-Archivos usados por el proyecto:
-
+Archivos esperados:
 - `backend/.env`
 - `frontend/.env.local`
 
-Tambien existen ejemplos:
-
+Ejemplos disponibles:
 - `backend/.env.example`
 - `frontend/.env.example`
 
-## Comandos principales
+> Importante: nunca subas credenciales reales al repositorio.
+
+---
+
+## Instalacion y Ejecucion (Windows)
 
 Desde la raiz del repo:
 
-Instalar backend + Prisma:
-
 ```bash
 npm run setup:backend
-```
-
-Instalar frontend:
-
-```bash
 npm run setup:frontend
 ```
 
-Levantar backend + frontend:
+Levantar todo:
 
 ```bash
 npm run dev
 ```
 
-Levantar por separado:
+Si hay conflictos de puertos/caches:
 
 ```bash
-npm run dev:backend
-npm run dev:frontend
+npm run dev:fresh
 ```
 
 Build:
@@ -176,37 +241,73 @@ npm run build:backend
 npm run build:frontend
 ```
 
-## URLs locales
+---
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:4000`
-- Health check backend: `http://localhost:4000/health`
+## Scripts Utiles
 
-## Troubleshooting rapido
+- `npm run setup:backend`
+- `npm run setup:frontend`
+- `npm run dev`
+- `npm run dev:backend`
+- `npm run dev:frontend`
+- `npm run dev:clean`
+- `npm run dev:fresh`
+- `npm run build:backend`
+- `npm run build:frontend`
 
-### Error Prisma `P1001` o `P1002` con Neon
+---
 
-Si aparece conexion intermitente a Neon:
+## Correos Automatizados Implementados
 
-1. Reintenta request o reinicia `npm run dev`.
-2. Verifica internet/VPN/firewall.
-3. Revisa que el host y puerto `5432` del endpoint Neon esten accesibles.
+- OTP y verificacion
+- Recuperacion de contrasena
+- Nueva solicitud creada
+- Nuevo presupuesto recibido
+- Presupuesto aceptado
+- Pago retenido en escrow
+- Pago liberado al profesional
+- Pago liberado automaticamente
+- Nuevo mensaje en chat
 
-El backend ya incluye reintentos de consulta y manejo de error `503` para cortes breves de conexion.
+Todos con template HTML y branding ITIW Connect.
 
-### Error `EADDRINUSE: 4000`
+---
 
-Ya hay otro proceso usando el puerto 4000. Cierra el proceso anterior del backend y vuelve a ejecutar.
+## Seguridad
 
-## Nota de seguridad
+- Password hashing con bcrypt (cost 12)
+- JWT obligatorio en rutas protegidas
+- Middleware por roles
+- No se almacenan datos de tarjeta (solo `stripePaymentIntentId`)
+- Control de acceso en chat (solo participantes del job)
 
-- No guardar datos de tarjeta ni documentos sensibles.
-- JWT requerido en rutas protegidas.
-- Passwords con bcrypt costo 12.
+---
 
-## Verificacion tecnica reciente
+## Troubleshooting Rapido
 
-- `npm --prefix backend run build` OK
-- `npm --prefix frontend run build` OK
-- Seed de categorias ejecutado y validado en Neon (18 categorias canonicas)
-"# ITIW-Connect" 
+### Prisma P1001/P1002 (Neon)
+1. Reintenta `npm run setup:backend`
+2. Verifica conectividad de red/firewall/VPN
+3. Reinicia backend: `npm run dev:backend`
+
+### `EADDRINUSE` en puertos 3000/4000
+- Usa: `npm run dev:fresh`
+
+### Error raro de Next (`Cannot find module './xx.js'` en `.next`)
+- Limpia cache: `npm run dev:clean`
+
+---
+
+## Roadmap Sugerido
+
+- Sistema de calificaciones/reviews post-servicio
+- WebSockets para chat en tiempo real
+- Adjuntos multimedia en chat y solicitudes
+- Panel admin de moderacion y soporte
+- Observabilidad (logs estructurados + metricas)
+
+---
+
+## Licencia
+
+Uso interno / MVP ITIW Connect.
