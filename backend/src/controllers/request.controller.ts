@@ -1,4 +1,4 @@
-import { JobPaymentStatus, JobStatus, QuoteStatus, ServiceRequestStatus } from "@prisma/client";
+import { JobPaymentStatus, JobStatus, NotificationType, QuoteStatus, Role, ServiceRequestStatus } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
 import { sendEmail } from "../config/mailer";
@@ -8,6 +8,7 @@ import {
   quoteAcceptedTemplate,
   requestCreatedTemplate,
 } from "../utils/emailTemplates";
+import { notifyManyUsers, notifyUser } from "../services/notification.service";
 
 const JOB_ESCROW_HOURS = 72;
 
@@ -82,6 +83,46 @@ export async function createServiceRequest(req: Request, res: Response) {
     env.emailUser,
     "Nueva solicitud creada - ITIW Connect",
     requestCreatedTemplate(request.description, request.category.name),
+  );
+
+  const compatibleProfessionals = await prisma.user.findMany({
+    where: {
+      role: Role.PROFESIONAL,
+      id: {
+        not: clientId,
+      },
+      OR: [
+        {
+          professionalProfile: {
+            specialties: {
+              has: request.category.name,
+            },
+          },
+        },
+        {
+          professionalProfile: {
+            specialties: {
+              isEmpty: true,
+            },
+          },
+        },
+      ],
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  await notifyManyUsers(
+    {
+      userIds: compatibleProfessionals.map((user) => user.id),
+      title: "Nueva solicitud disponible",
+      body: `Hay una nueva solicitud en ${request.category.name}: ${request.description}`,
+      type: NotificationType.SOLICITUD,
+    },
+    {
+      emailSubject: "Nueva solicitud creada - ITIW Connect",
+    },
   );
 
   return res.status(201).json({
@@ -165,7 +206,9 @@ export async function getRequestDetail(req: Request, res: Response) {
                   name: true,
                   avgRating: true,
                   totalJobs: true,
+                  reviewCount: true,
                   verifiedBadge: true,
+                  badges: true,
                 },
               },
             },
@@ -213,7 +256,9 @@ export async function getRequestDetail(req: Request, res: Response) {
           name: quote.professional.professionalProfile?.name || quote.professional.email,
           avgRating,
           totalJobs,
+          reviewCount: Number(quote.professional.professionalProfile?.reviewCount || 0),
           verifiedBadge: Boolean(quote.professional.professionalProfile?.verifiedBadge),
+          badges: quote.professional.professionalProfile?.badges || [],
         },
       };
     })
@@ -419,6 +464,18 @@ export async function createQuote(req: Request, res: Response) {
     ),
   );
 
+  await notifyUser(
+    {
+      userId: request.clientId,
+      title: "Nuevo presupuesto recibido",
+      body: `${professionalName} envio un presupuesto por $${new Intl.NumberFormat("es-CO").format(Math.round(quote.amountCop))} COP.`,
+      type: NotificationType.PRESUPUESTO,
+    },
+    {
+      emailSubject: "Tienes un nuevo presupuesto - ITIW Connect",
+    },
+  );
+
   return res.status(201).json({
     message: "Presupuesto enviado correctamente.",
     quote,
@@ -531,6 +588,18 @@ export async function acceptQuote(req: Request, res: Response) {
       result.acceptedQuote.request.description,
       `${env.frontendUrl}/dashboard`,
     ),
+  );
+
+  await notifyUser(
+    {
+      userId: result.acceptedQuote.professionalId,
+      title: "Tu presupuesto fue aceptado",
+      body: `El cliente acepto tu cotizacion para: ${result.acceptedQuote.request.description}`,
+      type: NotificationType.PRESUPUESTO,
+    },
+    {
+      emailSubject: "Presupuesto aceptado - ITIW Connect",
+    },
   );
 
   return res.status(200).json({

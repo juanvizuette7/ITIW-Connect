@@ -17,4 +17,5 @@ export const CANONICAL_CATEGORY_NAMES = [
   "Vidrier\u00EDa",
   "Alarmas y CCTV",
   "Electrodom\u00E9sticos",
+  "Otro",
 ] as const;

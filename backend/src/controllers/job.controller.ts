@@ -1,4 +1,4 @@
-import { JobPaymentStatus, JobStatus, PaymentStatus, Prisma, Role } from "@prisma/client";
+import { JobPaymentStatus, JobStatus, NotificationType, PaymentStatus, Prisma, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
 import { sendEmail } from "../config/mailer";
@@ -10,9 +10,13 @@ import {
 } from "../config/stripe";
 import { prisma } from "../config/prisma";
 import {
+  badgeAwardedTemplate,
   escrowPaymentTemplate,
   paymentReleasedTemplate,
+  rateExperienceTemplate,
 } from "../utils/emailTemplates";
+import { assignProfessionalBadges } from "../services/reviewBadge.service";
+import { notifyManyUsers, notifyUser } from "../services/notification.service";
 
 const COMMISSION_RATE = 0.1;
 const ESCROW_HOURS = 72;
@@ -37,6 +41,7 @@ const jobInclude = {
           professionalProfile: {
             select: {
               name: true,
+              badges: true,
             },
           },
           clientProfile: {
@@ -60,6 +65,7 @@ const jobInclude = {
       professionalProfile: {
         select: {
           name: true,
+          badges: true,
         },
       },
     },
@@ -71,6 +77,7 @@ const jobInclude = {
       professionalProfile: {
         select: {
           name: true,
+          badges: true,
         },
       },
       clientProfile: {
@@ -78,6 +85,14 @@ const jobInclude = {
           name: true,
         },
       },
+    },
+  },
+  reviews: {
+    select: {
+      id: true,
+      reviewerId: true,
+      reviewedId: true,
+      createdAt: true,
     },
   },
 } as const;
@@ -89,7 +104,7 @@ type JobWithRelations = Prisma.JobGetPayload<{
 function getDisplayName(user: {
   role: Role;
   clientProfile: { name: string } | null;
-  professionalProfile: { name: string } | null;
+  professionalProfile: { name: string; badges?: string[] } | null;
 }) {
   if (user.role === "CLIENTE") {
     return user.clientProfile?.name || "Cliente";
@@ -100,6 +115,13 @@ function getDisplayName(user: {
 function mapJob(job: JobWithRelations) {
   const clientName = getDisplayName(job.client);
   const professionalName = getDisplayName(job.professional);
+
+  const hasReviewedProfessional = job.reviews.some(
+    (review) => review.reviewerId === job.clientId && review.reviewedId === job.professionalId,
+  );
+  const hasReviewedClient = job.reviews.some(
+    (review) => review.reviewerId === job.professionalId && review.reviewedId === job.clientId,
+  );
 
   return {
     id: job.id,
@@ -125,11 +147,11 @@ function mapJob(job: JobWithRelations) {
     professional: {
       id: job.professional.id,
       name: professionalName,
+      badges: job.professional.professionalProfile?.badges || [],
     },
     payment: job.payment
       ? {
           id: job.payment.id,
-          stripePaymentIntentId: job.payment.stripePaymentIntentId,
           amountCop: job.payment.amountCop,
           commissionCop: job.payment.commissionCop,
           netProfessionalCop: job.payment.netProfessionalCop,
@@ -137,6 +159,8 @@ function mapJob(job: JobWithRelations) {
           createdAt: job.payment.createdAt,
         }
       : null,
+    hasReviewedProfessional,
+    hasReviewedClient,
   };
 }
 
@@ -205,7 +229,14 @@ export async function createOrConfirmEscrowPayment(req: Request, res: Response) 
       message: "PaymentIntent generado correctamente.",
       clientSecret,
       paymentIntentId: stripePaymentIntentId,
-      payment,
+      payment: {
+        id: payment.id,
+        amountCop: payment.amountCop,
+        commissionCop: payment.commissionCop,
+        netProfessionalCop: payment.netProfessionalCop,
+        status: payment.status,
+        createdAt: payment.createdAt,
+      },
       amountCop,
       commissionCop,
       netProfessionalCop,
@@ -256,10 +287,29 @@ export async function createOrConfirmEscrowPayment(req: Request, res: Response) 
     escrowPaymentTemplate(updated.updatedJob.quote.amountCop, updated.updatedJob.quote.request.description),
   );
 
+  await notifyManyUsers(
+    {
+      userIds: [updated.updatedJob.clientId, updated.updatedJob.professionalId],
+      title: "Pago procesado en escrow",
+      body: `El pago del trabajo "${updated.updatedJob.quote.request.description}" esta retenido de forma segura.`,
+      type: NotificationType.PAGO,
+    },
+    {
+      emailSubject: "Tu pago esta seguro en escrow - ITIW Connect",
+    },
+  );
+
   return res.status(200).json({
     message: "Pago procesado y retenido en escrow correctamente.",
     job: mapJob(updated.updatedJob),
-    payment: updated.payment,
+    payment: {
+      id: updated.payment.id,
+      amountCop: updated.payment.amountCop,
+      commissionCop: updated.payment.commissionCop,
+      netProfessionalCop: updated.payment.netProfessionalCop,
+      status: updated.payment.status,
+      createdAt: updated.payment.createdAt,
+    },
   });
 }
 
@@ -290,7 +340,7 @@ export async function confirmJobCompletion(req: Request, res: Response) {
 
   await capturePaymentIntent(job.payment.stripePaymentIntentId);
 
-  const updatedJob = await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     await tx.payment.update({
       where: { jobId: job.id },
       data: {
@@ -298,7 +348,7 @@ export async function confirmJobCompletion(req: Request, res: Response) {
       },
     });
 
-    return tx.job.update({
+    const releasedJob = await tx.job.update({
       where: { id: job.id },
       data: {
         clientConfirmed: true,
@@ -307,17 +357,71 @@ export async function confirmJobCompletion(req: Request, res: Response) {
       },
       include: jobInclude,
     });
+
+    await tx.professionalProfile.update({
+      where: { userId: releasedJob.professionalId },
+      data: {
+        totalJobs: {
+          increment: 1,
+        },
+      },
+    });
+
+    const assignedBadges = await assignProfessionalBadges(releasedJob.professionalId, tx);
+
+    return { releasedJob, assignedBadges };
   });
 
   await sendEmail(
     env.emailUser,
     "Pago liberado al profesional - ITIW Connect",
-    paymentReleasedTemplate(updatedJob.quote.amountCop, updatedJob.quote.request.description, false),
+    paymentReleasedTemplate(updated.releasedJob.quote.amountCop, updated.releasedJob.quote.request.description, false),
   );
+
+  await notifyManyUsers(
+    {
+      userIds: [updated.releasedJob.clientId, updated.releasedJob.professionalId],
+      title: "Pago liberado",
+      body: `El pago del trabajo "${updated.releasedJob.quote.request.description}" fue liberado correctamente.`,
+      type: NotificationType.PAGO,
+    },
+    {
+      emailSubject: "Pago liberado al profesional - ITIW Connect",
+    },
+  );
+
+  await sendEmail(
+    env.emailUser,
+    "Califica tu experiencia! - ITIW Connect",
+    rateExperienceTemplate(
+      updated.releasedJob.quote.request.description,
+      `${env.frontendUrl}/dashboard/job/${updated.releasedJob.id}/calificar`,
+    ),
+  );
+
+  for (const badgeType of updated.assignedBadges) {
+    await sendEmail(
+      env.emailUser,
+      "Obtuviste un nuevo badge! - ITIW Connect",
+      badgeAwardedTemplate(getDisplayName(updated.releasedJob.professional), badgeType),
+    );
+
+    await notifyUser(
+      {
+        userId: updated.releasedJob.professionalId,
+        title: "Nuevo badge obtenido",
+        body: `Ganaste el badge ${badgeType}.`,
+        type: NotificationType.BADGE,
+      },
+      {
+        emailSubject: "Obtuviste un nuevo badge! - ITIW Connect",
+      },
+    );
+  }
 
   return res.status(200).json({
     message: "Trabajo confirmado y pago liberado al profesional.",
-    job: mapJob(updatedJob),
+    job: mapJob(updated.releasedJob),
   });
 }
 

@@ -15,6 +15,10 @@ function emailLayout(title: string, contentHtml: string, ctaLabel?: string, ctaU
   </div>`;
 }
 
+function formatCop(value: number): string {
+  return new Intl.NumberFormat("es-CO").format(Math.round(value));
+}
+
 export function otpEmailTemplate(name: string, code: string): string {
   return emailLayout(
     "Codigo de verificacion",
@@ -51,7 +55,7 @@ export function newQuoteTemplate(
   estimatedHours: number,
   requestUrl: string,
 ): string {
-  const amount = new Intl.NumberFormat("es-CO").format(Math.round(amountCop));
+  const amount = formatCop(amountCop);
 
   return emailLayout(
     "Tienes un nuevo presupuesto",
@@ -71,7 +75,7 @@ export function quoteAcceptedTemplate(
   requestDescription: string,
   dashboardUrl: string,
 ): string {
-  const amount = new Intl.NumberFormat("es-CO").format(Math.round(amountCop));
+  const amount = formatCop(amountCop);
 
   return emailLayout(
     "Tu presupuesto fue aceptado",
@@ -86,7 +90,7 @@ export function quoteAcceptedTemplate(
 }
 
 export function escrowPaymentTemplate(amountCop: number, requestDescription: string): string {
-  const amount = new Intl.NumberFormat("es-CO").format(Math.round(amountCop));
+  const amount = formatCop(amountCop);
 
   return emailLayout(
     "Tu pago esta seguro en escrow",
@@ -97,7 +101,7 @@ export function escrowPaymentTemplate(amountCop: number, requestDescription: str
 }
 
 export function paymentReleasedTemplate(amountCop: number, requestDescription: string, automatic: boolean): string {
-  const amount = new Intl.NumberFormat("es-CO").format(Math.round(amountCop));
+  const amount = formatCop(amountCop);
 
   return emailLayout(
     automatic ? "Pago liberado automaticamente" : "Pago liberado al profesional",
@@ -113,5 +117,82 @@ export function newChatMessageTemplate(senderName: string, content: string, requ
     `<p style="margin:0 0 12px;"><strong>${senderName}</strong> envio un nuevo mensaje.</p>
      <p style="margin:0 0 8px;"><strong>Mensaje:</strong> ${content}</p>
      <p style="margin:0;"><strong>Solicitud:</strong> ${requestDescription}</p>`,
+  );
+}
+
+export function reviewReceivedTemplate(
+  reviewedName: string,
+  rating: number,
+  comment: string,
+  jobDescription: string,
+): string {
+  const safeComment = comment.trim() || "Sin comentario adicional.";
+
+  return emailLayout(
+    "Tienes una nueva resena",
+    `<p style="margin:0 0 12px;">Hola ${reviewedName},</p>
+     <p style="margin:0 0 8px;">Recibiste una calificacion de <strong>${rating}/5</strong>.</p>
+     <p style="margin:0 0 8px;"><strong>Comentario:</strong> ${safeComment}</p>
+     <p style="margin:0;"><strong>Trabajo:</strong> ${jobDescription}</p>`,
+  );
+}
+
+export function badgeDescription(type: string): string {
+  if (type === "VERIFICADO") {
+    return "Perfil con identidad verificada en ITIW Connect.";
+  }
+  if (type === "NUEVO_TALENTO") {
+    return "Profesional con sus primeros trabajos completados y buen desempeno.";
+  }
+  if (type === "TOP_RATED") {
+    return "Calificacion sobresaliente y reputacion alta en la plataforma.";
+  }
+  if (type === "EXPERTO") {
+    return "Profesional con experiencia comprobada en alto volumen de trabajos.";
+  }
+  return "Reconocimiento especial dentro de ITIW Connect.";
+}
+
+export function badgeAwardedTemplate(name: string, badgeType: string): string {
+  const description = badgeDescription(badgeType);
+
+  return emailLayout(
+    "Obtuviste un nuevo badge",
+    `<p style="margin:0 0 12px;">Hola ${name},</p>
+     <p style="margin:0 0 8px;">Se asigno un nuevo reconocimiento en tu perfil profesional.</p>
+     <p style="margin:0 0 8px;"><strong>Badge:</strong> ${badgeType}</p>
+     <p style="margin:0;"><strong>Detalle:</strong> ${description}</p>`,
+  );
+}
+
+export function rateExperienceTemplate(jobDescription: string, rateUrl: string): string {
+  return emailLayout(
+    "Califica tu experiencia",
+    `<p style="margin:0 0 12px;">El trabajo ya fue completado y el pago se encuentra liberado.</p>
+     <p style="margin:0;"><strong>Trabajo:</strong> ${jobDescription}</p>`,
+    "Calificar ahora",
+    rateUrl,
+  );
+}
+
+export function notificationEventTemplate(title: string, body: string): string {
+  return emailLayout(
+    title,
+    `<p style="margin:0;">${body}</p>`,
+  );
+}
+
+export function disputeOpenedTemplate(
+  openedByName: string,
+  reason: string,
+  description: string,
+  jobDescription: string,
+): string {
+  return emailLayout(
+    "Nueva disputa abierta",
+    `<p style="margin:0 0 10px;"><strong>Abierta por:</strong> ${openedByName}</p>
+     <p style="margin:0 0 10px;"><strong>Motivo:</strong> ${reason}</p>
+     <p style="margin:0 0 10px;"><strong>Detalle:</strong> ${description}</p>
+     <p style="margin:0;"><strong>Trabajo:</strong> ${jobDescription}</p>`,
   );
 }

@@ -21,11 +21,16 @@ type JobDetail = {
     };
   };
   professional: {
+    id: string;
     name: string;
+    badges: string[];
   };
   client: {
+    id: string;
     name: string;
   };
+  hasReviewedProfessional: boolean;
+  hasReviewedClient: boolean;
 };
 
 type ProfileMeResponse = {
@@ -49,11 +54,11 @@ function getRemainingEscrow(escrowReleaseAt: string) {
   const now = Date.now();
   const diff = end - now;
 
-  if (diff <= 0) return "Liberacion en: 0h 0min";
+  if (diff <= 0) return "Liberacion automatica en: 0h 0min";
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `Liberacion en: ${hours}h ${minutes}min`;
+  return `Liberacion automatica en: ${hours}h ${minutes}min`;
 }
 
 export default function JobDetailPage() {
@@ -107,6 +112,14 @@ export default function JobDetailPage() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    if (!job || role !== "CLIENTE") return;
+
+    if (job.status === "COMPLETADO" && job.paymentStatus === "LIBERADO" && !job.hasReviewedProfessional) {
+      router.replace(`/dashboard/job/${job.id}/calificar`);
+    }
+  }, [job, role, router]);
+
   function onLogout() {
     clearSession();
     router.push("/auth/login");
@@ -147,6 +160,8 @@ export default function JobDetailPage() {
 
   const showPayButton = role === "CLIENTE" && job.paymentStatus === "PENDIENTE";
   const showConfirmButton = role === "CLIENTE" && job.status === "EN_PROGRESO" && job.paymentStatus === "RETENIDO";
+  const showRateButton =
+    role === "CLIENTE" && job.status === "COMPLETADO" && job.paymentStatus === "LIBERADO" && !job.hasReviewedProfessional;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-8">
@@ -180,6 +195,12 @@ export default function JobDetailPage() {
             <button onClick={onConfirmJob} disabled={processing} className="premium-btn-primary">
               {processing ? "Confirmando..." : "Confirmar trabajo completado"}
             </button>
+          )}
+
+          {showRateButton && (
+            <Link href={`/dashboard/job/${job.id}/calificar`} className="rounded-xl bg-[#00C9A7] px-5 py-3 font-semibold text-[#06281f] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2]">
+              Calificar servicio
+            </Link>
           )}
 
           <Link href={`/dashboard/job/${job.id}/chat`} className="premium-btn-secondary">

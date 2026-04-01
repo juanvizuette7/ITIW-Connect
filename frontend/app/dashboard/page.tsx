@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -26,12 +26,29 @@ type JobItem = {
   paymentStatus: "PENDIENTE" | "RETENIDO" | "LIBERADO" | "REEMBOLSADO";
 };
 
+type PaymentHistoryResponse = {
+  totals: {
+    totalPagado: number;
+    totalComisiones: number;
+    totalNeto: number;
+  };
+  items: Array<{ id: string }>;
+};
+
 type ProfileMeResponse = {
   name: string;
   role: UserRole;
 };
 
-function CardIcon({ variant }: { variant: "plus" | "list" | "profile" | "briefcase" | "payments" }) {
+function formatCop(value: number) {
+  return `$${new Intl.NumberFormat("es-CO").format(Math.round(value))} COP`;
+}
+
+function CardIcon({
+  variant,
+}: {
+  variant: "plus" | "list" | "profile" | "briefcase" | "payments" | "history" | "notifications";
+}) {
   if (variant === "plus") {
     return (
       <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -64,6 +81,22 @@ function CardIcon({ variant }: { variant: "plus" | "list" | "profile" | "briefca
     );
   }
 
+  if (variant === "history") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 8v5l3 2M21 12a9 9 0 1 1-2.64-6.36" />
+      </svg>
+    );
+  }
+
+  if (variant === "notifications") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0" />
+      </svg>
+    );
+  }
+
   return (
     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
@@ -81,6 +114,7 @@ export default function DashboardPage() {
   const [availableRequestsCount, setAvailableRequestsCount] = useState(0);
   const [pendingQuotesCount, setPendingQuotesCount] = useState(0);
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
+  const [monthTotal, setMonthTotal] = useState(0);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -101,11 +135,26 @@ export default function DashboardPage() {
         setName(profile.name);
         setRole(profile.role);
 
-        const jobs = await apiRequest<JobItem[]>("/jobs", {
-          method: "GET",
-          token,
-        });
+        const [jobs, currentMonthHistory] = await Promise.all([
+          apiRequest<JobItem[]>("/jobs", {
+            method: "GET",
+            token,
+          }),
+          (() => {
+            const monthStart = new Date();
+            monthStart.setDate(1);
+            monthStart.setHours(0, 0, 0, 0);
+            const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
+            const query = `?fechaInicio=${encodeURIComponent(monthStart.toISOString())}&fechaFin=${encodeURIComponent(monthEnd.toISOString())}`;
+            return apiRequest<PaymentHistoryResponse>(`/payments/history${query}`, {
+              method: "GET",
+              token,
+            });
+          })(),
+        ]);
+
         setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
+        setMonthTotal(currentMonthHistory.totals.totalPagado);
 
         if (profile.role === "CLIENTE") {
           const requests = await apiRequest<ClientRequest[]>("/requests", {
@@ -138,7 +187,7 @@ export default function DashboardPage() {
       }
     }
 
-    loadDashboard();
+    void loadDashboard();
   }, [router]);
 
   const clientCards = useMemo(
@@ -165,14 +214,28 @@ export default function DashboardPage() {
         href: "/dashboard/mis-jobs",
       },
       {
+        icon: <CardIcon variant="history" />,
+        title: "Mi historial",
+        description: "Consulta pagos, comisiones y resumen mensual.",
+        countLabel: formatCop(monthTotal),
+        href: "/dashboard/historial",
+      },
+      {
         icon: <CardIcon variant="profile" />,
         title: "Mi perfil",
         description: "Actualiza tus datos personales y direcciones.",
         countLabel: "Editar perfil",
         href: "/dashboard/profile",
       },
+      {
+        icon: <CardIcon variant="notifications" />,
+        title: "Notificaciones",
+        description: "Revisa tus alertas internas en tiempo real.",
+        countLabel: "Ver ahora",
+        href: "/dashboard/notificaciones",
+      },
     ],
-    [activeRequestsCount, pendingPaymentsCount],
+    [activeRequestsCount, monthTotal, pendingPaymentsCount],
   );
 
   const professionalCards = useMemo(
@@ -199,14 +262,28 @@ export default function DashboardPage() {
         href: "/dashboard/mis-jobs",
       },
       {
+        icon: <CardIcon variant="history" />,
+        title: "Mi historial",
+        description: "Analiza ingresos, comisiones y movimientos.",
+        countLabel: formatCop(monthTotal),
+        href: "/dashboard/historial",
+      },
+      {
         icon: <CardIcon variant="profile" />,
         title: "Mi perfil",
         description: "Ajusta bio, especialidades y tarifa.",
         countLabel: "Editar perfil",
         href: "/dashboard/profile",
       },
+      {
+        icon: <CardIcon variant="notifications" />,
+        title: "Notificaciones",
+        description: "Revisa tus alertas internas en tiempo real.",
+        countLabel: "Ver ahora",
+        href: "/dashboard/notificaciones",
+      },
     ],
-    [availableRequestsCount, pendingPaymentsCount, pendingQuotesCount],
+    [availableRequestsCount, monthTotal, pendingPaymentsCount, pendingQuotesCount],
   );
 
   function onLogout() {
@@ -221,7 +298,7 @@ export default function DashboardPage() {
   const cards = role === "PROFESIONAL" ? professionalCards : clientCards;
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-8">
+    <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
       <DashboardHeader userName={name} onLogout={onLogout} />
 
       <section className="premium-panel p-6 md:p-8">
@@ -230,7 +307,7 @@ export default function DashboardPage() {
 
         {error && <p className="premium-error mt-4">{error}</p>}
 
-        <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {cards.map((card) => (
             <Link
               key={card.title}

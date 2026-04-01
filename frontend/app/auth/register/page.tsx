@@ -59,35 +59,50 @@ export default function RegisterPage() {
         "Pagos protegidos y comunicacion centralizada.",
       ]}
     >
-      <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Crear cuenta</h1>
-      <p className="mt-2 text-sm text-brand-muted">Completa tus datos para empezar a recibir o solicitar servicios.</p>
+      <div className="inline-flex items-center gap-2 rounded-full border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-3 py-1 text-xs font-semibold text-[#9bfde9]">
+        Registro rápido
+      </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-1">
+      <h1 className="mt-4 font-[var(--font-heading)] text-4xl font-extrabold leading-none text-white md:text-[2.8rem]">
+        Crear cuenta
+      </h1>
+      <p className="mt-3 text-sm leading-relaxed text-brand-muted">
+        Completa tus datos para empezar a recibir o solicitar servicios con pagos seguros, reputacion verificable y
+        seguimiento completo.
+      </p>
+
+      <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-1.5">
         <button
           type="button"
           onClick={() => setForm((prev) => ({ ...prev, role: "CLIENTE" }))}
-          className={`rounded-lg px-3 py-2 text-sm transition ${
+          className={`rounded-lg px-3 py-2.5 text-sm transition ${
             form.role === "CLIENTE"
-              ? "bg-brand-accent text-white"
+              ? "bg-brand-accent text-white shadow-[0_12px_24px_rgba(233,69,96,0.25)]"
               : "bg-transparent text-brand-muted hover:bg-white/5 hover:text-white"
           }`}
         >
-          Soy cliente
+          <span className="inline-flex items-center gap-1.5">
+            <span>👤</span>
+            <span>Soy cliente</span>
+          </span>
         </button>
         <button
           type="button"
           onClick={() => setForm((prev) => ({ ...prev, role: "PROFESIONAL" }))}
-          className={`rounded-lg px-3 py-2 text-sm transition ${
+          className={`rounded-lg px-3 py-2.5 text-sm transition ${
             form.role === "PROFESIONAL"
-              ? "bg-brand-accent text-white"
+              ? "bg-brand-accent text-white shadow-[0_12px_24px_rgba(233,69,96,0.25)]"
               : "bg-transparent text-brand-muted hover:bg-white/5 hover:text-white"
           }`}
         >
-          Soy profesional
+          <span className="inline-flex items-center gap-1.5">
+            <span>🛠️</span>
+            <span>Soy profesional</span>
+          </span>
         </button>
       </div>
 
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+      <form className="mt-6 space-y-4.5" onSubmit={onSubmit}>
         <div>
           <label className="mb-1.5 block text-sm text-[#d5dded]">Nombre</label>
           <input

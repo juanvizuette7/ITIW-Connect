@@ -7,9 +7,11 @@ import {
   resetPassword,
   verifyOtp,
 } from "../controllers/auth.controller";
+import { authRateLimiter } from "../middlewares/rate-limit.middleware";
 import { asyncHandler } from "../utils/asyncHandler";
 
 const authRouter = Router();
+authRouter.use(authRateLimiter);
 
 authRouter.post("/register", asyncHandler(register));
 authRouter.post("/login", asyncHandler(login));

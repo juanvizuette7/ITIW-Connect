@@ -30,6 +30,30 @@ export async function getMyProfile(req: Request, res: Response) {
   });
 }
 
+export async function getPublicProfessionalProfile(req: Request, res: Response) {
+  const { id } = req.params;
+
+  const professional = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      role: true,
+      isIdentityVerified: true,
+      professionalProfile: true,
+    },
+  });
+
+  if (!professional || professional.role !== "PROFESIONAL" || !professional.professionalProfile) {
+    return res.status(404).json({ message: "No encontramos el perfil profesional solicitado." });
+  }
+
+  return res.status(200).json({
+    id: professional.id,
+    isIdentityVerified: professional.isIdentityVerified,
+    professionalProfile: professional.professionalProfile,
+  });
+}
+
 export async function updateClientProfile(req: Request, res: Response) {
   const userId = req.user!.userId;
   const { name, photoUrl } = req.body as {

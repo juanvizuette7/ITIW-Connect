@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   CLIENTE
   PROFESIONAL
+  ADMIN
 }
 
 enum ServiceRequestStatus {
@@ -46,6 +47,31 @@ enum PaymentStatus {
   REEMBOLSADO
 }
 
+enum BadgeType {
+  VERIFICADO
+  TOP_RATED
+  EXPERTO
+  NUEVO_TALENTO
+}
+
+enum NotificationType {
+  SOLICITUD
+  PRESUPUESTO
+  MENSAJE
+  PAGO
+  CALIFICACION
+  BADGE
+  DISPUTA
+  SISTEMA
+}
+
+enum DisputeStatus {
+  ABIERTA
+  EN_REVISION
+  RESUELTA
+  CERRADA
+}
+
 model User {
   id                    String           @id @default(uuid()) @db.Uuid
   email                 String           @unique
@@ -53,6 +79,7 @@ model User {
   passwordHash          String
   role                  Role
   isEmailVerified       Boolean          @default(false)
+  isIdentityVerified    Boolean          @default(false)
   otpCode               String?
   otpExpiry             DateTime?
   otpAttempts           Int              @default(0)
@@ -67,6 +94,11 @@ model User {
   jobsAsClient          Job[]            @relation("ClientJobs")
   jobsAsProfessional    Job[]            @relation("ProfessionalJobs")
   messages              Message[]
+  badges                Badge[]
+  reviewsGiven          Review[]         @relation("ReviewsGiven")
+  reviewsReceived       Review[]         @relation("ReviewsReceived")
+  notifications         Notification[]
+  disputesOpened        Dispute[]        @relation("DisputesOpenedBy")
 
   @@map("users")
 }
@@ -92,6 +124,8 @@ model ProfessionalProfile {
   hourlyRate       Decimal  @db.Decimal(10, 2)
   coverageRadiusKm Int      @default(5)
   avgRating        Decimal  @default(0) @db.Decimal(3, 2)
+  reviewCount      Int      @default(0)
+  badges           String[] @default([])
   totalJobs        Int      @default(0)
   verifiedBadge    Boolean  @default(false)
   createdAt        DateTime @default(now())
@@ -167,6 +201,8 @@ model Job {
   client           User             @relation("ClientJobs", fields: [clientId], references: [id], onDelete: Cascade)
   professional     User             @relation("ProfessionalJobs", fields: [professionalId], references: [id], onDelete: Cascade)
   payment          Payment?
+  reviews          Review[]
+  dispute          Dispute?
 
   @@index([clientId])
   @@index([professionalId])
@@ -202,4 +238,68 @@ model Message {
   @@index([requestId])
   @@index([senderId])
   @@map("messages")
+}
+
+model Review {
+  id                 String   @id @default(uuid()) @db.Uuid
+  jobId              String   @db.Uuid
+  reviewerId         String   @db.Uuid
+  reviewedId         String   @db.Uuid
+  rating             Int
+  subcategoryRatings Json
+  comment            String   @db.VarChar(400)
+  createdAt          DateTime @default(now())
+  job                Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  reviewer           User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  reviewed           User     @relation("ReviewsReceived", fields: [reviewedId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, reviewerId])
+  @@index([reviewedId])
+  @@index([createdAt])
+  @@map("reviews")
+}
+
+model Badge {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  type      BadgeType
+  awardedAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("badges")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  title     String
+  body      String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Dispute {
+  id          String       @id @default(uuid()) @db.Uuid
+  jobId        String       @unique @db.Uuid
+  openedBy     String       @db.Uuid
+  reason       String
+  description  String
+  status       DisputeStatus @default(ABIERTA)
+  resolution   String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  job          Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  openedByUser User         @relation("DisputesOpenedBy", fields: [openedBy], references: [id], onDelete: Cascade)
+
+  @@index([openedBy])
+  @@index([status])
+  @@map("disputes")
 }

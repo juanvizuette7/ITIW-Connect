@@ -1,18 +1,23 @@
 import { Request, Response } from "express";
+import { NotificationType, Role } from "@prisma/client";
 import { env } from "../config/env";
 import { sendEmail } from "../config/mailer";
 import { prisma } from "../config/prisma";
+import { notifyManyUsers } from "../services/notification.service";
 import { newChatMessageTemplate } from "../utils/emailTemplates";
 
 function resolveName(user: {
-  role: "CLIENTE" | "PROFESIONAL";
+  role: Role;
   clientProfile: { name: string } | null;
   professionalProfile: { name: string } | null;
 }) {
   if (user.role === "CLIENTE") {
     return user.clientProfile?.name || "Cliente";
   }
-  return user.professionalProfile?.name || "Profesional";
+  if (user.role === "PROFESIONAL") {
+    return user.professionalProfile?.name || "Profesional";
+  }
+  return user.clientProfile?.name || user.professionalProfile?.name || "Administrador";
 }
 
 async function ensureJobParticipant(requestId: string, userId: string) {
@@ -32,6 +37,16 @@ async function ensureJobParticipant(requestId: string, userId: string) {
               description: true,
             },
           },
+        },
+      },
+      client: {
+        select: {
+          id: true,
+        },
+      },
+      professional: {
+        select: {
+          id: true,
         },
       },
     },
@@ -86,6 +101,18 @@ export async function sendMessage(req: Request, res: Response) {
     env.emailUser,
     "Tienes un mensaje nuevo - ITIW Connect",
     newChatMessageTemplate(senderName, message.content, job.quote.request.description),
+  );
+
+  await notifyManyUsers(
+    {
+      userIds: [job.client.id, job.professional.id].filter((id) => id !== senderId),
+      title: "Nuevo mensaje en el chat",
+      body: `${senderName} envio un mensaje en la solicitud: ${job.quote.request.description}`,
+      type: NotificationType.MENSAJE,
+    },
+    {
+      emailSubject: "Tienes un mensaje nuevo - ITIW Connect",
+    },
   );
 
   return res.status(201).json({

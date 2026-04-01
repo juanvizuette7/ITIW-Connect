@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-type UserRole = "CLIENTE" | "PROFESIONAL";
+type UserRole = "CLIENTE" | "PROFESIONAL" | "ADMIN";
 
 export function authorizeRoles(...allowedRoles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {

@@ -20,7 +20,9 @@ type QuoteItem = {
     name: string;
     avgRating: number;
     totalJobs: number;
+    reviewCount: number;
     verifiedBadge: boolean;
+    badges: string[];
   };
 };
 
@@ -54,7 +56,8 @@ function formatCop(value: number): string {
 }
 
 function stars(rating: number): string {
-  const amount = Math.max(1, Math.min(5, Math.round(rating)));
+  const amount = Math.max(0, Math.min(5, Math.round(rating)));
+  if (amount === 0) return "Sin calificaciones";
   return "★".repeat(amount);
 }
 
@@ -178,8 +181,18 @@ export default function SolicitudDetailPage() {
               <article key={quote.id} className="premium-panel p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-white">{quote.professional.name}</p>
-                    <p className="text-sm text-brand-gold">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-white">{quote.professional.name}</p>
+                      {quote.professional.badges.map((badge) => (
+                        <span
+                          key={`${quote.id}-${badge}`}
+                          className="rounded-full border border-[#00C9A7]/40 bg-[#00C9A7]/15 px-2 py-0.5 text-[10px] font-semibold text-[#7ff8e1]"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-sm text-[#f0c15d]">
                       {stars(quote.professional.avgRating)} · {quote.professional.avgRating.toFixed(1)}
                     </p>
                   </div>
@@ -191,10 +204,18 @@ export default function SolicitudDetailPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-[#c5d0e3]">
                   <span>Tiempo estimado: {quote.estimatedHours} horas</span>
                   <span>Trabajos: {quote.professional.totalJobs}</span>
+                  <span>Resenas: {quote.professional.reviewCount}</span>
                   <span>Score IA: {quote.score.toFixed(3)}</span>
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <Link
+                    href={`/dashboard/profesional/${quote.professional.id}`}
+                    className="text-sm text-[#00C9A7] hover:underline"
+                  >
+                    Ver perfil profesional
+                  </Link>
+
                   {canAccept && quote.status === "PENDIENTE" && (
                     <button
                       type="button"

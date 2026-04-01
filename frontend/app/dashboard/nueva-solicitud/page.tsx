@@ -103,11 +103,13 @@ export default function NuevaSolicitudPage() {
 
       <section className="premium-panel p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Nueva solicitud</h1>
-        <p className="mt-2 text-brand-muted">Describe el servicio que necesitas y selecciona una categoria.</p>
+        <p className="mt-2 text-brand-muted">
+          Selecciona una categoria general y describe el problema con detalle para recibir mejores cotizaciones.
+        </p>
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div>
-            <label className="mb-1.5 block text-sm text-[#d5dded]">Categoria</label>
+            <label className="mb-1.5 block text-sm text-[#d5dded]">Categoria general</label>
             <select
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
@@ -120,6 +122,9 @@ export default function NuevaSolicitudPage() {
                 </option>
               ))}
             </select>
+            <p className="mt-2 text-xs text-brand-muted">
+              Si tu caso no encaja exactamente, elige <strong>Otro</strong> y especifica todo en la descripcion.
+            </p>
           </div>
 
           <div>

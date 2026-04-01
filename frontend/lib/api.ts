@@ -7,14 +7,22 @@ interface RequestOptions extends RequestInit {
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { token, headers, ...rest } = options;
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...rest,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(headers || {}),
-    },
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...rest,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(headers || {}),
+      },
+    });
+  } catch {
+    throw new Error(
+      "No fue posible conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:4000.",
+    );
+  }
 
   const data = await response.json().catch(() => ({}));
 

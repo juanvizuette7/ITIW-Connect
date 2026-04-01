@@ -19,7 +19,8 @@ export const metadata: Metadata = {
   description: "Marketplace de servicios del hogar en Colombia",
   applicationName: "ITIW Connect",
   icons: {
-    icon: "/icon.svg",
+    icon: "/brand-logo.png",
+    apple: "/brand-logo.png",
   },
 };
 
