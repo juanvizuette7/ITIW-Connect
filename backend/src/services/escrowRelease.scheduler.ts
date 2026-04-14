@@ -5,14 +5,19 @@ import { sendEmail } from "../config/mailer";
 import { capturePaymentIntent } from "../config/stripe";
 import { prisma } from "../config/prisma";
 import {
+  aiRetrainCompletedTemplate,
   badgeAwardedTemplate,
+  npsSurveyTemplate,
   paymentReleasedTemplate,
   rateExperienceTemplate,
 } from "../utils/emailTemplates";
 import { notifyManyUsers, notifyUser } from "./notification.service";
 import { assignProfessionalBadges } from "./reviewBadge.service";
+import { retrainProfessionalAiScores } from "./aiTraining.service";
 
 let running = false;
+let runningNpsReminder = false;
+let runningAiRetrain = false;
 
 async function releaseEscrowJobs() {
   if (running) {
@@ -184,8 +189,106 @@ async function releaseEscrowJobs() {
   }
 }
 
+async function sendNpsReminders() {
+  if (runningNpsReminder) {
+    return;
+  }
+
+  runningNpsReminder = true;
+
+  try {
+    const threshold = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const jobs = await prisma.job.findMany({
+      where: {
+        status: JobStatus.COMPLETADO,
+        paymentStatus: JobPaymentStatus.LIBERADO,
+        npsReminderSent: false,
+        updatedAt: {
+          lte: threshold,
+        },
+      },
+      include: {
+        quote: {
+          include: {
+            request: {
+              select: {
+                description: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: "asc",
+      },
+    });
+
+    for (const job of jobs) {
+      const surveyUrl = `${env.frontendUrl}/dashboard/nps/${job.id}`;
+
+      await sendEmail(
+        env.emailUser,
+        "Como fue tu experiencia? - ITIW Connect",
+        npsSurveyTemplate(job.quote.request.description, surveyUrl),
+      );
+
+      await notifyManyUsers(
+        {
+          userIds: [job.clientId, job.professionalId],
+          title: "Encuesta NPS disponible",
+          body: "Tu trabajo ya cumple 24 horas completado. Comparte tu feedback en la encuesta NPS.",
+          type: NotificationType.SISTEMA,
+        },
+        {
+          emailSubject: "Como fue tu experiencia? - ITIW Connect",
+          sendMirrorEmail: false,
+        },
+      );
+
+      await prisma.job.update({
+        where: { id: job.id },
+        data: {
+          npsReminderSent: true,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("[SCHEDULER] Error enviando recordatorios NPS:", error);
+  } finally {
+    runningNpsReminder = false;
+  }
+}
+
+async function runAiRetrainCycle() {
+  if (runningAiRetrain) {
+    return;
+  }
+
+  runningAiRetrain = true;
+
+  try {
+    const results = await retrainProfessionalAiScores(72);
+
+    await sendEmail(
+      env.emailUser,
+      "Motor IA reentrenado - ITIW Connect",
+      aiRetrainCompletedTemplate(results.length),
+    );
+  } catch (error) {
+    console.error("[SCHEDULER] Error reentrenando motor IA:", error);
+  } finally {
+    runningAiRetrain = false;
+  }
+}
+
 export function startEscrowReleaseScheduler() {
   cron.schedule("0 * * * *", () => {
     void releaseEscrowJobs();
+    void sendNpsReminders();
+  });
+
+  cron.schedule("0 3 */3 * *", () => {
+    void runAiRetrainCycle();
   });
 }

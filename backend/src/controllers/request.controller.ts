@@ -9,6 +9,7 @@ import {
   requestCreatedTemplate,
 } from "../utils/emailTemplates";
 import { notifyManyUsers, notifyUser } from "../services/notification.service";
+import { logAiTrainingEvent } from "../services/aiTraining.service";
 
 const JOB_ESCROW_HOURS = 72;
 
@@ -124,6 +125,18 @@ export async function createServiceRequest(req: Request, res: Response) {
       emailSubject: "Nueva solicitud creada - ITIW Connect",
     },
   );
+
+  if (compatibleProfessionals.length > 0) {
+    await prisma.aiTrainingEvent.createMany({
+      data: compatibleProfessionals.map((professional) => ({
+        professionalId: professional.id,
+        requestId: request.id,
+        action: "SOLICITUD_RECIBIDA",
+        outcome: "NOTIFICADA",
+      })),
+      skipDuplicates: true,
+    });
+  }
 
   return res.status(201).json({
     message: "Solicitud creada correctamente.",
@@ -285,6 +298,14 @@ export async function getRequestDetail(req: Request, res: Response) {
 export async function getAvailableRequests(req: Request, res: Response) {
   const professionalId = req.user!.userId;
 
+  const professional = await prisma.professionalProfile.findUnique({
+    where: { userId: professionalId },
+    select: {
+      aiScore: true,
+      specialties: true,
+    },
+  });
+
   const requests = await prisma.serviceRequest.findMany({
     where: {
       status: ServiceRequestStatus.ACTIVA,
@@ -315,8 +336,33 @@ export async function getAvailableRequests(req: Request, res: Response) {
       createdAt: "desc",
     },
   });
+  const aiScore = Number(professional?.aiScore || 0);
+  const specialties = professional?.specialties || [];
 
-  return res.status(200).json(requests);
+  const rankedRequests = requests
+    .map((request) => {
+      const isSpecialtyMatch = specialties.some(
+        (specialty) => specialty.trim().toLowerCase() === request.category.name.trim().toLowerCase(),
+      );
+      const freshnessHours = Math.max(
+        0,
+        (Date.now() - request.createdAt.getTime()) / (1000 * 60 * 60),
+      );
+      const freshnessScore = 1 / (1 + freshnessHours);
+      const demandScore = request._count.quotes >= 5 ? 0.2 : 1 - request._count.quotes * 0.15;
+      const rankingScore =
+        aiScore * (isSpecialtyMatch ? 1.05 : 0.9) +
+        freshnessScore * 20 +
+        Math.max(0, demandScore) * 10;
+
+      return {
+        ...request,
+        rankingScore: Number(rankingScore.toFixed(2)),
+      };
+    })
+    .sort((a, b) => b.rankingScore - a.rankingScore);
+
+  return res.status(200).json(rankedRequests);
 }
 
 export async function getProfessionalQuotes(req: Request, res: Response) {
@@ -476,6 +522,13 @@ export async function createQuote(req: Request, res: Response) {
     },
   );
 
+  await logAiTrainingEvent({
+    professionalId,
+    requestId: request.id,
+    action: "COTIZACION",
+    outcome: "ENVIADA",
+  });
+
   return res.status(201).json({
     message: "Presupuesto enviado correctamente.",
     quote,
@@ -575,6 +628,26 @@ export async function acceptQuote(req: Request, res: Response) {
 
     return { acceptedQuote, updatedRequest, job };
   });
+
+  await logAiTrainingEvent({
+    professionalId: result.acceptedQuote.professionalId,
+    requestId: id,
+    action: "COTIZACION",
+    outcome: "ACEPTADA",
+  });
+
+  const rejectedProfessionalIds = request.quotes
+    .filter((quote) => quote.id !== quoteId)
+    .map((quote) => quote.professionalId);
+
+  for (const professionalId of rejectedProfessionalIds) {
+    await logAiTrainingEvent({
+      professionalId,
+      requestId: id,
+      action: "COTIZACION",
+      outcome: "RECHAZADA",
+    });
+  }
 
   const professionalName = getProfessionalName(result.acceptedQuote.professional);
 

@@ -31,6 +31,7 @@ type JobDetail = {
   };
   hasReviewedProfessional: boolean;
   hasReviewedClient: boolean;
+  updatedAt: string;
 };
 
 type ProfileMeResponse = {
@@ -162,6 +163,9 @@ export default function JobDetailPage() {
   const showConfirmButton = role === "CLIENTE" && job.status === "EN_PROGRESO" && job.paymentStatus === "RETENIDO";
   const showRateButton =
     role === "CLIENTE" && job.status === "COMPLETADO" && job.paymentStatus === "LIBERADO" && !job.hasReviewedProfessional;
+  const disputeWindowOpen =
+    job.paymentStatus === "LIBERADO" &&
+    Date.now() - new Date(job.updatedAt).getTime() <= 72 * 60 * 60 * 1000;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-8">
@@ -200,6 +204,15 @@ export default function JobDetailPage() {
           {showRateButton && (
             <Link href={`/dashboard/job/${job.id}/calificar`} className="rounded-xl bg-[#00C9A7] px-5 py-3 font-semibold text-[#06281f] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2]">
               Calificar servicio
+            </Link>
+          )}
+
+          {disputeWindowOpen && (
+            <Link
+              href={`/dashboard/disputas/nueva/${job.id}`}
+              className="rounded-xl border border-[#f87171]/40 bg-[#f87171]/10 px-5 py-3 font-semibold text-[#fecaca] transition hover:-translate-y-0.5 hover:bg-[#f87171]/20"
+            >
+              Abrir disputa
             </Link>
           )}
 

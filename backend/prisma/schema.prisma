@@ -78,6 +78,9 @@ model User {
   phone                 String           @unique
   passwordHash          String
   role                  Role
+  isActive              Boolean          @default(true)
+  deactivationReason    String?
+  deactivatedAt         DateTime?
   isEmailVerified       Boolean          @default(false)
   isIdentityVerified    Boolean          @default(false)
   otpCode               String?
@@ -99,6 +102,9 @@ model User {
   reviewsReceived       Review[]         @relation("ReviewsReceived")
   notifications         Notification[]
   disputesOpened        Dispute[]        @relation("DisputesOpenedBy")
+  aiTrainingEvents      AiTrainingEvent[]
+  portfolioPhotos       PortfolioPhoto[]
+  npsResponses          NpsResponse[]
 
   @@map("users")
 }
@@ -124,10 +130,15 @@ model ProfessionalProfile {
   hourlyRate       Decimal  @db.Decimal(10, 2)
   coverageRadiusKm Int      @default(5)
   avgRating        Decimal  @default(0) @db.Decimal(3, 2)
+  aiScore          Float    @default(0)
   reviewCount      Int      @default(0)
   badges           String[] @default([])
   totalJobs        Int      @default(0)
   verifiedBadge    Boolean  @default(false)
+  verificationStatus String @default("PENDIENTE")
+  verificationNotes String?
+  onboardingCompleted Boolean @default(false)
+  onboardingSteps  Json     @default("{}")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -159,6 +170,7 @@ model ServiceRequest {
   category    Category             @relation(fields: [categoryId], references: [id])
   quotes      Quote[]
   messages    Message[]
+  aiTrainingEvents AiTrainingEvent[]
 
   @@index([clientId])
   @@index([categoryId])
@@ -195,6 +207,7 @@ model Job {
   paymentStatus    JobPaymentStatus @default(PENDIENTE)
   escrowReleaseAt  DateTime
   clientConfirmed  Boolean          @default(false)
+  npsReminderSent  Boolean          @default(false)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   quote            Quote            @relation(fields: [quoteId], references: [id], onDelete: Cascade)
@@ -203,6 +216,7 @@ model Job {
   payment          Payment?
   reviews          Review[]
   dispute          Dispute?
+  npsResponses     NpsResponse[]
 
   @@index([clientId])
   @@index([professionalId])
@@ -302,4 +316,46 @@ model Dispute {
   @@index([openedBy])
   @@index([status])
   @@map("disputes")
+}
+
+model AiTrainingEvent {
+  id             String         @id @default(uuid()) @db.Uuid
+  professionalId String         @db.Uuid
+  requestId      String         @db.Uuid
+  action         String
+  outcome        String
+  createdAt      DateTime       @default(now())
+  professional   User           @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  request        ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, createdAt])
+  @@index([requestId])
+  @@map("ai_training_events")
+}
+
+model PortfolioPhoto {
+  id             String   @id @default(uuid()) @db.Uuid
+  professionalId String   @db.Uuid
+  photoUrl       String
+  description    String?
+  createdAt      DateTime @default(now())
+  professional   User     @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, createdAt])
+  @@map("portfolio_photos")
+}
+
+model NpsResponse {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId     String   @db.Uuid
+  userId    String   @db.Uuid
+  score     Int
+  comment   String?  @db.VarChar(300)
+  createdAt DateTime @default(now())
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([userId, createdAt])
+  @@map("nps_responses")
 }

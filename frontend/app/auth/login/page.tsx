@@ -11,10 +11,14 @@ interface LoginResponse {
   message: string;
   token: string;
   user?: {
-    role: "CLIENTE" | "PROFESIONAL";
+    role: "CLIENTE" | "PROFESIONAL" | "ADMIN";
   };
-  role?: "CLIENTE" | "PROFESIONAL";
+  role?: "CLIENTE" | "PROFESIONAL" | "ADMIN";
 }
+
+type OnboardingStatusResponse = {
+  onboardingCompleted: boolean;
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,6 +40,29 @@ export default function LoginPage() {
 
       const role = data.role || data.user?.role;
       saveSession(data.token, role);
+
+      if (role === "ADMIN") {
+        router.push("/admin/dashboard");
+        return;
+      }
+
+      if (role === "PROFESIONAL") {
+        try {
+          const onboardingStatus = await apiRequest<OnboardingStatusResponse>("/onboarding/status", {
+            method: "GET",
+            token: data.token,
+          });
+
+          if (!onboardingStatus.onboardingCompleted) {
+            router.push("/dashboard/onboarding");
+            return;
+          }
+        } catch {
+          router.push("/dashboard");
+          return;
+        }
+      }
+
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible iniciar sesion.");

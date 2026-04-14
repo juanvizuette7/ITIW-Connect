@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { env } from "../config/env";
 import { sendEmail } from "../config/mailer";
 import { prisma } from "../config/prisma";
-import { notifyManyUsers, notifyUser } from "../services/notification.service";
+import { notifyManyUsers } from "../services/notification.service";
 import { disputeOpenedTemplate, notificationEventTemplate } from "../utils/emailTemplates";
 
 const DISPUTE_WINDOW_MS = 72 * 60 * 60 * 1000;
@@ -21,7 +21,76 @@ function resolveName(user: {
   if (user.role === "CLIENTE") {
     return user.clientProfile?.name || "Cliente";
   }
-  return user.professionalProfile?.name || "Profesional";
+  if (user.role === "PROFESIONAL") {
+    return user.professionalProfile?.name || "Profesional";
+  }
+  return user.clientProfile?.name || user.professionalProfile?.name || "Administrador";
+}
+
+function mapDispute(dispute: {
+  id: string;
+  jobId: string;
+  openedBy: string;
+  reason: string;
+  description: string;
+  status: DisputeStatus;
+  resolution: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  job: {
+    id: string;
+    status: JobStatus;
+    paymentStatus: JobPaymentStatus;
+    createdAt: Date;
+    updatedAt: Date;
+    payment: {
+      status: PaymentStatus;
+      amountCop: number;
+      commissionCop: number;
+      netProfessionalCop: number;
+      createdAt: Date;
+    } | null;
+    quote: {
+      request: {
+        id: string;
+        description: string;
+        status: string;
+        category: {
+          id: string;
+          name: string;
+          iconUrl: string | null;
+          createdAt: Date;
+          updatedAt: Date;
+        };
+      };
+    };
+  };
+}) {
+  return {
+    id: dispute.id,
+    jobId: dispute.jobId,
+    openedBy: dispute.openedBy,
+    reason: dispute.reason,
+    description: dispute.description,
+    status: dispute.status,
+    resolution: dispute.resolution,
+    createdAt: dispute.createdAt,
+    updatedAt: dispute.updatedAt,
+    job: {
+      id: dispute.job.id,
+      status: dispute.job.status,
+      paymentStatus: dispute.job.paymentStatus,
+      createdAt: dispute.job.createdAt,
+      updatedAt: dispute.job.updatedAt,
+      payment: dispute.job.payment,
+      request: {
+        id: dispute.job.quote.request.id,
+        description: dispute.job.quote.request.description,
+        status: dispute.job.quote.request.status,
+        category: dispute.job.quote.request.category,
+      },
+    },
+  };
 }
 
 export async function openDispute(req: Request, res: Response) {
@@ -31,6 +100,14 @@ export async function openDispute(req: Request, res: Response) {
 
   if (!reason || !reason.trim() || !description || !description.trim()) {
     return res.status(400).json({ message: "Debes enviar motivo y descripcion de la disputa." });
+  }
+
+  if (reason.trim().length < 3 || reason.trim().length > 120) {
+    return res.status(400).json({ message: "El motivo debe tener entre 3 y 120 caracteres." });
+  }
+
+  if (description.trim().length < 20 || description.trim().length > 1200) {
+    return res.status(400).json({ message: "La descripcion debe tener entre 20 y 1200 caracteres." });
   }
 
   const job = await prisma.job.findUnique({
@@ -78,8 +155,8 @@ export async function openDispute(req: Request, res: Response) {
     return res.status(400).json({ message: "Este job ya tiene una disputa abierta o resuelta." });
   }
 
-  if (job.status !== JobStatus.COMPLETADO) {
-    return res.status(400).json({ message: "Solo puedes abrir disputa cuando el job este completado." });
+  if (job.status !== JobStatus.COMPLETADO || job.paymentStatus !== JobPaymentStatus.LIBERADO) {
+    return res.status(400).json({ message: "Solo puedes abrir disputa cuando el job este completado y con pago liberado." });
   }
 
   const elapsed = Date.now() - job.updatedAt.getTime();
@@ -116,13 +193,13 @@ export async function openDispute(req: Request, res: Response) {
       type: NotificationType.DISPUTA,
     },
     {
-      emailSubject: "Nueva disputa abierta â€” ITIW Connect",
+      emailSubject: "Nueva disputa abierta — ITIW Connect",
     },
   );
 
   await sendEmail(
     env.emailUser,
-    "Nueva disputa abierta â€” ITIW Connect",
+    "Nueva disputa abierta — ITIW Connect",
     disputeOpenedTemplate(openedByName, reason.trim(), description.trim(), job.quote.request.description),
   );
 
@@ -134,18 +211,31 @@ export async function openDispute(req: Request, res: Response) {
 
 export async function listMyDisputes(req: Request, res: Response) {
   const userId = req.user!.userId;
+  const role = req.user!.role;
 
   const disputes = await prisma.dispute.findMany({
-    where: {
-      OR: [
-        { openedBy: userId },
-        { job: { clientId: userId } },
-        { job: { professionalId: userId } },
-      ],
-    },
+    where:
+      role === "ADMIN"
+        ? undefined
+        : {
+            OR: [
+              { openedBy: userId },
+              { job: { clientId: userId } },
+              { job: { professionalId: userId } },
+            ],
+          },
     include: {
       job: {
         include: {
+          payment: {
+            select: {
+              status: true,
+              amountCop: true,
+              commissionCop: true,
+              netProfessionalCop: true,
+              createdAt: true,
+            },
+          },
           quote: {
             include: {
               request: {
@@ -163,7 +253,7 @@ export async function listMyDisputes(req: Request, res: Response) {
     },
   });
 
-  return res.status(200).json(disputes);
+  return res.status(200).json(disputes.map(mapDispute));
 }
 
 export async function getDisputeDetail(req: Request, res: Response) {
@@ -184,7 +274,15 @@ export async function getDisputeDetail(req: Request, res: Response) {
               },
             },
           },
-          payment: true,
+          payment: {
+            select: {
+              status: true,
+              amountCop: true,
+              commissionCop: true,
+              netProfessionalCop: true,
+              createdAt: true,
+            },
+          },
         },
       },
       openedByUser: {
@@ -211,7 +309,14 @@ export async function getDisputeDetail(req: Request, res: Response) {
     return res.status(403).json({ message: "No tienes permiso para ver esta disputa." });
   }
 
-  return res.status(200).json(dispute);
+  return res.status(200).json({
+    ...mapDispute(dispute),
+    openedByUser: {
+      id: dispute.openedByUser.id,
+      role: dispute.openedByUser.role,
+      name: resolveName(dispute.openedByUser),
+    },
+  });
 }
 
 export async function resolveDispute(req: Request, res: Response) {
@@ -220,6 +325,10 @@ export async function resolveDispute(req: Request, res: Response) {
 
   if (!resolution || !resolution.trim() || !outcome) {
     return res.status(400).json({ message: "Debes enviar outcome (LIBERAR o REEMBOLSAR) y resolution." });
+  }
+
+  if (resolution.trim().length < 10 || resolution.trim().length > 1200) {
+    return res.status(400).json({ message: "La resolucion debe tener entre 10 y 1200 caracteres." });
   }
 
   if (!["LIBERAR", "REEMBOLSAR"].includes(outcome)) {

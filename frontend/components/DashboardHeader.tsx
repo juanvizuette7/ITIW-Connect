@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrandLogo } from "./BrandLogo";
 import { apiRequest } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { getRole, getToken } from "@/lib/auth";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -19,6 +19,13 @@ type UnreadCountResponse = {
 export function DashboardHeader({ userName, onLogout, showNotifications = true }: DashboardHeaderProps) {
   const displayName = userName?.trim() ? userName.trim() : "Bienvenido";
   const [unread, setUnread] = useState(0);
+  const [bounce, setBounce] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const previousUnread = useRef(0);
+
+  useEffect(() => {
+    setIsAdmin(getRole() === "ADMIN");
+  }, []);
 
   useEffect(() => {
     if (!showNotifications) {
@@ -38,7 +45,13 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
           method: "GET",
           token,
         });
+
         if (mounted) {
+          if (response.unread > previousUnread.current) {
+            setBounce(true);
+            setTimeout(() => setBounce(false), 600);
+          }
+          previousUnread.current = response.unread;
           setUnread(response.unread);
         }
       } catch {
@@ -65,6 +78,15 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
         <BrandLogo href="/dashboard" imgClassName="h-11 w-auto md:h-[3.25rem]" />
 
         <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Link
+              href="/admin/dashboard"
+              className="rounded-xl border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-3 py-2 text-xs font-semibold text-[#82ffe8] transition hover:-translate-y-0.5 hover:bg-[#00C9A7]/20"
+            >
+              Admin
+            </Link>
+          )}
+
           {showNotifications && (
             <Link
               href="/dashboard/notificaciones"
@@ -75,7 +97,9 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
                 <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0" />
               </svg>
               {unread > 0 && (
-                <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#e94560] px-1.5 text-[10px] font-bold text-white">
+                <span
+                  className={`absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#e94560] px-1.5 text-[10px] font-bold text-white ${bounce ? "animate-badge-bounce" : ""}`}
+                >
                   {unread > 99 ? "99+" : unread}
                 </span>
               )}

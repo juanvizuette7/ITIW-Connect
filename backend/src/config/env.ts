@@ -45,7 +45,7 @@ export const env = {
   emailName: process.env.EMAIL_NAME || "ITIW Connect",
   stripeSecretKey: required("STRIPE_SECRET_KEY"),
   stripeWebhookSecret: required("STRIPE_WEBHOOK_SECRET"),
-  firebaseProjectId: required("FIREBASE_PROJECT_ID"),
-  firebaseClientEmail: required("FIREBASE_CLIENT_EMAIL"),
-  firebasePrivateKey: required("FIREBASE_PRIVATE_KEY"),
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID || "",
+  firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL || "",
+  firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY || "",
 };

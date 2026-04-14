@@ -40,6 +40,14 @@ type ProfileMeResponse = {
   role: UserRole;
 };
 
+type UnreadCountResponse = {
+  unread: number;
+};
+
+type OnboardingStatusResponse = {
+  onboardingCompleted: boolean;
+};
+
 function formatCop(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(Math.round(value))} COP`;
 }
@@ -115,6 +123,8 @@ export default function DashboardPage() {
   const [pendingQuotesCount, setPendingQuotesCount] = useState(0);
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
   const [monthTotal, setMonthTotal] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -135,7 +145,12 @@ export default function DashboardPage() {
         setName(profile.name);
         setRole(profile.role);
 
-        const [jobs, currentMonthHistory] = await Promise.all([
+        if (profile.role === "ADMIN") {
+          router.replace("/admin/dashboard");
+          return;
+        }
+
+        const [jobs, currentMonthHistory, unread] = await Promise.all([
           apiRequest<JobItem[]>("/jobs", {
             method: "GET",
             token,
@@ -151,10 +166,15 @@ export default function DashboardPage() {
               token,
             });
           })(),
+          apiRequest<UnreadCountResponse>("/notifications/unread-count", {
+            method: "GET",
+            token,
+          }),
         ]);
 
         setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
         setMonthTotal(currentMonthHistory.totals.totalPagado);
+        setUnreadNotifications(unread.unread);
 
         if (profile.role === "CLIENTE") {
           const requests = await apiRequest<ClientRequest[]>("/requests", {
@@ -165,7 +185,7 @@ export default function DashboardPage() {
         }
 
         if (profile.role === "PROFESIONAL") {
-          const [availableRequests, myQuotes] = await Promise.all([
+          const [availableRequests, myQuotes, onboardingStatus] = await Promise.all([
             apiRequest<AvailableRequest[]>("/requests/available", {
               method: "GET",
               token,
@@ -174,9 +194,14 @@ export default function DashboardPage() {
               method: "GET",
               token,
             }),
+            apiRequest<OnboardingStatusResponse>("/onboarding/status", {
+              method: "GET",
+              token,
+            }),
           ]);
           setAvailableRequestsCount(availableRequests.length);
           setPendingQuotesCount(myQuotes.filter((quote) => quote.status === "PENDIENTE").length);
+          setOnboardingCompleted(onboardingStatus.onboardingCompleted);
         }
       } catch (err) {
         clearSession();
@@ -231,11 +256,11 @@ export default function DashboardPage() {
         icon: <CardIcon variant="notifications" />,
         title: "Notificaciones",
         description: "Revisa tus alertas internas en tiempo real.",
-        countLabel: "Ver ahora",
+        countLabel: unreadNotifications > 0 ? `${unreadNotifications} no leidas` : "Sin pendientes",
         href: "/dashboard/notificaciones",
       },
     ],
-    [activeRequestsCount, monthTotal, pendingPaymentsCount],
+    [activeRequestsCount, monthTotal, pendingPaymentsCount, unreadNotifications],
   );
 
   const professionalCards = useMemo(
@@ -279,11 +304,11 @@ export default function DashboardPage() {
         icon: <CardIcon variant="notifications" />,
         title: "Notificaciones",
         description: "Revisa tus alertas internas en tiempo real.",
-        countLabel: "Ver ahora",
+        countLabel: unreadNotifications > 0 ? `${unreadNotifications} no leidas` : "Sin pendientes",
         href: "/dashboard/notificaciones",
       },
     ],
-    [availableRequestsCount, monthTotal, pendingPaymentsCount, pendingQuotesCount],
+    [availableRequestsCount, monthTotal, pendingPaymentsCount, pendingQuotesCount, unreadNotifications],
   );
 
   function onLogout() {
@@ -300,6 +325,19 @@ export default function DashboardPage() {
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
       <DashboardHeader userName={name} onLogout={onLogout} />
+
+      {role === "PROFESIONAL" && !onboardingCompleted && (
+        <section className="mb-5 rounded-2xl border border-amber-400/35 bg-amber-400/12 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium text-amber-200">
+              Completa tu perfil para empezar a recibir solicitudes.
+            </p>
+            <Link href="/dashboard/onboarding" className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#2f2200]">
+              Ir a onboarding
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="premium-panel p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel principal</h1>

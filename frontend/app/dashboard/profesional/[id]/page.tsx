@@ -45,6 +45,22 @@ type ProfileMeResponse = {
   name: string;
 };
 
+type PortfolioPhoto = {
+  id: string;
+  photoUrl: string;
+  description: string | null;
+  createdAt: string;
+};
+
+type PortfolioResponse = {
+  professional: {
+    id: string;
+    name: string;
+  };
+  total: number;
+  photos: PortfolioPhoto[];
+};
+
 function formatCop(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(Math.round(value))} COP`;
 }
@@ -86,6 +102,7 @@ export default function ProfessionalPublicPage() {
   const [userName, setUserName] = useState("");
   const [profile, setProfile] = useState<ProfessionalPublicProfile | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [portfolioPhotos, setPortfolioPhotos] = useState<PortfolioPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,15 +115,17 @@ export default function ProfessionalPublicPage() {
       }
 
       try {
-        const [me, professionalData, reviewsData] = await Promise.all([
+        const [me, professionalData, reviewsData, portfolioData] = await Promise.all([
           apiRequest<ProfileMeResponse>("/profile/me", { method: "GET", token }),
           apiRequest<ProfessionalPublicProfile>(`/profile/professional/${params.id}`, { method: "GET", token }),
           apiRequest<ReviewItem[]>(`/reviews/professional/${params.id}`, { method: "GET", token }),
+          apiRequest<PortfolioResponse>(`/portfolio/${params.id}`, { method: "GET", token }),
         ]);
 
         setUserName(me.name);
         setProfile(professionalData);
         setReviews(reviewsData);
+        setPortfolioPhotos(portfolioData.photos);
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible cargar el perfil profesional.");
       } finally {
@@ -217,6 +236,31 @@ export default function ProfessionalPublicPage() {
       </section>
 
       <section className="mt-6 rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
+        <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Portafolio</h2>
+        <p className="mt-2 text-sm text-[#94a3b8]">Trabajos recientes del profesional.</p>
+
+        {portfolioPhotos.length === 0 ? (
+          <p className="mt-4 text-sm text-[#94a3b8]">Aun no hay fotos publicas en este portafolio.</p>
+        ) : (
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+            {portfolioPhotos.map((photo, index) => (
+              <article
+                key={photo.id}
+                className="overflow-hidden rounded-xl border border-[#283549] bg-[#0A0F1A] opacity-0"
+                style={{
+                  animation: "portfolio-public-fade-in 380ms ease forwards",
+                  animationDelay: `${index * 70}ms`,
+                }}
+              >
+                <img src={photo.photoUrl} alt={photo.description || "Foto de portafolio"} className="h-40 w-full object-cover" />
+                {photo.description && <p className="px-2 py-2 text-xs text-[#d5dded]">{photo.description}</p>}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
         <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Resenas publicas</h2>
         <p className="mt-2 text-sm text-[#94a3b8]">Ordenadas de la mas reciente a la mas antigua.</p>
 
@@ -278,6 +322,16 @@ export default function ProfessionalPublicPage() {
           from {
             opacity: 0;
             transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes portfolio-public-fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
           }
           to {
             opacity: 1;

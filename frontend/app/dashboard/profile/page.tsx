@@ -1,12 +1,13 @@
 ﻿"use client";
 
-import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
 type ProfileMeResponse = {
+  id: string;
   role: UserRole;
   name: string;
   clientProfile: {
@@ -19,7 +20,25 @@ type ProfileMeResponse = {
     specialties: string[];
     hourlyRate: string | number;
     coverageRadiusKm: number;
+    onboardingCompleted: boolean;
   } | null;
+};
+
+type PortfolioPhoto = {
+  id: string;
+  professionalId: string;
+  photoUrl: string;
+  description: string | null;
+  createdAt: string;
+};
+
+type PortfolioResponse = {
+  professional: {
+    id: string;
+    name: string;
+  };
+  total: number;
+  photos: PortfolioPhoto[];
 };
 
 const savedAddressesKey = "itiw_saved_addresses";
@@ -28,6 +47,7 @@ export default function ProfilePage() {
   const router = useRouter();
 
   const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState("");
   const [role, setRole] = useState<UserRole | null>(null);
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -49,6 +69,13 @@ export default function ProfilePage() {
   });
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [specialtyInput, setSpecialtyInput] = useState("");
+
+  const [portfolioPhotos, setPortfolioPhotos] = useState<PortfolioPhoto[]>([]);
+  const [portfolioDescription, setPortfolioDescription] = useState("");
+  const [portfolioPreview, setPortfolioPreview] = useState<string | null>(null);
+  const [portfolioBase64, setPortfolioBase64] = useState<string | null>(null);
+  const [portfolioSaving, setPortfolioSaving] = useState(false);
+  const [portfolioDeletingId, setPortfolioDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const currentToken = getToken();
@@ -74,6 +101,7 @@ export default function ProfilePage() {
           token,
         });
 
+        setUserId(profile.id);
         setRole(profile.role);
         setUserName(profile.name || "");
 
@@ -93,6 +121,12 @@ export default function ProfilePage() {
             coverageRadiusKm: String(profile.professionalProfile.coverageRadiusKm ?? ""),
           });
           setSpecialties(profile.professionalProfile.specialties || []);
+
+          const portfolio = await apiRequest<PortfolioResponse>(`/portfolio/${profile.id}`, {
+            method: "GET",
+            token,
+          });
+          setPortfolioPhotos(portfolio.photos);
         }
       } catch (err) {
         clearSession();
@@ -103,7 +137,7 @@ export default function ProfilePage() {
       }
     }
 
-    loadProfile();
+    void loadProfile();
   }, [token, router]);
 
   const profileTitle = useMemo(() => {
@@ -212,6 +246,88 @@ export default function ProfilePage() {
     }
   }
 
+  function onPickPortfolioFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Selecciona un archivo de imagen valido para el portafolio.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result || "");
+      if (!value.startsWith("data:image/")) {
+        setError("No fue posible procesar la imagen seleccionada.");
+        return;
+      }
+      setPortfolioPreview(value);
+      setPortfolioBase64(value);
+      setError(null);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function onUploadPortfolio() {
+    if (!token || !portfolioBase64) {
+      setError("Selecciona una foto antes de subirla al portafolio.");
+      return;
+    }
+
+    if (portfolioPhotos.length >= 10) {
+      setError("Maximo 10 fotos en tu portafolio.");
+      return;
+    }
+
+    setPortfolioSaving(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await apiRequest<{ message: string; photo: PortfolioPhoto }>("/portfolio", {
+        method: "POST",
+        token,
+        body: JSON.stringify({
+          photoUrl: portfolioBase64,
+          description: portfolioDescription.trim() || null,
+        }),
+      });
+
+      setPortfolioPhotos((current) => [response.photo, ...current]);
+      setPortfolioDescription("");
+      setPortfolioPreview(null);
+      setPortfolioBase64(null);
+      setMessage(response.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible subir la foto al portafolio.");
+    } finally {
+      setPortfolioSaving(false);
+    }
+  }
+
+  async function onDeletePortfolio(photoId: string) {
+    if (!token) return;
+
+    setPortfolioDeletingId(photoId);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await apiRequest<{ message: string }>(`/portfolio/${photoId}`, {
+        method: "DELETE",
+        token,
+      });
+
+      setPortfolioPhotos((current) => current.filter((photo) => photo.id !== photoId));
+      setMessage(response.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible eliminar la foto.");
+    } finally {
+      setPortfolioDeletingId(null);
+    }
+  }
+
   if (loading) {
     return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando perfil...</main>;
   }
@@ -268,97 +384,195 @@ export default function ProfilePage() {
         )}
 
         {role === "PROFESIONAL" && (
-          <form className="mt-6 space-y-4" onSubmit={onSaveProfessional}>
-            <div>
-              <label className="mb-1.5 block text-sm text-[#d5dded]">Nombre</label>
-              <input
-                required
-                value={professionalForm.name}
-                onChange={(e) => setProfessionalForm((prev) => ({ ...prev, name: e.target.value }))}
-                className="premium-input"
-                placeholder="Nombre o marca personal"
-              />
-            </div>
-
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-sm text-[#d5dded]">
-                <span>Bio</span>
-                <span className={`${bioCount > 300 ? "text-[#ff9bac]" : "text-brand-muted"}`}>{bioCount}/300</span>
+          <>
+            <form className="mt-6 space-y-4" onSubmit={onSaveProfessional}>
+              <div>
+                <label className="mb-1.5 block text-sm text-[#d5dded]">Nombre</label>
+                <input
+                  required
+                  value={professionalForm.name}
+                  onChange={(e) => setProfessionalForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="premium-input"
+                  placeholder="Nombre o marca personal"
+                />
               </div>
-              <textarea
-                rows={4}
-                maxLength={300}
-                value={professionalForm.bio}
-                onChange={(e) => setProfessionalForm((prev) => ({ ...prev, bio: e.target.value }))}
-                className="premium-input"
-                placeholder="Describe tu experiencia profesional"
-              />
-            </div>
 
-            <div>
-              <label className="mb-1.5 block text-sm text-[#d5dded]">Especialidades (max 5)</label>
-              <input
-                value={specialtyInput}
-                onChange={(e) => setSpecialtyInput(e.target.value)}
-                onKeyDown={onSpecialtyKeyDown}
-                onBlur={() => addSpecialty(specialtyInput)}
-                className="premium-input"
-                placeholder="Escribe y presiona Enter"
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                {specialties.map((specialty) => (
-                  <span
-                    key={specialty}
-                    className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-[#d5dded]"
-                  >
-                    {specialty}
-                    <button
-                      type="button"
-                      onClick={() => removeSpecialty(specialty)}
-                      className="text-brand-accent transition hover:text-[#ff7d92]"
+              <div>
+                <div className="mb-1.5 flex items-center justify-between text-sm text-[#d5dded]">
+                  <span>Bio</span>
+                  <span className={`${bioCount > 300 ? "text-[#ff9bac]" : "text-brand-muted"}`}>{bioCount}/300</span>
+                </div>
+                <textarea
+                  rows={4}
+                  maxLength={300}
+                  value={professionalForm.bio}
+                  onChange={(e) => setProfessionalForm((prev) => ({ ...prev, bio: e.target.value }))}
+                  className="premium-input"
+                  placeholder="Ej: Electricista con 10 anos de experiencia"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm text-[#d5dded]">Especialidades (max 5)</label>
+                <input
+                  value={specialtyInput}
+                  onChange={(e) => setSpecialtyInput(e.target.value)}
+                  onKeyDown={onSpecialtyKeyDown}
+                  onBlur={() => addSpecialty(specialtyInput)}
+                  className="premium-input"
+                  placeholder="Escribe y presiona Enter"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {specialties.map((specialty) => (
+                    <span
+                      key={specialty}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-[#d5dded]"
                     >
-                      x
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm text-[#d5dded]">Tarifa por hora (COP)</label>
-                <input
-                  required
-                  type="number"
-                  min={0}
-                  value={professionalForm.hourlyRate}
-                  onChange={(e) => setProfessionalForm((prev) => ({ ...prev, hourlyRate: e.target.value }))}
-                  className="premium-input"
-                  placeholder="Tarifa por hora en COP"
-                />
+                      {specialty}
+                      <button
+                        type="button"
+                        onClick={() => removeSpecialty(specialty)}
+                        className="text-brand-accent transition hover:text-[#ff7d92]"
+                      >
+                        x
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm text-[#d5dded]">Zona de cobertura (km)</label>
-                <input
-                  required
-                  type="number"
-                  min={1}
-                  value={professionalForm.coverageRadiusKm}
-                  onChange={(e) => setProfessionalForm((prev) => ({ ...prev, coverageRadiusKm: e.target.value }))}
-                  className="premium-input"
-                  placeholder="5"
-                />
-              </div>
-            </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm text-[#d5dded]">Tarifa por hora (COP)</label>
+                  <input
+                    required
+                    type="number"
+                    min={0}
+                    value={professionalForm.hourlyRate}
+                    onChange={(e) => setProfessionalForm((prev) => ({ ...prev, hourlyRate: e.target.value }))}
+                    className="premium-input"
+                    placeholder="Ej: 50000"
+                  />
+                </div>
 
-            <button disabled={saving} className="premium-btn-primary w-full md:w-auto">
-              {saving ? "Guardando..." : "Guardar cambios"}
-            </button>
-          </form>
+                <div>
+                  <label className="mb-1.5 block text-sm text-[#d5dded]">Zona de cobertura (km)</label>
+                  <input
+                    required
+                    type="number"
+                    min={1}
+                    value={professionalForm.coverageRadiusKm}
+                    onChange={(e) => setProfessionalForm((prev) => ({ ...prev, coverageRadiusKm: e.target.value }))}
+                    className="premium-input"
+                    placeholder="5"
+                  />
+                </div>
+              </div>
+
+              <button disabled={saving} className="premium-btn-primary w-full md:w-auto">
+                {saving ? "Guardando..." : "Guardar cambios"}
+              </button>
+            </form>
+
+            <section className="mt-8 rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Portafolio</h2>
+                <span className="text-xs text-brand-muted">Maximo 10 fotos</span>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1.2fr]">
+                <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div>
+                    <p className="text-sm text-[#d5dded]">Agregar foto</p>
+                    <label
+                      htmlFor="portfolio-file-input"
+                      className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#00C9A7]/45 bg-[#00C9A7]/8 px-4 py-5 text-sm font-semibold text-[#8dfce8] transition hover:-translate-y-0.5 hover:bg-[#00C9A7]/15"
+                    >
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9A7] text-lg leading-none text-[#042821]">+</span>
+                      Seleccionar imagen del portafolio
+                    </label>
+                    <input
+                      id="portfolio-file-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={onPickPortfolioFile}
+                      className="hidden"
+                    />
+                  </div>
+
+                  <label className="block text-sm text-[#d5dded]">
+                    Descripcion (opcional)
+                    <input
+                      value={portfolioDescription}
+                      onChange={(event) => setPortfolioDescription(event.target.value)}
+                      maxLength={180}
+                      className="premium-input mt-1"
+                      placeholder="Describe el trabajo mostrado"
+                    />
+                  </label>
+
+                  {portfolioPreview && (
+                    <img src={portfolioPreview} alt="Preview portafolio" className="h-40 w-full rounded-xl border border-white/10 object-cover" />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={onUploadPortfolio}
+                    disabled={portfolioSaving || !portfolioBase64 || portfolioPhotos.length >= 10}
+                    className="rounded-xl bg-[#00C9A7] px-4 py-2 text-sm font-semibold text-[#052920] transition hover:-translate-y-0.5 hover:bg-[#2ce1c2] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {portfolioSaving ? "Subiendo..." : "Subir al portafolio"}
+                  </button>
+                </div>
+
+                <div>
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {portfolioPhotos.map((photo, index) => (
+                      <article
+                        key={photo.id}
+                        className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] opacity-0"
+                        style={{
+                          animation: "portfolio-fade-in 360ms ease forwards",
+                          animationDelay: `${index * 65}ms`,
+                        }}
+                      >
+                        <img src={photo.photoUrl} alt={photo.description || "Foto de portafolio"} className="h-28 w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => onDeletePortfolio(photo.id)}
+                          disabled={portfolioDeletingId === photo.id}
+                          className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-rose-300/50 bg-rose-500/70 text-xs font-bold text-white transition hover:bg-rose-500"
+                        >
+                          x
+                        </button>
+                        {photo.description && (
+                          <p className="line-clamp-2 px-2 py-1 text-[11px] text-[#dce6f7]">{photo.description}</p>
+                        )}
+                      </article>
+                    ))}
+                    {portfolioPhotos.length === 0 && (
+                      <p className="col-span-full text-sm text-brand-muted">Aun no has agregado fotos a tu portafolio.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
         )}
       </section>
+
+      <style jsx global>{`
+        @keyframes portfolio-fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </main>
   );
 }
-

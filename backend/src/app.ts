@@ -3,6 +3,8 @@ import cors from "cors";
 import routes from "./routes";
 import { env } from "./config/env";
 import { errorHandler } from "./middlewares/error.middleware";
+import { normalizeErrorResponse } from "./middlewares/error-format.middleware";
+import { validateRequestInput } from "./middlewares/input-validation.middleware";
 import { generalRateLimiter } from "./middlewares/rate-limit.middleware";
 
 export const app = express();
@@ -42,6 +44,8 @@ app.use(
 );
 app.use(generalRateLimiter);
 app.use(express.json());
+app.use(normalizeErrorResponse);
+app.use(validateRequestInput);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ message: "API de ITIW Connect activa." });

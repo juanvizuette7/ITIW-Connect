@@ -196,3 +196,41 @@ export function disputeOpenedTemplate(
      <p style="margin:0;"><strong>Trabajo:</strong> ${jobDescription}</p>`,
   );
 }
+
+export function adminApprovalTemplate(professionalName: string, badgeAssigned: string): string {
+  return emailLayout(
+    "Tu perfil fue aprobado",
+    `<p style="margin:0 0 12px;">Hola ${professionalName},</p>
+     <p style="margin:0 0 8px;">Tu perfil profesional fue aprobado por administracion.</p>
+     <p style="margin:0 0 8px;"><strong>Badge asignado:</strong> ${badgeAssigned}</p>
+     <p style="margin:0;">Ya puedes recibir solicitudes en ITIW Connect.</p>`,
+  );
+}
+
+export function adminRejectionTemplate(professionalName: string, reason: string): string {
+  return emailLayout(
+    "Tu perfil necesita ajustes",
+    `<p style="margin:0 0 12px;">Hola ${professionalName},</p>
+     <p style="margin:0 0 8px;">Tu perfil aun no pudo ser aprobado.</p>
+     <p style="margin:0 0 8px;"><strong>Motivo:</strong> ${reason}</p>
+     <p style="margin:0;">Ajusta tu perfil y vuelve a enviarlo para revision.</p>`,
+  );
+}
+
+export function npsSurveyTemplate(jobDescription: string, surveyUrl: string): string {
+  return emailLayout(
+    "Como fue tu experiencia?",
+    `<p style="margin:0 0 12px;">Tu trabajo ya fue completado y pasaron 24 horas.</p>
+     <p style="margin:0;"><strong>Servicio:</strong> ${jobDescription}</p>`,
+    "Responder encuesta NPS",
+    surveyUrl,
+  );
+}
+
+export function aiRetrainCompletedTemplate(totalProfessionals: number): string {
+  return emailLayout(
+    "Motor IA reentrenado",
+    `<p style="margin:0 0 12px;">El proceso de reentrenamiento del motor IA se ejecuto correctamente.</p>
+     <p style="margin:0;"><strong>Profesionales actualizados:</strong> ${totalProfessionals}</p>`,
+  );
+}

@@ -1,4 +1,4 @@
-export type UserRole = "CLIENTE" | "PROFESIONAL";
+export type UserRole = "CLIENTE" | "PROFESIONAL" | "ADMIN";
 
 const TOKEN_KEY = "itiw_token";
 const ROLE_KEY = "itiw_role";

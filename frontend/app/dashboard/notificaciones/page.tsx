@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
@@ -40,6 +40,70 @@ function typeLabel(type: NotificationType) {
   return "Sistema";
 }
 
+function typeIcon(type: NotificationType) {
+  if (type === "SOLICITUD") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    );
+  }
+
+  if (type === "PRESUPUESTO") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 7h16v10H4zM4 11h16M8 15h2" />
+      </svg>
+    );
+  }
+
+  if (type === "MENSAJE") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M5 6h14v9H8l-3 3z" />
+      </svg>
+    );
+  }
+
+  if (type === "PAGO") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3 7h18v10H3zM3 11h18M7 15h3" />
+      </svg>
+    );
+  }
+
+  if (type === "CALIFICACION") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="m12 4 2.2 4.5 4.8.7-3.5 3.4.8 4.8L12 15l-4.3 2.3.8-4.8L5 9.2l4.8-.7z" />
+      </svg>
+    );
+  }
+
+  if (type === "BADGE") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M7 4h10v6a5 5 0 1 1-10 0zM9 20l3-2 3 2" />
+      </svg>
+    );
+  }
+
+  if (type === "DISPUTA") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 7v6m0 4h.01M5 4h14l-1 14H6z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 6v6m0 6h.01M6 6h12v12H6z" />
+    </svg>
+  );
+}
+
 function typeClass(type: NotificationType) {
   if (type === "SOLICITUD") return "border-cyan-400/40 bg-cyan-400/15 text-cyan-200";
   if (type === "PRESUPUESTO") return "border-fuchsia-400/40 bg-fuchsia-400/15 text-fuchsia-200";
@@ -51,6 +115,22 @@ function typeClass(type: NotificationType) {
   return "border-slate-400/40 bg-slate-400/15 text-slate-200";
 }
 
+function relativeTime(dateValue: string) {
+  const now = Date.now();
+  const time = new Date(dateValue).getTime();
+  const diffMs = Math.max(0, now - time);
+
+  const minutes = Math.floor(diffMs / (1000 * 60));
+  if (minutes < 1) return "hace unos segundos";
+  if (minutes < 60) return `hace ${minutes} minuto${minutes === 1 ? "" : "s"}`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} hora${hours === 1 ? "" : "s"}`;
+
+  const days = Math.floor(hours / 24);
+  return `hace ${days} dia${days === 1 ? "" : "s"}`;
+}
+
 export default function NotificacionesPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
@@ -59,8 +139,9 @@ export default function NotificacionesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [fadingIds, setFadingIds] = useState<string[]>([]);
 
-  const unreadCount = notifications.filter((item) => !item.isRead).length;
+  const unreadCount = useMemo(() => notifications.filter((item) => !item.isRead).length, [notifications]);
 
   const loadNotifications = async (authToken: string, background = false) => {
     if (background) {
@@ -130,15 +211,21 @@ export default function NotificacionesPage() {
     if (!token) return;
 
     try {
+      setFadingIds((current) => [...current, id]);
       await apiRequest<{ message: string }>(`/notifications/${id}/read`, {
         method: "PUT",
         token,
       });
-      setNotifications((current) =>
-        current.map((item) => (item.id === id ? { ...item, isRead: true } : item)),
-      );
+
+      setTimeout(() => {
+        setNotifications((current) =>
+          current.map((item) => (item.id === id ? { ...item, isRead: true } : item)),
+        );
+        setFadingIds((current) => current.filter((itemId) => itemId !== id));
+      }, 220);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible marcar la notificacion.");
+      setFadingIds((current) => current.filter((itemId) => itemId !== id));
     }
   };
 
@@ -164,12 +251,12 @@ export default function NotificacionesPage() {
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
       <DashboardHeader userName={userName} onLogout={onLogout} />
 
-      <section className="premium-panel p-6 md:p-8">
+      <section className="rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Notificaciones</h1>
             <p className="mt-2 text-sm text-brand-muted">
-              Actualizacion automatica cada 10 segundos. No leidas: {unreadCount}
+              Polling automatico cada 10 segundos. No leidas: {unreadCount}
               {refreshing ? " · sincronizando..." : ""}
             </p>
           </div>
@@ -178,7 +265,7 @@ export default function NotificacionesPage() {
             type="button"
             onClick={onMarkAllRead}
             disabled={unreadCount === 0}
-            className="premium-btn-secondary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-4 py-2 text-sm font-semibold text-[#82ffe8] transition hover:bg-[#00C9A7]/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Marcar todas como leidas
           </button>
@@ -192,47 +279,69 @@ export default function NotificacionesPage() {
               Aun no tienes notificaciones.
             </article>
           ) : (
-            notifications.map((item) => (
-              <article
-                key={item.id}
-                className={`rounded-xl border p-4 transition ${
-                  item.isRead
-                    ? "border-white/10 bg-white/[0.03]"
-                    : "border-[#00C9A7]/35 bg-[#00C9A7]/10"
-                }`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`rounded-full border px-2 py-0.5 text-[11px] ${typeClass(item.type)}`}>
-                      {typeLabel(item.type)}
-                    </span>
-                    {!item.isRead && (
-                      <span className="rounded-full border border-[#00C9A7]/50 bg-[#00C9A7]/15 px-2 py-0.5 text-[11px] text-[#89ffe8]">
-                        Nueva
+            notifications.map((item, index) => {
+              const isFading = fadingIds.includes(item.id);
+
+              return (
+                <article
+                  key={item.id}
+                  className={`rounded-xl border p-4 transition-all duration-300 ${
+                    item.isRead
+                      ? "border-white/10 bg-white/[0.03]"
+                      : "border-[#00C9A7]/35 bg-[#00C9A7]/12"
+                  } ${isFading ? "opacity-40" : "opacity-100"}`}
+                  style={{
+                    animation: `notif-slide-in 400ms ease both`,
+                    animationDelay: `${Math.min(index * 70, 420)}ms`,
+                  }}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] ${typeClass(item.type)}`}>
+                        {typeIcon(item.type)}
+                        {typeLabel(item.type)}
                       </span>
-                    )}
+                      {!item.isRead && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[#00C9A7]/40 bg-[#00C9A7]/15 px-2 py-0.5 text-[11px] text-[#83fce5]">
+                          <span className="h-2 w-2 rounded-full bg-[#00C9A7] animate-teal-pulse" />
+                          Nueva
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#94a3b8]">{relativeTime(item.createdAt)}</p>
                   </div>
-                  <p className="text-xs text-[#94a3b8]">{new Date(item.createdAt).toLocaleString("es-CO")}</p>
-                </div>
 
-                <p className="mt-3 font-semibold text-white">{item.title}</p>
-                <p className="mt-1 text-sm text-brand-muted">{item.body}</p>
+                  <p className="mt-3 font-semibold text-white">{item.title}</p>
+                  <p className="mt-1 text-sm text-brand-muted">{item.body}</p>
 
-                {!item.isRead && (
-                  <button
-                    type="button"
-                    onClick={() => onMarkRead(item.id)}
-                    className="mt-3 rounded-lg border border-[#00C9A7]/40 bg-[#00C9A7]/10 px-3 py-1.5 text-xs font-semibold text-[#83fce5] transition hover:bg-[#00C9A7]/20"
-                  >
-                    Marcar como leida
-                  </button>
-                )}
-              </article>
-            ))
+                  {!item.isRead && (
+                    <button
+                      type="button"
+                      onClick={() => onMarkRead(item.id)}
+                      className="mt-3 rounded-lg border border-[#00C9A7]/40 bg-[#00C9A7]/10 px-3 py-1.5 text-xs font-semibold text-[#83fce5] transition hover:bg-[#00C9A7]/20"
+                    >
+                      Marcar como leida
+                    </button>
+                  )}
+                </article>
+              );
+            })
           )}
         </div>
       </section>
+
+      <style jsx global>{`
+        @keyframes notif-slide-in {
+          from {
+            opacity: 0;
+            transform: translateX(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
     </main>
   );
 }
-

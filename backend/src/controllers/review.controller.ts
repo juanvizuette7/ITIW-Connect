@@ -14,6 +14,7 @@ import {
   SubcategoryRatingsInput,
 } from "../services/reviewBadge.service";
 import { notifyUser } from "../services/notification.service";
+import { logAiTrainingEvent } from "../services/aiTraining.service";
 
 const REVIEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -256,6 +257,13 @@ export async function reviewProfessional(req: Request, res: Response) {
       },
     );
   }
+
+  await logAiTrainingEvent({
+    professionalId: job.professionalId,
+    requestId: job.quote.request.id,
+    action: "CALIFICACION_RECIBIDA",
+    outcome: validation.rating >= 4 ? "POSITIVA" : "NEGATIVA",
+  });
 
   return res.status(201).json({
     message: "Calificacion enviada correctamente.",
