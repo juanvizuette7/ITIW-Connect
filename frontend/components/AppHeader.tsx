@@ -13,6 +13,9 @@ export function AppHeader() {
           <a href="#beneficios" className="transition hover:text-white">
             Beneficios
           </a>
+          <Link href="/buscar" className="transition hover:text-white">
+            Buscar
+          </Link>
           <Link href="/auth/login" className="transition hover:text-white">
             Iniciar sesion
           </Link>

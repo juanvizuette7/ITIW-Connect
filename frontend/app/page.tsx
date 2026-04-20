@@ -221,6 +221,9 @@ export default function HomePage() {
             <a href="#categorias" className="transition hover:text-white">
               Categorias
             </a>
+            <Link href="/buscar" className="transition hover:text-white">
+              Buscar
+            </Link>
             <Link href="/auth/login" className="transition hover:text-white">
               Iniciar sesion
             </Link>

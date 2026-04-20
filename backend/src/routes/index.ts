@@ -14,6 +14,7 @@ import portfolioRouter from "./portfolio.routes";
 import profileRouter from "./profile.routes";
 import reviewRouter from "./review.routes";
 import requestRouter from "./request.routes";
+import searchRouter from "./search.routes";
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.use("/ai", aiRouter);
 router.use("/profile", profileRouter);
 router.use("/categories", categoryRouter);
 router.use("/requests", requestRouter);
+router.use("/buscar", searchRouter);
 router.use("/jobs", jobRouter);
 router.use("/messages", messageRouter);
 router.use("/reviews", reviewRouter);

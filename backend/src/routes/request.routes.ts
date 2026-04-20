@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   acceptQuote,
+  cancelClientRequest,
   createQuote,
   createServiceRequest,
   getAvailableRequests,
@@ -18,6 +19,7 @@ requestRouter.post("/", authenticateJWT, authorizeRoles("CLIENTE"), asyncHandler
 requestRouter.get("/available", authenticateJWT, authorizeRoles("PROFESIONAL"), asyncHandler(getAvailableRequests));
 requestRouter.get("/my-quotes", authenticateJWT, authorizeRoles("PROFESIONAL"), asyncHandler(getProfessionalQuotes));
 requestRouter.get("/", authenticateJWT, authorizeRoles("CLIENTE"), asyncHandler(getClientRequests));
+requestRouter.put("/:id/cancel", authenticateJWT, authorizeRoles("CLIENTE"), asyncHandler(cancelClientRequest));
 requestRouter.get("/:id", authenticateJWT, asyncHandler(getRequestDetail));
 requestRouter.post(
   "/:id/quotes",

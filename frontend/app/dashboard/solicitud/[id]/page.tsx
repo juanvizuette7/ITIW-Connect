@@ -186,6 +186,15 @@ export default function SolicitudDetailPage() {
                       {quote.professional.badges.map((badge) => (
                         <span
                           key={`${quote.id}-${badge}`}
+                          title={
+                            badge === "VERIFICADO"
+                              ? "Identidad validada por ITIW Connect."
+                              : badge === "TOP_RATED"
+                              ? "Mantiene calificaciones sobresalientes."
+                              : badge === "EXPERTO"
+                              ? "Alto volumen de trabajos completados."
+                              : "Profesional nuevo con primeras entregas."
+                          }
                           className="rounded-full border border-[#00C9A7]/40 bg-[#00C9A7]/15 px-2 py-0.5 text-[10px] font-semibold text-[#7ff8e1]"
                         >
                           {badge}

@@ -15,6 +15,7 @@ import {
 } from "../services/reviewBadge.service";
 import { notifyUser } from "../services/notification.service";
 import { logAiTrainingEvent } from "../services/aiTraining.service";
+import { paginatedResponse, resolvePagination } from "../utils/pagination";
 
 const REVIEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -336,6 +337,7 @@ export async function reviewClient(req: Request, res: Response) {
 
 export async function listProfessionalReviews(req: Request, res: Response) {
   const { professionalId } = req.params;
+  const { page, limit, skip, take } = resolvePagination(req.query);
 
   const professional = await prisma.professionalProfile.findUnique({
     where: { userId: professionalId },
@@ -346,50 +348,60 @@ export async function listProfessionalReviews(req: Request, res: Response) {
     return res.status(404).json({ message: "No encontramos el profesional indicado." });
   }
 
-  const reviews = await prisma.review.findMany({
-    where: {
-      reviewedId: professionalId,
-    },
-    include: {
-      reviewer: {
-        select: {
-          id: true,
-          role: true,
-          clientProfile: {
-            select: {
-              name: true,
+  const [total, reviews] = await Promise.all([
+    prisma.review.count({
+      where: {
+        reviewedId: professionalId,
+      },
+    }),
+    prisma.review.findMany({
+      where: {
+        reviewedId: professionalId,
+      },
+      include: {
+        reviewer: {
+          select: {
+            id: true,
+            role: true,
+            clientProfile: {
+              select: {
+                name: true,
+              },
             },
-          },
-          professionalProfile: {
-            select: {
-              name: true,
+            professionalProfile: {
+              select: {
+                name: true,
+              },
             },
           },
         },
-      },
-      job: {
-        select: {
-          id: true,
-          quote: {
-            select: {
-              request: {
-                select: {
-                  id: true,
-                  description: true,
+        job: {
+          select: {
+            id: true,
+            quote: {
+              select: {
+                request: {
+                  select: {
+                    id: true,
+                    description: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take,
+    }),
+  ]);
 
   return res.status(200).json(
-    reviews.map((review) => ({
+    paginatedResponse({
+      data: reviews.map((review) => ({
       id: review.id,
       jobId: review.jobId,
       rating: review.rating,
@@ -406,5 +418,9 @@ export async function listProfessionalReviews(req: Request, res: Response) {
         description: review.job.quote.request.description,
       },
     })),
+      total,
+      page,
+      limit,
+    }),
   );
 }

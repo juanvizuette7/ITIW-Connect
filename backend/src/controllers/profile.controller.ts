@@ -6,9 +6,45 @@ export async function getMyProfile(req: Request, res: Response) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    include: {
-      clientProfile: true,
-      professionalProfile: true,
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      role: true,
+      isEmailVerified: true,
+      clientProfile: {
+        select: {
+          id: true,
+          userId: true,
+          name: true,
+          photoUrl: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      professionalProfile: {
+        select: {
+          id: true,
+          userId: true,
+          name: true,
+          bio: true,
+          specialties: true,
+          hourlyRate: true,
+          coverageRadiusKm: true,
+          avgRating: true,
+          aiScore: true,
+          reviewCount: true,
+          badges: true,
+          totalJobs: true,
+          verifiedBadge: true,
+          verificationStatus: true,
+          verificationNotes: true,
+          onboardingCompleted: true,
+          onboardingSteps: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
     },
   });
 

@@ -25,6 +25,14 @@ type ProfileMeResponse = {
   name: string;
 };
 
+type PaginatedRequestsResponse = {
+  data: ServiceRequest[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 function statusClasses(status: ServiceRequest["status"]): string {
   if (status === "ACTIVA") return "bg-emerald-500/20 text-emerald-300 border-emerald-500/35";
   if (status === "AGENDADA") return "bg-sky-500/20 text-sky-300 border-sky-500/35";
@@ -36,11 +44,15 @@ export default function MisSolicitudesPage() {
   const router = useRouter();
   const [userName, setUserName] = useState("");
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [cancelModalId, setCancelModalId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadData(page = 1, firstLoad = false) {
       const savedToken = getToken();
       const role = getRole();
 
@@ -49,27 +61,68 @@ export default function MisSolicitudesPage() {
         return;
       }
 
+      if (firstLoad) setLoading(true);
+
       try {
         const [profile, myRequests] = await Promise.all([
           apiRequest<ProfileMeResponse>("/profile/me", { method: "GET", token: savedToken }),
-          apiRequest<ServiceRequest[]>("/requests", { method: "GET", token: savedToken }),
+          apiRequest<PaginatedRequestsResponse>(`/requests?page=${page}&limit=10`, {
+            method: "GET",
+            token: savedToken,
+          }),
         ]);
 
         setUserName(profile.name);
-        setRequests(myRequests);
+        setRequests(myRequests.data);
+        setCurrentPage(myRequests.page);
+        setTotalPages(myRequests.totalPages);
+        setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible cargar tus solicitudes.");
       } finally {
-        setLoading(false);
+        if (firstLoad) setLoading(false);
       }
     }
 
-    loadData();
+    void loadData(1, true);
   }, [router]);
+
+  async function reloadPage(page: number) {
+    const savedToken = getToken();
+    if (!savedToken) return;
+
+    const myRequests = await apiRequest<PaginatedRequestsResponse>(`/requests?page=${page}&limit=10`, {
+      method: "GET",
+      token: savedToken,
+    });
+    setRequests(myRequests.data);
+    setCurrentPage(myRequests.page);
+    setTotalPages(myRequests.totalPages);
+  }
 
   function onLogout() {
     clearSession();
     router.push("/auth/login");
+  }
+
+  async function onConfirmCancel() {
+    const token = getToken();
+    if (!token || !cancelModalId) return;
+
+    setCancelling(true);
+    setError(null);
+    try {
+      await apiRequest<{ message: string }>(`/requests/${cancelModalId}/cancel`, {
+        method: "PUT",
+        token,
+      });
+      setCancelModalId(null);
+      await reloadPage(currentPage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible cancelar la solicitud.");
+    } finally {
+      setCancelling(false);
+    }
   }
 
   if (loading) {
@@ -121,6 +174,16 @@ export default function MisSolicitudesPage() {
                     Ver detalle
                   </Link>
 
+                  {request.status === "ACTIVA" && (
+                    <button
+                      type="button"
+                      onClick={() => setCancelModalId(request.id)}
+                      className="text-rose-300 hover:underline"
+                    >
+                      Cancelar solicitud
+                    </button>
+                  )}
+
                   {request.jobId && (request.status === "AGENDADA" || request.status === "COMPLETADA") && (
                     <Link href={`/dashboard/job/${request.jobId}`} className="text-emerald-300 hover:underline">
                       Ver job
@@ -131,7 +194,59 @@ export default function MisSolicitudesPage() {
             ))}
           </div>
         )}
+
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-end gap-2 text-sm">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => void reloadPage(currentPage - 1)}
+              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Anterior
+            </button>
+            <span className="text-brand-muted">
+              Pagina {currentPage} de {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => void reloadPage(currentPage + 1)}
+              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
       </section>
+
+      {cancelModalId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#30425a] bg-[#0A0F1A] p-5">
+            <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Confirmar cancelacion</h2>
+            <p className="mt-2 text-sm text-brand-muted">
+              Esta accion es irreversible. La solicitud pasara a estado CANCELADA.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCancelModalId(null)}
+                className="premium-btn-secondary px-4 py-2 text-sm"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={() => void onConfirmCancel()}
+                disabled={cancelling}
+                className="rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25 disabled:opacity-60"
+              >
+                {cancelling ? "Cancelando..." : "Si, cancelar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

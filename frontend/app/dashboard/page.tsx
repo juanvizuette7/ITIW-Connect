@@ -27,12 +27,24 @@ type JobItem = {
 };
 
 type PaymentHistoryResponse = {
+  data: Array<{ id: string }>;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   totals: {
     totalPagado: number;
     totalComisiones: number;
     totalNeto: number;
   };
-  items: Array<{ id: string }>;
+};
+
+type PaginatedClientRequests = {
+  data: ClientRequest[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 };
 
 type ProfileMeResponse = {
@@ -177,11 +189,11 @@ export default function DashboardPage() {
         setUnreadNotifications(unread.unread);
 
         if (profile.role === "CLIENTE") {
-          const requests = await apiRequest<ClientRequest[]>("/requests", {
+          const requests = await apiRequest<PaginatedClientRequests>("/requests?page=1&limit=200", {
             method: "GET",
             token,
           });
-          setActiveRequestsCount(requests.filter((request) => request.status === "ACTIVA").length);
+          setActiveRequestsCount(requests.data.filter((request) => request.status === "ACTIVA").length);
         }
 
         if (profile.role === "PROFESIONAL") {

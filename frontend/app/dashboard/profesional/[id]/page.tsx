@@ -41,6 +41,14 @@ type ReviewItem = {
   };
 };
 
+type PaginatedReviewsResponse = {
+  data: ReviewItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 type ProfileMeResponse = {
   name: string;
 };
@@ -102,6 +110,8 @@ export default function ProfessionalPublicPage() {
   const [userName, setUserName] = useState("");
   const [profile, setProfile] = useState<ProfessionalPublicProfile | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
   const [portfolioPhotos, setPortfolioPhotos] = useState<PortfolioPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,13 +128,18 @@ export default function ProfessionalPublicPage() {
         const [me, professionalData, reviewsData, portfolioData] = await Promise.all([
           apiRequest<ProfileMeResponse>("/profile/me", { method: "GET", token }),
           apiRequest<ProfessionalPublicProfile>(`/profile/professional/${params.id}`, { method: "GET", token }),
-          apiRequest<ReviewItem[]>(`/reviews/professional/${params.id}`, { method: "GET", token }),
+          apiRequest<PaginatedReviewsResponse>(`/reviews/professional/${params.id}?page=1&limit=12`, {
+            method: "GET",
+            token,
+          }),
           apiRequest<PortfolioResponse>(`/portfolio/${params.id}`, { method: "GET", token }),
         ]);
 
         setUserName(me.name);
         setProfile(professionalData);
-        setReviews(reviewsData);
+        setReviews(reviewsData.data);
+        setReviewsPage(reviewsData.page);
+        setReviewsTotalPages(reviewsData.totalPages);
         setPortfolioPhotos(portfolioData.photos);
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible cargar el perfil profesional.");
@@ -187,6 +202,15 @@ export default function ProfessionalPublicPage() {
               {profile.professionalProfile.badges.map((badge) => (
                 <span
                   key={badge}
+                  title={
+                    badge === "VERIFICADO"
+                      ? "Identidad validada por ITIW Connect."
+                      : badge === "TOP_RATED"
+                      ? "Mantiene calificaciones sobresalientes."
+                      : badge === "EXPERTO"
+                      ? "Alto volumen de trabajos completados."
+                      : "Profesional nuevo con primeras entregas."
+                  }
                   className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-[0_0_18px_rgba(0,201,167,0.16)] ${badgeClass(badge)}`}
                 >
                   <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/20 text-[10px] font-bold">
@@ -313,6 +337,50 @@ export default function ProfessionalPublicPage() {
                 </article>
               );
             })}
+          </div>
+        )}
+
+        {reviewsTotalPages > 1 && (
+          <div className="mt-6 flex items-center justify-end gap-2 text-sm">
+            <button
+              type="button"
+              disabled={reviewsPage <= 1}
+              onClick={async () => {
+                const token = getToken();
+                if (!token) return;
+                const response = await apiRequest<PaginatedReviewsResponse>(
+                  `/reviews/professional/${params.id}?page=${reviewsPage - 1}&limit=12`,
+                  { method: "GET", token },
+                );
+                setReviews(response.data);
+                setReviewsPage(response.page);
+                setReviewsTotalPages(response.totalPages);
+              }}
+              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Anterior
+            </button>
+            <span className="text-brand-muted">
+              Pagina {reviewsPage} de {reviewsTotalPages}
+            </span>
+            <button
+              type="button"
+              disabled={reviewsPage >= reviewsTotalPages}
+              onClick={async () => {
+                const token = getToken();
+                if (!token) return;
+                const response = await apiRequest<PaginatedReviewsResponse>(
+                  `/reviews/professional/${params.id}?page=${reviewsPage + 1}&limit=12`,
+                  { method: "GET", token },
+                );
+                setReviews(response.data);
+                setReviewsPage(response.page);
+                setReviewsTotalPages(response.totalPages);
+              }}
+              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Siguiente
+            </button>
           </div>
         )}
       </section>

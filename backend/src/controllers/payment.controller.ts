@@ -1,6 +1,7 @@
 import { PaymentStatus, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import { paginatedResponse, resolvePagination } from "../utils/pagination";
 
 type PaymentHistoryQuery = {
   fechaInicio?: string;
@@ -40,6 +41,7 @@ function resolveName(user: {
 export async function getPaymentHistory(req: Request, res: Response) {
   const userId = req.user!.userId;
   const role = req.user!.role;
+  const { page, limit, skip, take } = resolvePagination(req.query);
 
   const query = req.query as PaymentHistoryQuery;
   const startDate = parseDate(query.fechaInicio || query.startDate);
@@ -72,97 +74,109 @@ export async function getPaymentHistory(req: Request, res: Response) {
   if (startDate) createdAtFilter.gte = startDate;
   if (endDate) createdAtFilter.lte = endDate;
 
-  const payments = await prisma.payment.findMany({
-    where: {
-      ...(Object.keys(createdAtFilter).length > 0 ? { createdAt: createdAtFilter } : {}),
-      ...(status ? { status } : {}),
-      ...(minAmount !== null || maxAmount !== null
-        ? {
-            amountCop: {
-              ...(minAmount !== null ? { gte: minAmount } : {}),
-              ...(maxAmount !== null ? { lte: maxAmount } : {}),
-            },
-          }
-        : {}),
-      job: role === "CLIENTE" ? { clientId: userId } : { professionalId: userId },
-    },
-    include: {
-      job: {
-        include: {
-          client: {
-            select: {
-              role: true,
-              clientProfile: {
-                select: { name: true },
-              },
-              professionalProfile: {
-                select: { name: true },
-              },
-            },
+  const where = {
+    ...(Object.keys(createdAtFilter).length > 0 ? { createdAt: createdAtFilter } : {}),
+    ...(status ? { status } : {}),
+    ...(minAmount !== null || maxAmount !== null
+      ? {
+          amountCop: {
+            ...(minAmount !== null ? { gte: minAmount } : {}),
+            ...(maxAmount !== null ? { lte: maxAmount } : {}),
           },
-          professional: {
-            select: {
-              role: true,
-              clientProfile: {
-                select: { name: true },
-              },
-              professionalProfile: {
-                select: { name: true },
+        }
+      : {}),
+    job: role === "CLIENTE" ? { clientId: userId } : { professionalId: userId },
+  };
+
+  const [total, aggregateTotals, payments] = await Promise.all([
+    prisma.payment.count({ where }),
+    prisma.payment.aggregate({
+      where,
+      _sum: {
+        amountCop: true,
+        commissionCop: true,
+        netProfessionalCop: true,
+      },
+    }),
+    prisma.payment.findMany({
+      where,
+      include: {
+        job: {
+          include: {
+            client: {
+              select: {
+                role: true,
+                clientProfile: {
+                  select: { name: true },
+                },
+                professionalProfile: {
+                  select: { name: true },
+                },
               },
             },
-          },
-          quote: {
-            include: {
-              request: {
-                include: {
-                  category: true,
+            professional: {
+              select: {
+                role: true,
+                clientProfile: {
+                  select: { name: true },
+                },
+                professionalProfile: {
+                  select: { name: true },
+                },
+              },
+            },
+            quote: {
+              include: {
+                request: {
+                  include: {
+                    category: true,
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take,
+    }),
+  ]);
 
-  const totals = payments.reduce(
-    (acc, payment) => {
-      acc.totalPagado += payment.amountCop;
-      acc.totalComisiones += payment.commissionCop;
-      acc.totalNeto += payment.netProfessionalCop;
-      return acc;
-    },
-    {
-      totalPagado: 0,
-      totalComisiones: 0,
-      totalNeto: 0,
-    },
+  const totals = {
+    totalPagado: Number(aggregateTotals._sum.amountCop || 0),
+    totalComisiones: Number(aggregateTotals._sum.commissionCop || 0),
+    totalNeto: Number(aggregateTotals._sum.netProfessionalCop || 0),
+  };
+
+  return res.status(200).json(
+    paginatedResponse({
+      data: payments.map((payment) => ({
+        id: payment.id,
+        jobId: payment.jobId,
+        status: payment.status,
+        amountCop: payment.amountCop,
+        commissionCop: payment.commissionCop,
+        netProfessionalCop: payment.netProfessionalCop,
+        createdAt: payment.createdAt,
+        request: {
+          id: payment.job.quote.request.id,
+          description: payment.job.quote.request.description,
+          category: payment.job.quote.request.category,
+        },
+        client: {
+          name: resolveName(payment.job.client),
+        },
+        professional: {
+          name: resolveName(payment.job.professional),
+        },
+      })),
+      total,
+      page,
+      limit,
+      extra: { totals },
+    }),
   );
-
-  return res.status(200).json({
-    totals,
-    items: payments.map((payment) => ({
-      id: payment.id,
-      jobId: payment.jobId,
-      status: payment.status,
-      amountCop: payment.amountCop,
-      commissionCop: payment.commissionCop,
-      netProfessionalCop: payment.netProfessionalCop,
-      createdAt: payment.createdAt,
-      request: {
-        id: payment.job.quote.request.id,
-        description: payment.job.quote.request.description,
-        category: payment.job.quote.request.category,
-      },
-      client: {
-        name: resolveName(payment.job.client),
-      },
-      professional: {
-        name: resolveName(payment.job.professional),
-      },
-    })),
-  });
 }

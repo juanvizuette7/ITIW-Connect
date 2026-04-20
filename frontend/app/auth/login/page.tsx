@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AuthSplitLayout } from "@/components/AuthSplitLayout";
 import { apiRequest } from "@/lib/api";
 import { saveSession } from "@/lib/auth";
+import { GoogleAuthButton } from "@/components/GoogleAuthButton";
 
 interface LoginResponse {
   message: string;
@@ -115,7 +116,18 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {error && <p className="premium-error">{error}</p>}
+        <GoogleAuthButton onError={setError} />
+
+        {error && (
+          <p className="premium-error">
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#ff9bac]/60 text-xs">
+                !
+              </span>
+              <span>{error}</span>
+            </span>
+          </p>
+        )}
 
         <button disabled={loading} className="premium-btn-primary w-full">
           {loading ? "Ingresando..." : "Iniciar sesion ?"}

@@ -10,6 +10,11 @@ import {
 } from "../utils/emailTemplates";
 import { notifyManyUsers, notifyUser } from "../services/notification.service";
 import { logAiTrainingEvent } from "../services/aiTraining.service";
+import {
+  getCachedProfessionalAiScore,
+  setCachedProfessionalAiScore,
+} from "../services/cache.service";
+import { paginatedResponse, resolvePagination } from "../utils/pagination";
 
 const JOB_ESCROW_HOURS = 72;
 
@@ -146,41 +151,62 @@ export async function createServiceRequest(req: Request, res: Response) {
 
 export async function getClientRequests(req: Request, res: Response) {
   const clientId = req.user!.userId;
+  const { page, limit, skip, take } = resolvePagination(req.query);
 
-  const requests = await prisma.serviceRequest.findMany({
-    where: { clientId },
-    include: {
-      category: true,
-      _count: {
-        select: {
-          quotes: true,
+  const [total, requests] = await Promise.all([
+    prisma.serviceRequest.count({
+      where: { clientId },
+    }),
+    prisma.serviceRequest.findMany({
+      where: { clientId },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            iconUrl: true,
+          },
         },
-      },
-      quotes: {
-        where: {
-          status: QuoteStatus.ACEPTADA,
+        _count: {
+          select: {
+            quotes: true,
+          },
         },
-        select: {
-          id: true,
-          job: {
-            select: {
-              id: true,
+        quotes: {
+          where: {
+            status: QuoteStatus.ACEPTADA,
+          },
+          select: {
+            id: true,
+            job: {
+              select: {
+                id: true,
+              },
             },
           },
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take,
+    }),
+  ]);
 
-  const response = requests.map((request) => ({
+  const data = requests.map((request) => ({
     ...request,
     jobId: request.quotes[0]?.job?.id || null,
   }));
 
-  return res.status(200).json(response);
+  return res.status(200).json(
+    paginatedResponse({
+      data,
+      total,
+      page,
+      limit,
+    }),
+  );
 }
 
 export async function getRequestDetail(req: Request, res: Response) {
@@ -298,10 +324,11 @@ export async function getRequestDetail(req: Request, res: Response) {
 export async function getAvailableRequests(req: Request, res: Response) {
   const professionalId = req.user!.userId;
 
+  let aiScore = getCachedProfessionalAiScore(professionalId);
   const professional = await prisma.professionalProfile.findUnique({
     where: { userId: professionalId },
     select: {
-      aiScore: true,
+      aiScore: aiScore === null,
       specialties: true,
     },
   });
@@ -336,7 +363,10 @@ export async function getAvailableRequests(req: Request, res: Response) {
       createdAt: "desc",
     },
   });
-  const aiScore = Number(professional?.aiScore || 0);
+  if (aiScore === null) {
+    aiScore = Number(professional?.aiScore || 0);
+    setCachedProfessionalAiScore(professionalId, aiScore);
+  }
   const specialties = professional?.specialties || [];
 
   const rankedRequests = requests
@@ -409,6 +439,49 @@ export async function getProfessionalQuotes(req: Request, res: Response) {
       job: quote.job,
     })),
   );
+}
+
+export async function cancelClientRequest(req: Request, res: Response) {
+  const clientId = req.user!.userId;
+  const { id } = req.params;
+
+  const request = await prisma.serviceRequest.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      clientId: true,
+      status: true,
+    },
+  });
+
+  if (!request) {
+    return res.status(404).json({ message: "No encontramos la solicitud indicada." });
+  }
+
+  if (request.clientId !== clientId) {
+    return res.status(403).json({ message: "No tienes permiso para cancelar esta solicitud." });
+  }
+
+  if (request.status !== ServiceRequestStatus.ACTIVA) {
+    return res.status(400).json({ message: "Solo puedes cancelar solicitudes activas." });
+  }
+
+  const updated = await prisma.serviceRequest.update({
+    where: { id },
+    data: {
+      status: ServiceRequestStatus.CANCELADA,
+    },
+    select: {
+      id: true,
+      status: true,
+      updatedAt: true,
+    },
+  });
+
+  return res.status(200).json({
+    message: "Solicitud cancelada correctamente.",
+    request: updated,
+  });
 }
 
 export async function createQuote(req: Request, res: Response) {

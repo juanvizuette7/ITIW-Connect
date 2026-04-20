@@ -1,5 +1,6 @@
-﻿import { JobStatus, Prisma } from "@prisma/client";
+import { JobStatus } from "@prisma/client";
 import { prisma } from "../config/prisma";
+import { setCachedProfessionalAiScore } from "./cache.service";
 
 type LogAiTrainingEventInput = {
   professionalId: string;
@@ -131,6 +132,7 @@ export async function retrainProfessionalAiScores(hoursWindow = 72): Promise<Ret
         aiScore,
       },
     });
+    setCachedProfessionalAiScore(professionalId, aiScore);
 
     results.push({
       professionalId,

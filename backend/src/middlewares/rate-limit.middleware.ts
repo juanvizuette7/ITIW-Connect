@@ -58,3 +58,8 @@ export const authRateLimiter = createRateLimiter({
   message: "Demasiados intentos en autenticacion. Espera 15 minutos e intenta nuevamente.",
 });
 
+export const loginRateLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Se bloqueo temporalmente el inicio de sesion por demasiados intentos desde esta IP. Espera 15 minutos.",
+});

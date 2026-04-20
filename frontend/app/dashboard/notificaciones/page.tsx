@@ -25,6 +25,14 @@ type NotificationItem = {
   createdAt: string;
 };
 
+type PaginatedNotificationsResponse = {
+  data: NotificationItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 type ProfileMeResponse = {
   name: string;
 };
@@ -151,11 +159,11 @@ export default function NotificacionesPage() {
     }
 
     try {
-      const list = await apiRequest<NotificationItem[]>("/notifications", {
+      const list = await apiRequest<PaginatedNotificationsResponse>("/notifications?page=1&limit=100", {
         method: "GET",
         token: authToken,
       });
-      setNotifications(list);
+      setNotifications(list.data);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible cargar las notificaciones.");

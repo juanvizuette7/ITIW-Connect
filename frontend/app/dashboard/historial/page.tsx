@@ -30,12 +30,16 @@ type PaymentItem = {
 };
 
 type PaymentHistoryResponse = {
+  data: PaymentItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   totals: {
     totalPagado: number;
     totalComisiones: number;
     totalNeto: number;
   };
-  items: PaymentItem[];
 };
 
 type ProfileMeResponse = {
@@ -91,6 +95,8 @@ export default function HistorialPage() {
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<PaymentItem[]>([]);
   const [totals, setTotals] = useState({ totalPagado: 0, totalComisiones: 0, totalNeto: 0 });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
     fechaInicio: "",
     fechaFin: "",
@@ -114,13 +120,16 @@ export default function HistorialPage() {
     return built ? `?${built}` : "";
   }, [filters]);
 
-  async function loadHistory(authToken: string, query = "") {
-    const response = await apiRequest<PaymentHistoryResponse>(`/payments/history${query}`, {
+  async function loadHistory(authToken: string, query = "", page = 1) {
+    const separator = query ? "&" : "?";
+    const response = await apiRequest<PaymentHistoryResponse>(`/payments/history${query}${separator}page=${page}&limit=10`, {
       method: "GET",
       token: authToken,
     });
-    setItems(response.items);
+    setItems(response.data);
     setTotals(response.totals);
+    setCurrentPage(response.page);
+    setTotalPages(response.totalPages);
   }
 
   useEffect(() => {
@@ -159,10 +168,15 @@ export default function HistorialPage() {
     if (!token) return;
     setError(null);
     try {
-      await loadHistory(token, queryString);
+      await loadHistory(token, queryString, 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible aplicar filtros.");
     }
+  }
+
+  async function onChangePage(nextPage: number) {
+    if (!token) return;
+    await loadHistory(token, queryString, nextPage);
   }
 
   function exportCsv() {
@@ -304,6 +318,30 @@ export default function HistorialPage() {
             ))
           )}
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-end gap-2 text-sm">
+            <button
+              type="button"
+              disabled={currentPage <= 1}
+              onClick={() => void onChangePage(currentPage - 1)}
+              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Anterior
+            </button>
+            <span className="text-brand-muted">
+              Pagina {currentPage} de {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={currentPage >= totalPages}
+              onClick={() => void onChangePage(currentPage + 1)}
+              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 border-t border-[#253245] pt-6">
           <p className="mb-3 text-sm font-semibold text-[#dbe6ff]">Totales del historial</p>

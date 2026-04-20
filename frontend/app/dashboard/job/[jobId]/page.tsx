@@ -73,6 +73,7 @@ export default function JobDetailPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [confirmDisputeOpen, setConfirmDisputeOpen] = useState(false);
   const [tick, setTick] = useState(0);
 
   async function loadJob(authToken: string) {
@@ -208,12 +209,13 @@ export default function JobDetailPage() {
           )}
 
           {disputeWindowOpen && (
-            <Link
-              href={`/dashboard/disputas/nueva/${job.id}`}
+            <button
+              type="button"
+              onClick={() => setConfirmDisputeOpen(true)}
               className="rounded-xl border border-[#f87171]/40 bg-[#f87171]/10 px-5 py-3 font-semibold text-[#fecaca] transition hover:-translate-y-0.5 hover:bg-[#f87171]/20"
             >
               Abrir disputa
-            </Link>
+            </button>
           )}
 
           <Link href={`/dashboard/job/${job.id}/chat`} className="premium-btn-secondary">
@@ -221,6 +223,32 @@ export default function JobDetailPage() {
           </Link>
         </div>
       </section>
+
+      {confirmDisputeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#30425a] bg-[#0A0F1A] p-5">
+            <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Confirmar disputa</h2>
+            <p className="mt-2 text-sm text-brand-muted">
+              Abrir una disputa congelara el proceso normal de conciliacion hasta revision.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDisputeOpen(false)}
+                className="premium-btn-secondary px-4 py-2 text-sm"
+              >
+                Volver
+              </button>
+              <Link
+                href={`/dashboard/disputas/nueva/${job.id}`}
+                className="rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25"
+              >
+                Continuar
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

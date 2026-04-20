@@ -2,6 +2,7 @@ import { NotificationType } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma";
 import { notifyUser } from "../services/notification.service";
+import { paginatedResponse, resolvePagination } from "../utils/pagination";
 
 type CreateNotificationBody = {
   userId?: string;
@@ -55,13 +56,28 @@ export async function createNotification(req: Request, res: Response) {
 
 export async function listMyNotifications(req: Request, res: Response) {
   const userId = req.user!.userId;
+  const { page, limit, skip, take } = resolvePagination(req.query);
 
-  const notifications = await prisma.notification.findMany({
-    where: { userId },
-    orderBy: [{ isRead: "asc" }, { createdAt: "desc" }],
-  });
+  const [total, notifications] = await Promise.all([
+    prisma.notification.count({
+      where: { userId },
+    }),
+    prisma.notification.findMany({
+      where: { userId },
+      orderBy: [{ isRead: "asc" }, { createdAt: "desc" }],
+      skip,
+      take,
+    }),
+  ]);
 
-  return res.status(200).json(notifications);
+  return res.status(200).json(
+    paginatedResponse({
+      data: notifications,
+      total,
+      page,
+      limit,
+    }),
+  );
 }
 
 export async function markNotificationAsRead(req: Request, res: Response) {
@@ -122,4 +138,3 @@ export async function getUnreadNotificationsCount(req: Request, res: Response) {
 
   return res.status(200).json({ unread });
 }
-

@@ -2,6 +2,7 @@ import dns from "node:dns";
 
 import { app } from "./app";
 import { env } from "./config/env";
+import { configurePassport } from "./config/passport";
 import { prisma } from "./config/prisma";
 import { startEscrowReleaseScheduler } from "./services/escrowRelease.scheduler";
 
@@ -38,6 +39,7 @@ async function startServer() {
   dns.setDefaultResultOrder("ipv4first");
 
   await connectDatabaseWithRetry();
+  configurePassport();
   startEscrowReleaseScheduler();
 
   app.listen(env.port, () => {

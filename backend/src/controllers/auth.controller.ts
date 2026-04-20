@@ -1,5 +1,6 @@
-import { Request, Response } from "express";
+import { Role } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "../config/prisma";
 import { env } from "../config/env";
@@ -7,6 +8,7 @@ import { signToken } from "../utils/jwt";
 import { generateOtpCode } from "../utils/otp";
 import { otpEmailTemplate, resetPasswordTemplate } from "../utils/emailTemplates";
 import { sendEmail } from "../config/mailer";
+import { isGoogleOauthConfigured } from "../config/passport";
 
 type UserRole = "CLIENTE" | "PROFESIONAL";
 
@@ -28,6 +30,12 @@ function logOtpInDevelopment(email: string, otpCode: string) {
   }
 }
 
+function logFailedLogin(ip: string, email: string, reason: string) {
+  console.warn(
+    `[SECURITY][LOGIN_FAILED] ip=${ip} email=${email || "no-provided"} reason=${reason} at=${new Date().toISOString()}`,
+  );
+}
+
 export async function register(req: Request, res: Response) {
   const { name, email, phone, telefono, password, role } = req.body as {
     name?: string;
@@ -39,17 +47,16 @@ export async function register(req: Request, res: Response) {
   };
 
   const resolvedPhone = (phone || telefono || "").trim();
+  const normalizedEmail = (email || "").trim().toLowerCase();
+  const normalizedName = (name || "").trim();
 
-  if (!name || !email || !resolvedPhone || !password || !role) {
+  if (!normalizedName || !normalizedEmail || !resolvedPhone || !password || !role) {
     return res.status(400).json({ message: "Debes completar nombre, correo, telefono, contrasena y rol." });
   }
 
   if (role !== "CLIENTE" && role !== "PROFESIONAL") {
     return res.status(400).json({ message: "El rol debe ser CLIENTE o PROFESIONAL." });
   }
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedName = name.trim();
 
   if (!isValidEmail(normalizedEmail)) {
     return res.status(400).json({ message: "El correo no tiene un formato valido." });
@@ -67,6 +74,7 @@ export async function register(req: Request, res: Response) {
     where: {
       OR: [{ email: normalizedEmail }, { phone: resolvedPhone }],
     },
+    select: { id: true },
   });
 
   if (existingUser) {
@@ -82,7 +90,7 @@ export async function register(req: Request, res: Response) {
       email: normalizedEmail,
       phone: resolvedPhone,
       passwordHash,
-      role,
+      role: role as Role,
       otpCode,
       otpExpiry,
       otpAttempts: 0,
@@ -110,9 +118,17 @@ export async function register(req: Request, res: Response) {
             }
           : undefined,
     },
-    include: {
-      clientProfile: true,
-      professionalProfile: true,
+    select: {
+      id: true,
+      email: true,
+      phone: true,
+      role: true,
+      clientProfile: {
+        select: { name: true },
+      },
+      professionalProfile: {
+        select: { name: true },
+      },
     },
   });
 
@@ -140,26 +156,43 @@ export async function register(req: Request, res: Response) {
 
 export async function login(req: Request, res: Response) {
   const { email, password } = req.body as { email?: string; password?: string };
+  const normalizedEmail = (email || "").trim().toLowerCase();
+  const requesterIp = req.ip || "unknown";
 
-  if (!email || !password) {
+  if (!normalizedEmail || !password) {
+    logFailedLogin(requesterIp, normalizedEmail, "missing_credentials");
     return res.status(400).json({ message: "Debes enviar correo y contrasena." });
   }
 
   const user = await prisma.user.findUnique({
-    where: { email: email.trim().toLowerCase() },
-    include: {
-      clientProfile: true,
-      professionalProfile: true,
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      passwordHash: true,
+      isActive: true,
+      clientProfile: {
+        select: { name: true },
+      },
+      professionalProfile: {
+        select: { name: true },
+      },
     },
   });
 
   if (!user) {
+    logFailedLogin(requesterIp, normalizedEmail, "user_not_found");
     return res.status(401).json({ message: "Correo o contrasena incorrectos." });
   }
 
-  const isMatch = await bcrypt.compare(password, user.passwordHash);
+  if (!user.isActive) {
+    return res.status(403).json({ message: "Tu cuenta esta desactivada temporalmente." });
+  }
 
+  const isMatch = await bcrypt.compare(password, user.passwordHash);
   if (!isMatch) {
+    logFailedLogin(requesterIp, normalizedEmail, "invalid_password");
     return res.status(401).json({ message: "Correo o contrasena incorrectos." });
   }
 
@@ -183,9 +216,10 @@ export async function login(req: Request, res: Response) {
 
 export async function verifyOtp(req: Request, res: Response) {
   const { email, otpCode, code } = req.body as { email?: string; otpCode?: string; code?: string };
-  const resolvedCode = otpCode || code;
+  const normalizedEmail = (email || "").trim().toLowerCase();
+  const resolvedCode = (otpCode || code || "").trim();
 
-  if (!email || !resolvedCode) {
+  if (!normalizedEmail || !resolvedCode) {
     return res.status(400).json({ message: "Debes enviar correo y codigo OTP." });
   }
 
@@ -194,7 +228,13 @@ export async function verifyOtp(req: Request, res: Response) {
   }
 
   const user = await prisma.user.findUnique({
-    where: { email: email.trim().toLowerCase() },
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      otpCode: true,
+      otpExpiry: true,
+      otpAttempts: true,
+    },
   });
 
   if (!user) {
@@ -239,18 +279,23 @@ export async function verifyOtp(req: Request, res: Response) {
 
 export async function resendOtp(req: Request, res: Response) {
   const { email } = req.body as { email?: string };
+  const normalizedEmail = (email || "").trim().toLowerCase();
 
-  if (!email) {
+  if (!normalizedEmail) {
     return res.status(400).json({ message: "Debes enviar el correo electronico." });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    include: {
-      clientProfile: true,
-      professionalProfile: true,
+    select: {
+      id: true,
+      email: true,
+      clientProfile: {
+        select: { name: true },
+      },
+      professionalProfile: {
+        select: { name: true },
+      },
     },
   });
 
@@ -278,23 +323,29 @@ export async function resendOtp(req: Request, res: Response) {
 
 export async function forgotPassword(req: Request, res: Response) {
   const { email } = req.body as { email?: string };
+  const normalizedEmail = (email || "").trim().toLowerCase();
 
-  if (!email) {
+  if (!normalizedEmail) {
     return res.status(400).json({ message: "Debes enviar el correo electronico." });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    include: {
-      clientProfile: true,
-      professionalProfile: true,
+    select: {
+      id: true,
+      email: true,
+      clientProfile: {
+        select: { name: true },
+      },
+      professionalProfile: {
+        select: { name: true },
+      },
     },
   });
 
   if (!user) {
     return res.status(200).json({
-      message: "Si el correo existe, recibirás un enlace para recuperar tu contraseña.",
+      message: "Si el correo existe, recibiras un enlace para recuperar tu contrasena.",
     });
   }
 
@@ -311,12 +362,12 @@ export async function forgotPassword(req: Request, res: Response) {
 
   await sendEmail(
     user.email,
-    "Recuperar contraseña - ITIW Connect",
+    "Recuperar contrasena - ITIW Connect",
     resetPasswordTemplate(name, resetUrl),
   );
 
   return res.status(200).json({
-    message: "Si el correo existe, recibirás un enlace para recuperar tu contraseña.",
+    message: "Si el correo existe, recibiras un enlace para recuperar tu contrasena.",
   });
 }
 
@@ -324,11 +375,11 @@ export async function resetPassword(req: Request, res: Response) {
   const { token, password } = req.body as { token?: string; password?: string };
 
   if (!token || !password) {
-    return res.status(400).json({ message: "Debes enviar token y nueva contraseña." });
+    return res.status(400).json({ message: "Debes enviar token y nueva contrasena." });
   }
 
   if (!isValidPassword(password)) {
-    return res.status(400).json({ message: "La nueva contraseña debe tener mínimo 8 caracteres." });
+    return res.status(400).json({ message: "La nueva contrasena debe tener minimo 8 caracteres." });
   }
 
   const user = await prisma.user.findFirst({
@@ -338,10 +389,11 @@ export async function resetPassword(req: Request, res: Response) {
         gte: new Date(),
       },
     },
+    select: { id: true },
   });
 
   if (!user) {
-    return res.status(400).json({ message: "El token es inválido o ya expiró." });
+    return res.status(400).json({ message: "El token es invalido o ya expiro." });
   }
 
   const passwordHash = await bcrypt.hash(password, env.bcryptRounds);
@@ -355,6 +407,24 @@ export async function resetPassword(req: Request, res: Response) {
     },
   });
 
-  return res.status(200).json({ message: "Contraseña actualizada correctamente." });
+  return res.status(200).json({ message: "Contrasena actualizada correctamente." });
+}
+
+export async function getGoogleOauthStatus(_req: Request, res: Response) {
+  return res.status(200).json({
+    configured: isGoogleOauthConfigured(),
+  });
+}
+
+export async function googleAuthCallbackSuccess(req: Request, res: Response) {
+  const oauthUser = req.user as { token?: string } | undefined;
+
+  if (!oauthUser?.token) {
+    return res.redirect(`${env.frontendUrl}/auth/login?oauthError=token_invalido`);
+  }
+
+  return res.redirect(
+    `${env.frontendUrl}/auth/oauth-success?token=${encodeURIComponent(oauthUser.token)}`,
+  );
 }
 

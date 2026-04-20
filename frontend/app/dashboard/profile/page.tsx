@@ -76,6 +76,7 @@ export default function ProfilePage() {
   const [portfolioBase64, setPortfolioBase64] = useState<string | null>(null);
   const [portfolioSaving, setPortfolioSaving] = useState(false);
   const [portfolioDeletingId, setPortfolioDeletingId] = useState<string | null>(null);
+  const [confirmDeletePhotoId, setConfirmDeletePhotoId] = useState<string | null>(null);
 
   useEffect(() => {
     const currentToken = getToken();
@@ -539,7 +540,7 @@ export default function ProfilePage() {
                         <img src={photo.photoUrl} alt={photo.description || "Foto de portafolio"} className="h-28 w-full object-cover" />
                         <button
                           type="button"
-                          onClick={() => onDeletePortfolio(photo.id)}
+                          onClick={() => setConfirmDeletePhotoId(photo.id)}
                           disabled={portfolioDeletingId === photo.id}
                           className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-rose-300/50 bg-rose-500/70 text-xs font-bold text-white transition hover:bg-rose-500"
                         >
@@ -560,6 +561,37 @@ export default function ProfilePage() {
           </>
         )}
       </section>
+
+      {confirmDeletePhotoId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#30425a] bg-[#0A0F1A] p-5">
+            <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Eliminar foto</h2>
+            <p className="mt-2 text-sm text-brand-muted">
+              Esta accion no se puede deshacer. La foto se eliminara de tu portafolio.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeletePhotoId(null)}
+                className="premium-btn-secondary px-4 py-2 text-sm"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await onDeletePortfolio(confirmDeletePhotoId);
+                  setConfirmDeletePhotoId(null);
+                }}
+                disabled={portfolioDeletingId === confirmDeletePhotoId}
+                className="rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25 disabled:opacity-60"
+              >
+                {portfolioDeletingId === confirmDeletePhotoId ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         @keyframes portfolio-fade-in {
