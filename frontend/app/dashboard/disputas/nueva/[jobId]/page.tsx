@@ -211,7 +211,7 @@ export default function NuevaDisputaPage() {
           <button
             type="submit"
             disabled={saving || !canOpenDispute}
-            className={`rounded-xl bg-[#00C9A7] px-5 py-3 font-semibold text-[#052b22] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2] disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`rounded-xl bg-[#e94560] px-5 py-3 font-semibold text-[#052b22] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2] disabled:cursor-not-allowed disabled:opacity-60 ${
               shake ? "animate-dispute-shake" : ""
             }`}
           >
@@ -222,3 +222,4 @@ export default function NuevaDisputaPage() {
     </main>
   );
 }
+

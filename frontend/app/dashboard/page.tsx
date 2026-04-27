@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -23,6 +23,7 @@ type ProfessionalQuote = {
 
 type JobItem = {
   id: string;
+  status: "PENDIENTE" | "EN_PROGRESO" | "COMPLETADO" | "CANCELADO";
   paymentStatus: "PENDIENTE" | "RETENIDO" | "LIBERADO" | "REEMBOLSADO";
 };
 
@@ -41,13 +42,10 @@ type PaymentHistoryResponse = {
 
 type PaginatedClientRequests = {
   data: ClientRequest[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 };
 
 type ProfileMeResponse = {
+  id: string;
   name: string;
   role: UserRole;
 };
@@ -58,70 +56,43 @@ type UnreadCountResponse = {
 
 type OnboardingStatusResponse = {
   onboardingCompleted: boolean;
+  progress: {
+    completed: number;
+    total: number;
+    percentage: number;
+  };
+};
+
+type ProfessionalStatsResponse = {
+  professionalProfile: {
+    avgRating: number | string;
+  };
 };
 
 function formatCop(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(Math.round(value))} COP`;
 }
 
-function CardIcon({
-  variant,
-}: {
-  variant: "plus" | "list" | "profile" | "briefcase" | "payments" | "history" | "notifications";
-}) {
-  if (variant === "plus") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 5v14M5 12h14" />
-      </svg>
-    );
+function TileIcon({ name }: { name: "new" | "list" | "briefcase" | "money" | "history" | "notif" | "profile" }) {
+  if (name === "new") {
+    return <span className="text-lg">➕</span>;
   }
-
-  if (variant === "list") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M9 6h10M9 12h10M9 18h10M4 6h.01M4 12h.01M4 18h.01" />
-      </svg>
-    );
+  if (name === "list") {
+    return <span className="text-lg">📋</span>;
   }
-
-  if (variant === "briefcase") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M3 8h18v11H3zM9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-      </svg>
-    );
+  if (name === "briefcase") {
+    return <span className="text-lg">🧰</span>;
   }
-
-  if (variant === "payments") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M3 7h18v10H3zM3 11h18M7 15h3" />
-      </svg>
-    );
+  if (name === "money") {
+    return <span className="text-lg">💳</span>;
   }
-
-  if (variant === "history") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 8v5l3 2M21 12a9 9 0 1 1-2.64-6.36" />
-      </svg>
-    );
+  if (name === "history") {
+    return <span className="text-lg">🧾</span>;
   }
-
-  if (variant === "notifications") {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0" />
-      </svg>
-    );
+  if (name === "notif") {
+    return <span className="text-lg">🔔</span>;
   }
-
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-      <path d="M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-    </svg>
-  );
+  return <span className="text-lg">👤</span>;
 }
 
 export default function DashboardPage() {
@@ -136,7 +107,9 @@ export default function DashboardPage() {
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
   const [monthTotal, setMonthTotal] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
+  const [onboarding, setOnboarding] = useState<OnboardingStatusResponse | null>(null);
+  const [completedJobs, setCompletedJobs] = useState(0);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
 
   useEffect(() => {
     async function loadDashboard() {
@@ -163,10 +136,7 @@ export default function DashboardPage() {
         }
 
         const [jobs, currentMonthHistory, unread] = await Promise.all([
-          apiRequest<JobItem[]>("/jobs", {
-            method: "GET",
-            token,
-          }),
+          apiRequest<JobItem[]>("/jobs", { method: "GET", token }),
           (() => {
             const monthStart = new Date();
             monthStart.setDate(1);
@@ -178,13 +148,11 @@ export default function DashboardPage() {
               token,
             });
           })(),
-          apiRequest<UnreadCountResponse>("/notifications/unread-count", {
-            method: "GET",
-            token,
-          }),
+          apiRequest<UnreadCountResponse>("/notifications/unread-count", { method: "GET", token }),
         ]);
 
         setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
+        setCompletedJobs(jobs.filter((job) => job.status === "COMPLETADO").length);
         setMonthTotal(currentMonthHistory.totals.totalPagado);
         setUnreadNotifications(unread.unread);
 
@@ -194,26 +162,20 @@ export default function DashboardPage() {
             token,
           });
           setActiveRequestsCount(requests.data.filter((request) => request.status === "ACTIVA").length);
+          setAvgRating(null);
         }
 
         if (profile.role === "PROFESIONAL") {
-          const [availableRequests, myQuotes, onboardingStatus] = await Promise.all([
-            apiRequest<AvailableRequest[]>("/requests/available", {
-              method: "GET",
-              token,
-            }),
-            apiRequest<ProfessionalQuote[]>("/requests/my-quotes", {
-              method: "GET",
-              token,
-            }),
-            apiRequest<OnboardingStatusResponse>("/onboarding/status", {
-              method: "GET",
-              token,
-            }),
+          const [availableRequests, myQuotes, onboardingStatus, professionalPublic] = await Promise.all([
+            apiRequest<AvailableRequest[]>("/requests/available", { method: "GET", token }),
+            apiRequest<ProfessionalQuote[]>("/requests/my-quotes", { method: "GET", token }),
+            apiRequest<OnboardingStatusResponse>("/onboarding/status", { method: "GET", token }),
+            apiRequest<ProfessionalStatsResponse>(`/profile/professional/${profile.id}`, { method: "GET", token }),
           ]);
           setAvailableRequestsCount(availableRequests.length);
           setPendingQuotesCount(myQuotes.filter((quote) => quote.status === "PENDIENTE").length);
-          setOnboardingCompleted(onboardingStatus.onboardingCompleted);
+          setOnboarding(onboardingStatus);
+          setAvgRating(Number(professionalPublic.professionalProfile?.avgRating || 0));
         }
       } catch (err) {
         clearSession();
@@ -227,48 +189,66 @@ export default function DashboardPage() {
     void loadDashboard();
   }, [router]);
 
+  const stats = useMemo(
+    () => [
+      {
+        title: role === "PROFESIONAL" ? "Solicitudes activas" : "Solicitudes activas",
+        value: role === "PROFESIONAL" ? availableRequestsCount : activeRequestsCount,
+      },
+      {
+        title: "Trabajos completados",
+        value: completedJobs,
+      },
+      {
+        title: "Calificación promedio",
+        value: avgRating === null ? "Sin calificar" : avgRating.toFixed(1),
+      },
+    ],
+    [activeRequestsCount, availableRequestsCount, avgRating, completedJobs, role],
+  );
+
   const clientCards = useMemo(
     () => [
       {
-        icon: <CardIcon variant="plus" />,
+        icon: <TileIcon name="new" />,
         title: "Nueva solicitud",
-        description: "Crea una nueva solicitud y recibe cotizaciones.",
+        description: "Publica un servicio y recibe cotizaciones verificadas.",
         countLabel: `${activeRequestsCount} activas`,
         href: "/dashboard/nueva-solicitud",
       },
       {
-        icon: <CardIcon variant="list" />,
+        icon: <TileIcon name="list" />,
         title: "Mis solicitudes",
-        description: "Consulta estados, presupuestos y avances.",
+        description: "Consulta estado, presupuestos y avance de cada servicio.",
         countLabel: `${activeRequestsCount} activas`,
         href: "/dashboard/mis-solicitudes",
       },
       {
-        icon: <CardIcon variant="payments" />,
+        icon: <TileIcon name="money" />,
         title: "Mis pagos",
-        description: "Revisa estado de escrow y pagos liberados.",
+        description: "Monitorea pagos pendientes y liberaciones en escrow.",
         countLabel: `${pendingPaymentsCount} pendientes`,
         href: "/dashboard/mis-jobs",
       },
       {
-        icon: <CardIcon variant="history" />,
+        icon: <TileIcon name="history" />,
         title: "Mi historial",
-        description: "Consulta pagos, comisiones y resumen mensual.",
+        description: "Revisa movimientos y totales del mes actual.",
         countLabel: formatCop(monthTotal),
         href: "/dashboard/historial",
       },
       {
-        icon: <CardIcon variant="profile" />,
+        icon: <TileIcon name="profile" />,
         title: "Mi perfil",
-        description: "Actualiza tus datos personales y direcciones.",
-        countLabel: "Editar perfil",
+        description: "Actualiza tus datos y preferencias de cuenta.",
+        countLabel: "Editar",
         href: "/dashboard/profile",
       },
       {
-        icon: <CardIcon variant="notifications" />,
+        icon: <TileIcon name="notif" />,
         title: "Notificaciones",
-        description: "Revisa tus alertas internas en tiempo real.",
-        countLabel: unreadNotifications > 0 ? `${unreadNotifications} no leidas` : "Sin pendientes",
+        description: "Mantente al día con alertas importantes.",
+        countLabel: unreadNotifications > 0 ? `${unreadNotifications} nuevas` : "Sin pendientes",
         href: "/dashboard/notificaciones",
       },
     ],
@@ -278,45 +258,45 @@ export default function DashboardPage() {
   const professionalCards = useMemo(
     () => [
       {
-        icon: <CardIcon variant="briefcase" />,
+        icon: <TileIcon name="briefcase" />,
         title: "Solicitudes disponibles",
-        description: "Revisa nuevos trabajos y envia tu cotizacion.",
+        description: "Explora trabajos activos y envía tu propuesta.",
         countLabel: `${availableRequestsCount} nuevas`,
         href: "/dashboard/solicitudes-disponibles",
       },
       {
-        icon: <CardIcon variant="list" />,
+        icon: <TileIcon name="list" />,
         title: "Mis cotizaciones",
-        description: "Gestiona tus propuestas enviadas.",
+        description: "Gestiona tus propuestas enviadas a clientes.",
         countLabel: `${pendingQuotesCount} pendientes`,
         href: "/dashboard/mis-cotizaciones",
       },
       {
-        icon: <CardIcon variant="payments" />,
+        icon: <TileIcon name="money" />,
         title: "Mis pagos",
-        description: "Consulta los jobs y pagos en escrow.",
+        description: "Revisa jobs y estados de pago en escrow.",
         countLabel: `${pendingPaymentsCount} pendientes`,
         href: "/dashboard/mis-jobs",
       },
       {
-        icon: <CardIcon variant="history" />,
+        icon: <TileIcon name="history" />,
         title: "Mi historial",
-        description: "Analiza ingresos, comisiones y movimientos.",
+        description: "Controla ingresos, comisiones y movimiento mensual.",
         countLabel: formatCop(monthTotal),
         href: "/dashboard/historial",
       },
       {
-        icon: <CardIcon variant="profile" />,
+        icon: <TileIcon name="profile" />,
         title: "Mi perfil",
-        description: "Ajusta bio, especialidades y tarifa.",
-        countLabel: "Editar perfil",
+        description: "Actualiza bio, especialidades y portafolio.",
+        countLabel: "Editar",
         href: "/dashboard/profile",
       },
       {
-        icon: <CardIcon variant="notifications" />,
+        icon: <TileIcon name="notif" />,
         title: "Notificaciones",
-        description: "Revisa tus alertas internas en tiempo real.",
-        countLabel: unreadNotifications > 0 ? `${unreadNotifications} no leidas` : "Sin pendientes",
+        description: "Sigue tus alertas en tiempo real.",
+        countLabel: unreadNotifications > 0 ? `${unreadNotifications} nuevas` : "Sin pendientes",
         href: "/dashboard/notificaciones",
       },
     ],
@@ -338,12 +318,18 @@ export default function DashboardPage() {
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
       <DashboardHeader userName={name} onLogout={onLogout} />
 
-      {role === "PROFESIONAL" && !onboardingCompleted && (
+      {role === "PROFESIONAL" && onboarding && !onboarding.onboardingCompleted && (
         <section className="mb-5 rounded-2xl border border-amber-400/35 bg-amber-400/12 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-medium text-amber-200">
-              Completa tu perfil para empezar a recibir solicitudes.
-            </p>
+            <div>
+              <p className="text-sm font-medium text-amber-200">Completa tu perfil para empezar a recibir solicitudes.</p>
+              <div className="mt-2 h-2 w-[260px] max-w-full overflow-hidden rounded-full bg-amber-100/20">
+                <div
+                  className="h-full rounded-full bg-amber-300 transition-all duration-700"
+                  style={{ width: `${onboarding.progress.percentage}%` }}
+                />
+              </div>
+            </div>
             <Link href="/dashboard/onboarding" className="rounded-lg bg-amber-300 px-3 py-2 text-xs font-semibold text-[#2f2200]">
               Ir a onboarding
             </Link>
@@ -353,21 +339,32 @@ export default function DashboardPage() {
 
       <section className="premium-panel p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel principal</h1>
-        <p className="mt-2 text-brand-muted">Accede rapidamente a los modulos clave de tu cuenta.</p>
+        <p className="mt-2 text-brand-muted">Resumen rápido de tu actividad y accesos principales.</p>
 
         {error && <p className="premium-error mt-4">{error}</p>}
 
-        <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          {stats.map((stat) => (
+            <article key={stat.title} className="rounded-2xl border border-[var(--border)] bg-[#0d1928] p-4">
+              <p className="text-xs uppercase tracking-wide text-[#9bb0ce]">{stat.title}</p>
+              <p className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{stat.value}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-7 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {cards.map((card) => (
             <Link
               key={card.title}
               href={card.href}
-              className="premium-panel p-5 transition duration-200 hover:-translate-y-0.5 hover:border-white/20"
+              className="premium-panel premium-hover-card p-5"
             >
-              <div className="mb-3 text-brand-accent">{card.icon}</div>
+              <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 text-[#8effea]">
+                {card.icon}
+              </div>
               <p className="font-[var(--font-heading)] text-xl font-bold text-white">{card.title}</p>
               <p className="mt-2 text-sm text-brand-muted">{card.description}</p>
-              <p className="mt-3 text-sm font-medium text-brand-accent">{card.countLabel}</p>
+              <p className="mt-3 text-sm font-semibold text-[var(--brand-accent)]">{card.countLabel}</p>
             </Link>
           ))}
         </div>
@@ -375,3 +372,4 @@ export default function DashboardPage() {
     </main>
   );
 }
+

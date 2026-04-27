@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -234,7 +234,7 @@ export default function HistorialPage() {
           <button
             type="button"
             onClick={exportCsv}
-            className="rounded-xl bg-[#00C9A7] px-4 py-2 text-sm font-semibold text-[#06281f] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2]"
+            className="rounded-xl bg-[#e94560] px-4 py-2 text-sm font-semibold text-[#06281f] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2]"
           >
             Exportar CSV
           </button>
@@ -245,18 +245,18 @@ export default function HistorialPage() {
             type="date"
             value={filters.fechaInicio}
             onChange={(event) => setFilters((current) => ({ ...current, fechaInicio: event.target.value }))}
-            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none focus:border-[#00C9A7]"
+            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none focus:border-[#e94560]"
           />
           <input
             type="date"
             value={filters.fechaFin}
             onChange={(event) => setFilters((current) => ({ ...current, fechaFin: event.target.value }))}
-            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none focus:border-[#00C9A7]"
+            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none focus:border-[#e94560]"
           />
           <select
             value={filters.status}
             onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}
-            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none focus:border-[#00C9A7]"
+            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none focus:border-[#e94560]"
           >
             <option value="">Todos los estados</option>
             <option value="PENDIENTE">PENDIENTE</option>
@@ -269,14 +269,14 @@ export default function HistorialPage() {
             placeholder="Monto minimo"
             value={filters.montoMinimo}
             onChange={(event) => setFilters((current) => ({ ...current, montoMinimo: event.target.value }))}
-            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none placeholder:text-[#94a3b8] focus:border-[#00C9A7]"
+            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none placeholder:text-[#94a3b8] focus:border-[#e94560]"
           />
           <input
             type="number"
             placeholder="Monto maximo"
             value={filters.montoMaximo}
             onChange={(event) => setFilters((current) => ({ ...current, montoMaximo: event.target.value }))}
-            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none placeholder:text-[#94a3b8] focus:border-[#00C9A7]"
+            className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none placeholder:text-[#94a3b8] focus:border-[#e94560]"
           />
         </div>
 
@@ -284,7 +284,7 @@ export default function HistorialPage() {
           <button
             type="button"
             onClick={onApplyFilters}
-            className="rounded-xl border border-[#00C9A7]/40 bg-[#00C9A7]/10 px-4 py-2 text-sm font-semibold text-[#7ff8e1] transition hover:-translate-y-0.5 hover:bg-[#00C9A7]/20"
+            className="rounded-xl border border-[#e94560]/40 bg-[#e94560]/10 px-4 py-2 text-sm font-semibold text-[#7ff8e1] transition hover:-translate-y-0.5 hover:bg-[#e94560]/20"
           >
             Aplicar filtros
           </button>
@@ -364,3 +364,4 @@ export default function HistorialPage() {
     </main>
   );
 }
+

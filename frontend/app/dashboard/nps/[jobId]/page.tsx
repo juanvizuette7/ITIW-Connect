@@ -106,8 +106,8 @@ export default function NpsPage() {
                 onClick={() => setScore(value)}
                 className={`rounded-xl border px-0 py-3 text-sm font-bold transition ${
                   score === value
-                    ? "border-[#00C9A7] bg-[#00C9A7]/20 text-[#8dfde8]"
-                    : "border-white/15 bg-white/[0.03] text-[#d5dded] hover:-translate-y-0.5 hover:border-[#00C9A7]/40"
+                    ? "border-[#e94560] bg-[#e94560]/20 text-[#8dfde8]"
+                    : "border-white/15 bg-white/[0.03] text-[#d5dded] hover:-translate-y-0.5 hover:border-[#e94560]/40"
                 }`}
               >
                 {value}
@@ -128,7 +128,7 @@ export default function NpsPage() {
             <p className="mt-1 text-right text-xs text-brand-muted">{comment.length}/300</p>
           </div>
 
-          <button disabled={saving} className="rounded-xl bg-[#00C9A7] px-5 py-3 font-semibold text-[#04271f] transition hover:-translate-y-0.5 hover:bg-[#36e4c6] disabled:cursor-not-allowed disabled:opacity-60">
+          <button disabled={saving} className="rounded-xl bg-[#e94560] px-5 py-3 font-semibold text-[#04271f] transition hover:-translate-y-0.5 hover:bg-[#36e4c6] disabled:cursor-not-allowed disabled:opacity-60">
             {saving ? "Enviando..." : "Enviar"}
           </button>
         </form>
@@ -136,3 +136,4 @@ export default function NpsPage() {
     </main>
   );
 }
+

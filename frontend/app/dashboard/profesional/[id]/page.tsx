@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -77,22 +77,16 @@ function toNumber(value: string | number): number {
   return typeof value === "number" ? value : Number(value);
 }
 
+function stars(value: number) {
+  const amount = Math.max(0, Math.min(5, Math.round(value)));
+  return amount > 0 ? "★".repeat(amount) : "Sin calificaciones";
+}
+
 function badgeClass(type: string) {
   if (type === "VERIFICADO") return "border-emerald-400/40 bg-emerald-400/15 text-emerald-200";
-  if (type === "TOP_RATED") return "border-[#00C9A7]/40 bg-[#00C9A7]/15 text-[#74fbe4]";
+  if (type === "TOP_RATED") return "border-[var(--brand-accent)]/40 bg-[var(--brand-accent)]/15 text-[#7cfce6]";
   if (type === "EXPERTO") return "border-amber-300/40 bg-amber-300/15 text-amber-200";
   return "border-sky-400/40 bg-sky-400/15 text-sky-200";
-}
-
-function badgeIconLabel(type: string) {
-  if (type === "VERIFICADO") return "V";
-  if (type === "TOP_RATED") return "T";
-  if (type === "EXPERTO") return "E";
-  return "N";
-}
-
-function stars(value: number) {
-  return "\u2605".repeat(Math.max(0, Math.min(5, Math.round(value))));
 }
 
 function safeSubcategoryRatings(value: ReviewItem["subcategoryRatings"]) {
@@ -107,6 +101,7 @@ function safeSubcategoryRatings(value: ReviewItem["subcategoryRatings"]) {
 export default function ProfessionalPublicPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<"sobre" | "portafolio" | "resenas">("sobre");
   const [userName, setUserName] = useState("");
   const [profile, setProfile] = useState<ProfessionalPublicProfile | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
@@ -128,7 +123,7 @@ export default function ProfessionalPublicPage() {
         const [me, professionalData, reviewsData, portfolioData] = await Promise.all([
           apiRequest<ProfileMeResponse>("/profile/me", { method: "GET", token }),
           apiRequest<ProfessionalPublicProfile>(`/profile/professional/${params.id}`, { method: "GET", token }),
-          apiRequest<PaginatedReviewsResponse>(`/reviews/professional/${params.id}?page=1&limit=12`, {
+          apiRequest<PaginatedReviewsResponse>(`/reviews/professional/${params.id}?page=1&limit=8`, {
             method: "GET",
             token,
           }),
@@ -158,6 +153,10 @@ export default function ProfessionalPublicPage() {
 
   const average = useMemo(() => (profile ? toNumber(profile.professionalProfile.avgRating) : 0), [profile]);
   const fee = useMemo(() => (profile ? toNumber(profile.professionalProfile.hourlyRate) : 0), [profile]);
+  const yearsExp = useMemo(() => {
+    if (!profile) return 0;
+    return Math.max(1, Math.floor(profile.professionalProfile.totalJobs / 15));
+  }, [profile]);
 
   if (loading) {
     return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando perfil profesional...</main>;
@@ -175,231 +174,225 @@ export default function ProfessionalPublicPage() {
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
       <DashboardHeader userName={userName} onLogout={onLogout} />
 
-      <section className="rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
-        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+      <section className="premium-panel p-6 md:p-8">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 text-2xl font-extrabold text-[#89ffe9]">
+            {profile.professionalProfile.name.slice(0, 2).toUpperCase()}
+          </div>
           <div>
-            <div className="flex items-center gap-3">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#334155] bg-[#0A0F1A] text-xl font-bold text-white">
-                {profile.professionalProfile.name.slice(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">
-                  {profile.professionalProfile.name}
-                </h1>
-                {profile.isIdentityVerified && (
-                  <span className="mt-1 inline-flex rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2 py-0.5 text-xs text-emerald-200">
-                    VERIFICADO
-                  </span>
+            <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">{profile.professionalProfile.name}</h1>
+            {(profile.isIdentityVerified || profile.professionalProfile.verifiedBadge) && (
+              <span className="mt-2 inline-flex rounded-full border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
+                Verificado
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <article className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
+            <p className="text-xs uppercase tracking-wide text-[#9cb0cd]">Calificación promedio</p>
+            <p className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{average.toFixed(1)}</p>
+            <p className="text-sm text-[#f5cf7a]">{stars(average)}</p>
+          </article>
+          <article className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
+            <p className="text-xs uppercase tracking-wide text-[#9cb0cd]">Trabajos completados</p>
+            <p className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{profile.professionalProfile.totalJobs}</p>
+          </article>
+          <article className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
+            <p className="text-xs uppercase tracking-wide text-[#9cb0cd]">Años de experiencia</p>
+            <p className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{yearsExp}</p>
+            <p className="text-xs text-[#8ea3bf]">Estimado por historial</p>
+          </article>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {profile.professionalProfile.badges.map((badge) => (
+            <span
+              key={badge}
+              className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${badgeClass(badge)}`}
+              title={badge}
+            >
+              {badge}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-6 inline-flex rounded-xl border border-white/10 bg-white/[0.03] p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("sobre")}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              activeTab === "sobre" ? "bg-[var(--brand-accent)] text-[#032920]" : "text-[#c8d6eb] hover:bg-white/5"
+            }`}
+          >
+            Sobre mí
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("portafolio")}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              activeTab === "portafolio" ? "bg-[var(--brand-accent)] text-[#032920]" : "text-[#c8d6eb] hover:bg-white/5"
+            }`}
+          >
+            Portafolio
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("resenas")}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              activeTab === "resenas" ? "bg-[var(--brand-accent)] text-[#032920]" : "text-[#c8d6eb] hover:bg-white/5"
+            }`}
+          >
+            Reseñas
+          </button>
+        </div>
+
+        {activeTab === "sobre" && (
+          <div className="mt-5 space-y-4">
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-sm text-[#d6e1f4]">{profile.professionalProfile.bio || "Este profesional aún no agregó una biografía."}</p>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-semibold text-white">Especialidades</p>
+              <div className="flex flex-wrap gap-2">
+                {profile.professionalProfile.specialties.length === 0 ? (
+                  <span className="text-sm text-brand-muted">Aún no registra especialidades.</span>
+                ) : (
+                  profile.professionalProfile.specialties.map((specialty) => (
+                    <span key={specialty} className="rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-1 text-xs text-[#84ffe8]">
+                      {specialty}
+                    </span>
+                  ))
                 )}
               </div>
             </div>
 
-            <p className="mt-4 max-w-3xl text-sm text-[#9ca3af]">
-              {profile.professionalProfile.bio || "Profesional registrado en ITIW Connect."}
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {profile.professionalProfile.badges.map((badge) => (
-                <span
-                  key={badge}
-                  title={
-                    badge === "VERIFICADO"
-                      ? "Identidad validada por ITIW Connect."
-                      : badge === "TOP_RATED"
-                      ? "Mantiene calificaciones sobresalientes."
-                      : badge === "EXPERTO"
-                      ? "Alto volumen de trabajos completados."
-                      : "Profesional nuevo con primeras entregas."
-                  }
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold shadow-[0_0_18px_rgba(0,201,167,0.16)] ${badgeClass(badge)}`}
-                >
-                  <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-black/20 text-[10px] font-bold">
-                    {badgeIconLabel(badge)}
-                  </span>
-                  {badge}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-3 text-sm text-[#cbd5e1]">
-              <span className="rounded-lg border border-[#334155] bg-[#0A0F1A] px-3 py-1">
-                Tarifa: {formatCop(fee)}
-              </span>
-              <span className="rounded-lg border border-[#334155] bg-[#0A0F1A] px-3 py-1">
-                Cobertura: {profile.professionalProfile.coverageRadiusKm} km
-              </span>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-wide text-[#8ea3bf]">Tarifa por hora</p>
+                <p className="mt-1 font-semibold text-white">{formatCop(fee)}</p>
+              </article>
+              <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <p className="text-xs uppercase tracking-wide text-[#8ea3bf]">Zona de cobertura</p>
+                <p className="mt-1 font-semibold text-white">{profile.professionalProfile.coverageRadiusKm} km</p>
+              </article>
             </div>
           </div>
+        )}
 
-          <div className="rounded-2xl border border-[#263245] bg-[#0A0F1A] px-5 py-4 text-center md:min-w-[220px]">
-            <p className="font-[var(--font-heading)] text-5xl font-extrabold text-white">{average.toFixed(1)}</p>
-            <p className="mt-1 text-[#f0c15d]">{stars(average)}</p>
-            <p className="mt-2 text-xs text-[#94a3b8]">
-              {profile.professionalProfile.reviewCount} resenas - {profile.professionalProfile.totalJobs} trabajos
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <p className="text-sm font-semibold text-[#cbd5e1]">Especialidades</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {profile.professionalProfile.specialties.length === 0 ? (
-              <span className="text-sm text-[#94a3b8]">Aun no registra especialidades.</span>
+        {activeTab === "portafolio" && (
+          <div className="mt-5">
+            {portfolioPhotos.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm text-brand-muted">
+                Este profesional aún no tiene fotos en su portafolio.
+              </div>
             ) : (
-              profile.professionalProfile.specialties.map((specialty) => (
-                <span
-                  key={specialty}
-                  className="rounded-full border border-[#334155] bg-[#0A0F1A] px-3 py-1 text-xs text-[#dbe6ff]"
-                >
-                  {specialty}
-                </span>
-              ))
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {portfolioPhotos.map((photo) => (
+                  <article key={photo.id} className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+                    <img src={photo.photoUrl} alt={photo.description || "Foto de portafolio"} className="h-48 w-full object-cover" />
+                    {photo.description && <p className="px-3 py-2 text-xs text-[#d6e1f4]">{photo.description}</p>}
+                  </article>
+                ))}
+              </div>
             )}
           </div>
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
-        <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Portafolio</h2>
-        <p className="mt-2 text-sm text-[#94a3b8]">Trabajos recientes del profesional.</p>
-
-        {portfolioPhotos.length === 0 ? (
-          <p className="mt-4 text-sm text-[#94a3b8]">Aun no hay fotos publicas en este portafolio.</p>
-        ) : (
-          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
-            {portfolioPhotos.map((photo, index) => (
-              <article
-                key={photo.id}
-                className="overflow-hidden rounded-xl border border-[#283549] bg-[#0A0F1A] opacity-0"
-                style={{
-                  animation: "portfolio-public-fade-in 380ms ease forwards",
-                  animationDelay: `${index * 70}ms`,
-                }}
-              >
-                <img src={photo.photoUrl} alt={photo.description || "Foto de portafolio"} className="h-40 w-full object-cover" />
-                {photo.description && <p className="px-2 py-2 text-xs text-[#d5dded]">{photo.description}</p>}
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="mt-6 rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
-        <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Resenas publicas</h2>
-        <p className="mt-2 text-sm text-[#94a3b8]">Ordenadas de la mas reciente a la mas antigua.</p>
-
-        {error && (
-          <p className="mt-4 rounded-xl border border-[#e94560]/30 bg-[#e94560]/15 px-3 py-2 text-sm text-[#ff9bac]">
-            {error}
-          </p>
         )}
 
-        {reviews.length === 0 ? (
-          <p className="mt-4 text-sm text-[#94a3b8]">Este profesional aun no tiene resenas publicas.</p>
-        ) : (
+        {activeTab === "resenas" && (
           <div className="mt-5 space-y-3">
-            {reviews.map((review, index) => {
-              const subcategories = safeSubcategoryRatings(review.subcategoryRatings);
+            {reviews.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm text-brand-muted">
+                Este profesional aún no tiene reseñas públicas.
+              </div>
+            ) : (
+              reviews.map((review, index) => {
+                const subcategories = safeSubcategoryRatings(review.subcategoryRatings);
+                return (
+                  <article
+                    key={review.id}
+                    className="rounded-xl border border-white/10 bg-white/[0.03] p-4 opacity-0"
+                    style={{
+                      animation: "review-stagger 360ms ease forwards",
+                      animationDelay: `${index * 75}ms`,
+                    }}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-xs font-bold text-white">
+                          {review.reviewer.name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <p className="text-sm font-semibold text-white">{review.reviewer.name}</p>
+                      </div>
+                      <p className="text-xs text-[#8ea3bf]">{new Date(review.createdAt).toLocaleDateString("es-CO")}</p>
+                    </div>
+                    <p className="mt-2 text-sm text-[#f7d07c]">{stars(review.rating)}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Puntualidad {subcategories.puntualidad}/5</span>
+                      <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Calidad {subcategories.calidad}/5</span>
+                      <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Comunicación {subcategories.comunicacion}/5</span>
+                      <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Limpieza {subcategories.limpieza}/5</span>
+                    </div>
+                    <p className="mt-3 text-sm text-[#c8d6eb]">{review.comment}</p>
+                  </article>
+                );
+              })
+            )}
 
-              return (
-                <article
-                  key={review.id}
-                  className="rounded-xl border border-[#283549] bg-[#0A0F1A] p-4 opacity-0"
-                  style={{
-                    animation: "review-fade-in 420ms ease forwards",
-                    animationDelay: `${index * 85}ms`,
+            {reviewsTotalPages > 1 && (
+              <div className="mt-6 flex items-center justify-end gap-2 text-sm">
+                <button
+                  type="button"
+                  disabled={reviewsPage <= 1}
+                  onClick={async () => {
+                    const token = getToken();
+                    if (!token) return;
+                    const response = await apiRequest<PaginatedReviewsResponse>(
+                      `/reviews/professional/${params.id}?page=${reviewsPage - 1}&limit=8`,
+                      { method: "GET", token },
+                    );
+                    setReviews(response.data);
+                    setReviewsPage(response.page);
+                    setReviewsTotalPages(response.totalPages);
                   }}
+                  className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white">{review.reviewer.name}</p>
-                    <p className="text-xs text-[#8ea0b9]">{new Date(review.createdAt).toLocaleDateString("es-CO")}</p>
-                  </div>
-                  <p className="mt-1 text-sm text-[#f0c15d]">
-                    {stars(review.rating)} - {review.rating.toFixed(1)}
-                  </p>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-[#334155] bg-[#111827] px-2 py-0.5 text-[11px] text-[#d7e7ff]">
-                      Puntualidad {subcategories.puntualidad}/5
-                    </span>
-                    <span className="rounded-full border border-[#334155] bg-[#111827] px-2 py-0.5 text-[11px] text-[#d7e7ff]">
-                      Calidad {subcategories.calidad}/5
-                    </span>
-                    <span className="rounded-full border border-[#334155] bg-[#111827] px-2 py-0.5 text-[11px] text-[#d7e7ff]">
-                      Comunicacion {subcategories.comunicacion}/5
-                    </span>
-                    <span className="rounded-full border border-[#334155] bg-[#111827] px-2 py-0.5 text-[11px] text-[#d7e7ff]">
-                      Limpieza {subcategories.limpieza}/5
-                    </span>
-                  </div>
-
-                  <p className="mt-3 text-sm text-[#cbd5e1]">{review.comment}</p>
-                </article>
-              );
-            })}
-          </div>
-        )}
-
-        {reviewsTotalPages > 1 && (
-          <div className="mt-6 flex items-center justify-end gap-2 text-sm">
-            <button
-              type="button"
-              disabled={reviewsPage <= 1}
-              onClick={async () => {
-                const token = getToken();
-                if (!token) return;
-                const response = await apiRequest<PaginatedReviewsResponse>(
-                  `/reviews/professional/${params.id}?page=${reviewsPage - 1}&limit=12`,
-                  { method: "GET", token },
-                );
-                setReviews(response.data);
-                setReviewsPage(response.page);
-                setReviewsTotalPages(response.totalPages);
-              }}
-              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Anterior
-            </button>
-            <span className="text-brand-muted">
-              Pagina {reviewsPage} de {reviewsTotalPages}
-            </span>
-            <button
-              type="button"
-              disabled={reviewsPage >= reviewsTotalPages}
-              onClick={async () => {
-                const token = getToken();
-                if (!token) return;
-                const response = await apiRequest<PaginatedReviewsResponse>(
-                  `/reviews/professional/${params.id}?page=${reviewsPage + 1}&limit=12`,
-                  { method: "GET", token },
-                );
-                setReviews(response.data);
-                setReviewsPage(response.page);
-                setReviewsTotalPages(response.totalPages);
-              }}
-              className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Siguiente
-            </button>
+                  Anterior
+                </button>
+                <span className="text-brand-muted">
+                  Página {reviewsPage} de {reviewsTotalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={reviewsPage >= reviewsTotalPages}
+                  onClick={async () => {
+                    const token = getToken();
+                    if (!token) return;
+                    const response = await apiRequest<PaginatedReviewsResponse>(
+                      `/reviews/professional/${params.id}?page=${reviewsPage + 1}&limit=8`,
+                      { method: "GET", token },
+                    );
+                    setReviews(response.data);
+                    setReviewsPage(response.page);
+                    setReviewsTotalPages(response.totalPages);
+                  }}
+                  className="premium-btn-secondary px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>
 
       <style jsx global>{`
-        @keyframes review-fade-in {
+        @keyframes review-stagger {
           from {
             opacity: 0;
             transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes portfolio-public-fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
           }
           to {
             opacity: 1;
@@ -410,3 +403,4 @@ export default function ProfessionalPublicPage() {
     </main>
   );
 }
+

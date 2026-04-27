@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Syne } from "next/font/google";
 import "./globals.css";
 import { RouteTransition } from "@/components/RouteTransition";
+import { ToastHost } from "@/components/ToastHost";
 
 const bodyFont = DM_Sans({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${bodyFont.variable} ${headingFont.variable} font-[var(--font-body)]`}>
         <RouteTransition>{children}</RouteTransition>
+        <ToastHost />
       </body>
     </html>
   );

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
@@ -60,8 +60,8 @@ export default function RegisterPage() {
         "Pagos protegidos y comunicacion centralizada.",
       ]}
     >
-      <div className="inline-flex items-center gap-2 rounded-full border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-3 py-1 text-xs font-semibold text-[#9bfde9]">
-        Registro rápido
+      <div className="inline-flex items-center gap-2 rounded-full border border-[#e94560]/35 bg-[#e94560]/12 px-3 py-1 text-xs font-semibold text-[#9bfde9]">
+        Registro rÃ¡pido
       </div>
 
       <h1 className="mt-4 font-[var(--font-heading)] text-4xl font-extrabold leading-none text-white md:text-[2.8rem]">
@@ -83,7 +83,7 @@ export default function RegisterPage() {
           }`}
         >
           <span className="inline-flex items-center gap-1.5">
-            <span>👤</span>
+            <span>ðŸ‘¤</span>
             <span>Soy cliente</span>
           </span>
         </button>
@@ -97,7 +97,7 @@ export default function RegisterPage() {
           }`}
         >
           <span className="inline-flex items-center gap-1.5">
-            <span>🛠️</span>
+            <span>ðŸ› ï¸</span>
             <span>Soy profesional</span>
           </span>
         </button>
@@ -179,3 +179,4 @@ export default function RegisterPage() {
     </AuthSplitLayout>
   );
 }
+

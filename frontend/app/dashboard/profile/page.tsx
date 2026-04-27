@@ -487,9 +487,9 @@ export default function ProfilePage() {
                     <p className="text-sm text-[#d5dded]">Agregar foto</p>
                     <label
                       htmlFor="portfolio-file-input"
-                      className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#00C9A7]/45 bg-[#00C9A7]/8 px-4 py-5 text-sm font-semibold text-[#8dfce8] transition hover:-translate-y-0.5 hover:bg-[#00C9A7]/15"
+                      className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#e94560]/45 bg-[#e94560]/8 px-4 py-5 text-sm font-semibold text-[#8dfce8] transition hover:-translate-y-0.5 hover:bg-[#e94560]/15"
                     >
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#00C9A7] text-lg leading-none text-[#042821]">+</span>
+                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#e94560] text-lg leading-none text-[#042821]">+</span>
                       Seleccionar imagen del portafolio
                     </label>
                     <input
@@ -520,7 +520,7 @@ export default function ProfilePage() {
                     type="button"
                     onClick={onUploadPortfolio}
                     disabled={portfolioSaving || !portfolioBase64 || portfolioPhotos.length >= 10}
-                    className="rounded-xl bg-[#00C9A7] px-4 py-2 text-sm font-semibold text-[#052920] transition hover:-translate-y-0.5 hover:bg-[#2ce1c2] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-xl bg-[#e94560] px-4 py-2 text-sm font-semibold text-[#052920] transition hover:-translate-y-0.5 hover:bg-[#2ce1c2] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {portfolioSaving ? "Subiendo..." : "Subir al portafolio"}
                   </button>
@@ -608,3 +608,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+

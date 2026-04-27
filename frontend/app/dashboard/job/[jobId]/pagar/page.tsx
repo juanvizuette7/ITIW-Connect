@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -7,6 +7,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { showToast } from "@/lib/toast";
 
 type JobDetail = {
   id: string;
@@ -48,7 +49,7 @@ function CardField() {
               iconColor: "#e94560",
               fontSize: "16px",
               "::placeholder": {
-                color: "#8892a4",
+                color: "#8ca2c1",
               },
             },
           },
@@ -66,9 +67,29 @@ function MockCardFields() {
         <input className="premium-input" placeholder="12/26" />
         <input className="premium-input" placeholder="123" />
       </div>
-      <p className="text-xs text-brand-muted">
-        Usa la tarjeta de prueba 4242 4242 4242 4242.
-      </p>
+      <p className="text-xs text-brand-muted">Usa la tarjeta de prueba 4242 4242 4242 4242.</p>
+    </div>
+  );
+}
+
+function EscrowSteps() {
+  const steps = [
+    "Pago retenido",
+    "Trabajo ejecutado",
+    "Confirmas",
+    "Profesional cobra",
+  ];
+
+  return (
+    <div className="grid gap-3 md:grid-cols-4">
+      {steps.map((step, index) => (
+        <article key={step} className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-accent)] text-sm font-bold text-[#032920]">
+            {index + 1}
+          </span>
+          <p className="mt-2 text-sm font-semibold text-white">{step}</p>
+        </article>
+      ))}
     </div>
   );
 }
@@ -87,16 +108,14 @@ function PayForm({
   const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  const subtotal = Math.round(job.amountCop);
-  const commission = Math.round(subtotal * 0.1);
-  const total = subtotal;
+  const service = Math.round(job.amountCop);
+  const commission = Math.round(service * 0.1);
+  const total = service + commission;
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
-    setSuccess(null);
     setLoading(true);
 
     try {
@@ -108,7 +127,7 @@ function PayForm({
 
       if (!isMockStripeKey) {
         if (!stripe || !elements) {
-          throw new Error("Stripe no esta disponible en este momento.");
+          throw new Error("Stripe no está disponible en este momento.");
         }
 
         const card = elements.getElement(CardElement);
@@ -136,7 +155,7 @@ function PayForm({
         }),
       });
 
-      setSuccess("Pago retenido en escrow correctamente.");
+      showToast({ message: "Pago procesado correctamente", kind: "success" });
       onPaid();
       setTimeout(() => router.push(`/dashboard/job/${job.id}`), 900);
     } catch (err) {
@@ -148,26 +167,35 @@ function PayForm({
 
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
-      <div className="premium-panel p-4">
-        <p className="text-sm text-brand-muted">Subtotal</p>
-        <p className="text-white">{formatCop(subtotal)}</p>
-        <p className="mt-3 text-sm text-brand-muted">Comision ITIW Connect (10%)</p>
-        <p className="text-white">{formatCop(commission)}</p>
-        <p className="mt-3 text-sm text-brand-muted">Total</p>
-        <p className="font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(total)}</p>
+      <EscrowSteps />
+
+      <div className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-brand-muted">Servicio</span>
+          <span className="text-white">{formatCop(service)}</span>
+        </div>
+        <div className="mt-2 flex items-center justify-between text-sm">
+          <span className="text-brand-muted">Comisión 10%</span>
+          <span className="text-white">{formatCop(commission)}</span>
+        </div>
+        <div className="mt-3 border-t border-white/10 pt-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-brand-muted">Total</span>
+            <span className="font-[var(--font-heading)] text-2xl font-bold text-[var(--brand-accent)]">{formatCop(total)}</span>
+          </div>
+        </div>
       </div>
 
       {isMockStripeKey ? <MockCardFields /> : <CardField />}
 
-      <p className="text-sm text-brand-muted">
-        Tu dinero queda protegido hasta que confirmes que el trabajo quedo bien.
+      <p className="rounded-xl border border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/10 px-3 py-2 text-sm text-[#83ffe8]">
+        Tu dinero está protegido hasta que confirmes que el trabajo quedó bien.
       </p>
 
       {error && <p className="premium-error">{error}</p>}
-      {success && <p className="premium-success">{success}</p>}
 
-      <button disabled={loading} className="premium-btn-primary w-full">
-        {loading ? "Procesando pago..." : `Pagar ${formatCop(total)} de forma segura`}
+      <button disabled={loading} className="premium-btn-primary w-full py-3.5 text-base">
+        {loading ? "Procesando pago..." : "Pagar de forma segura"}
       </button>
     </form>
   );
@@ -213,7 +241,7 @@ export default function JobPayPage() {
       }
     }
 
-    init();
+    void init();
   }, [params.jobId, router]);
 
   function onLogout() {
@@ -236,13 +264,15 @@ export default function JobPayPage() {
       <DashboardHeader userName={userName} onLogout={onLogout} />
 
       <section className="premium-panel p-6 md:p-8">
-        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Pagar job</h1>
+        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Pago seguro en escrow</h1>
         <p className="mt-2 text-brand-muted">{job.request.description}</p>
 
         {error && <p className="premium-error mt-4">{error}</p>}
 
         {!canPay ? (
-          <p className="mt-6 text-emerald-300">Este job ya no tiene pagos pendientes.</p>
+          <p className="mt-6 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+            Este job ya no tiene pagos pendientes.
+          </p>
         ) : (
           <Elements stripe={stripePromise}>
             {token ? <PayForm token={token} job={job} onPaid={() => loadJob(token)} /> : null}
@@ -252,3 +282,4 @@ export default function JobPayPage() {
     </main>
   );
 }
+

@@ -84,7 +84,7 @@ function Gauge({ title, metric }: { title: string; metric: NpsMetric }) {
         <div
           className="relative h-24 w-24 rounded-full transition-all duration-700 ease-out"
           style={{
-            background: `conic-gradient(#00C9A7 ${progress}%, #1f2a3a ${progress}% 100%)`,
+            background: `conic-gradient(#e94560 ${progress}%, #1f2a3a ${progress}% 100%)`,
           }}
         >
           <div className="absolute inset-2 flex items-center justify-center rounded-full bg-[#0A0F1A]">
@@ -178,7 +178,7 @@ export default function AdminDashboardPage() {
             <p className="mt-2 text-sm text-brand-muted">Métricas reales y monitoreo de la beta cerrada.</p>
           </div>
 
-          <Link href="/admin/profesionales" className="rounded-xl border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-4 py-2 text-sm font-semibold text-[#7efbe7] transition hover:-translate-y-0.5 hover:bg-[#00C9A7]/20">
+          <Link href="/admin/profesionales" className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 px-4 py-2 text-sm font-semibold text-[#7efbe7] transition hover:-translate-y-0.5 hover:bg-[#e94560]/20">
             Gestionar profesionales
           </Link>
         </div>
@@ -188,35 +188,35 @@ export default function AdminDashboardPage() {
         {stats && (
           <>
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(0,201,167,0.18)]">
+              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(233,69,96,0.18)]">
                 <p className="text-sm text-[#9db2cf]">Profesionales activos</p>
                 <p className="mt-2 text-3xl font-extrabold text-white">{Math.round(activeProsCount)}</p>
               </article>
 
-              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(0,201,167,0.18)]">
+              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(233,69,96,0.18)]">
                 <p className="text-sm text-[#9db2cf]">Solicitudes del mes</p>
                 <p className="mt-2 text-3xl font-extrabold text-white">{Math.round(requestsMonthCount)}</p>
                 <div className="mt-3 h-2 w-full rounded-full bg-[#132033]">
-                  <div className="h-full rounded-full bg-gradient-to-r from-[#00C9A7] to-[#6df7e0]" style={{ width: `${Math.min(100, Math.max(8, stats.requestsMonth))}%` }} />
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#e94560] to-[#6df7e0]" style={{ width: `${Math.min(100, Math.max(8, stats.requestsMonth))}%` }} />
                 </div>
               </article>
 
-              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(0,201,167,0.18)]">
+              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(233,69,96,0.18)]">
                 <p className="text-sm text-[#9db2cf]">Tasa de conversion</p>
                 <p className={`mt-2 text-3xl font-extrabold ${conversionColor}`}>{conversionRateCount.toFixed(2)}%</p>
               </article>
 
-              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(0,201,167,0.18)]">
+              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(233,69,96,0.18)]">
                 <p className="text-sm text-[#9db2cf]">Ticket promedio</p>
                 <p className="mt-2 text-3xl font-extrabold text-white">{formatCop(avgTicketCount)}</p>
               </article>
 
-              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(0,201,167,0.18)]">
+              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(233,69,96,0.18)]">
                 <p className="text-sm text-[#9db2cf]">Ingresos ITIW (comisiones)</p>
                 <p className="mt-2 text-3xl font-extrabold text-white">{formatCop(revenueCount)}</p>
               </article>
 
-              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(0,201,167,0.18)]">
+              <article className="rounded-2xl border border-[#263245] bg-[#0A0F1A] p-5 transition hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(233,69,96,0.18)]">
                 <p className="text-sm text-[#9db2cf]">Total clientes</p>
                 <p className="mt-2 text-3xl font-extrabold text-white">{stats.totalClients}</p>
               </article>
@@ -237,7 +237,7 @@ export default function AdminDashboardPage() {
                     <div key={bucket.label} className="flex flex-col items-center gap-2">
                       <div className="flex h-28 w-full items-end rounded-lg border border-[#233246] bg-[#101826] px-2">
                         <div
-                          className="w-full rounded-md bg-gradient-to-t from-[#00C9A7] to-[#6df7e0] transition-all duration-700 ease-out"
+                          className="w-full rounded-md bg-gradient-to-t from-[#e94560] to-[#6df7e0] transition-all duration-700 ease-out"
                           style={{
                             height: `${height}%`,
                             transitionDelay: `${index * 80}ms`,
@@ -257,3 +257,4 @@ export default function AdminDashboardPage() {
     </main>
   );
 }
+

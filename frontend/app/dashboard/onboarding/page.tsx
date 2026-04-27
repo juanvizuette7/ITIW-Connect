@@ -179,7 +179,7 @@ export default function OnboardingPage() {
             </div>
             <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-[#0A0F1A]">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#00C9A7] to-[#5df2db] transition-all duration-700"
+                className="h-full rounded-full bg-gradient-to-r from-[#e94560] to-[#5df2db] transition-all duration-700"
                 style={{ width: `${status.progress.percentage}%` }}
               />
             </div>
@@ -211,7 +211,7 @@ export default function OnboardingPage() {
                     Completado
                   </span>
                 ) : (
-                  <Link href={step.href} className="rounded-lg border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-3 py-2 text-xs font-semibold text-[#83fce5] transition hover:bg-[#00C9A7]/20">
+                  <Link href={step.href} className="rounded-lg border border-[#e94560]/35 bg-[#e94560]/12 px-3 py-2 text-xs font-semibold text-[#83fce5] transition hover:bg-[#e94560]/20">
                     Ir a completar
                   </Link>
                 )}
@@ -225,7 +225,7 @@ export default function OnboardingPage() {
             type="button"
             onClick={onCompleteOnboarding}
             disabled={saving || !status?.allCompleted}
-            className="rounded-xl bg-[#00C9A7] px-5 py-3 font-semibold text-[#03261d] transition hover:-translate-y-0.5 hover:bg-[#35e0c3] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl bg-[#e94560] px-5 py-3 font-semibold text-[#03261d] transition hover:-translate-y-0.5 hover:bg-[#35e0c3] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? "Guardando..." : "Finalizar onboarding"}
           </button>
@@ -236,12 +236,12 @@ export default function OnboardingPage() {
         </div>
 
         {status?.allCompleted && (
-          <div className="relative mt-6 overflow-hidden rounded-xl border border-[#00C9A7]/35 bg-[#00C9A7]/10 p-4">
+          <div className="relative mt-6 overflow-hidden rounded-xl border border-[#e94560]/35 bg-[#e94560]/10 p-4">
             <p className="text-sm font-semibold text-[#9cffec]">Celebracion: onboarding completado.</p>
             <div className="pointer-events-none absolute inset-0">
-              <span className="absolute left-[12%] top-2 h-2 w-2 animate-ping rounded-full bg-[#00C9A7]" />
+              <span className="absolute left-[12%] top-2 h-2 w-2 animate-ping rounded-full bg-[#e94560]" />
               <span className="absolute left-[35%] top-3 h-2 w-2 animate-ping rounded-full bg-[#7efbe7] [animation-delay:120ms]" />
-              <span className="absolute left-[58%] top-2 h-2 w-2 animate-ping rounded-full bg-[#00C9A7] [animation-delay:260ms]" />
+              <span className="absolute left-[58%] top-2 h-2 w-2 animate-ping rounded-full bg-[#e94560] [animation-delay:260ms]" />
               <span className="absolute left-[81%] top-3 h-2 w-2 animate-ping rounded-full bg-[#7efbe7] [animation-delay:380ms]" />
             </div>
           </div>
@@ -263,3 +263,4 @@ export default function OnboardingPage() {
     </main>
   );
 }
+

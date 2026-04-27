@@ -225,7 +225,7 @@ export default function AdminProfesionalesPage() {
                 </tr>
               ) : (
                 items.map((item) => (
-                  <tr key={item.id} className="rounded-xl border border-[#263245] bg-[#0A0F1A] text-sm text-[#dbe6ff] transition hover:shadow-[0_0_16px_rgba(0,201,167,0.18)]">
+                  <tr key={item.id} className="rounded-xl border border-[#263245] bg-[#0A0F1A] text-sm text-[#dbe6ff] transition hover:shadow-[0_0_16px_rgba(233,69,96,0.18)]">
                     <td className="rounded-l-xl px-3 py-3 align-top">
                       <p className="font-semibold text-white">{item.name}</p>
                       <p className="mt-1 text-xs text-[#8ea0b9]">{item.email}</p>
@@ -309,3 +309,4 @@ export default function AdminProfesionalesPage() {
     </main>
   );
 }
+

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { showToast } from "@/lib/toast";
 
 type AvailableRequest = {
   id: string;
@@ -104,6 +105,7 @@ export default function SolicitudesDisponiblesPage() {
       setMessage("");
       setSelectedRequestId(null);
       setSuccess("Cotizacion enviada correctamente.");
+      showToast({ message: "Presupuesto enviado", kind: "success" });
       await loadRequests(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible enviar la cotizacion.");

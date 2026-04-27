@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { showToast } from "@/lib/toast";
 
 type JobDetail = {
   id: string;
@@ -67,10 +68,10 @@ function StarSelector({
               onMouseEnter={() => setHover(item)}
               onMouseLeave={() => setHover(0)}
               onClick={() => onChange(item)}
-              className={`text-2xl transition duration-200 ${selected ? "text-[#00C9A7] scale-110" : "text-slate-500 hover:text-[#6ef0d7]"}`}
+              className={`text-2xl transition duration-200 ${selected ? "text-[#e94560] scale-110" : "text-slate-500 hover:text-[#6ef0d7]"}`}
               aria-label={`${item} estrellas`}
             >
-              {"★"}
+              {"\u2605"}
             </button>
           );
         })}
@@ -91,7 +92,7 @@ function Confetti({ show }: { show: boolean }) {
           style={{
             left: `${(index * 2.5) % 100}%`,
             top: "-10%",
-            backgroundColor: index % 2 === 0 ? "#00C9A7" : "#e94560",
+            backgroundColor: index % 2 === 0 ? "#e94560" : "#e94560",
             animation: `confetti-fall ${2 + (index % 6) * 0.35}s linear forwards`,
             animationDelay: `${(index % 10) * 0.08}s`,
             transform: `rotate(${(index * 37) % 360}deg)`,
@@ -144,7 +145,7 @@ export default function CalificarJobPage() {
         setRole(profile.role);
         setJob(detail);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "No fue posible cargar el formulario de calificacion.");
+        setError(err instanceof Error ? err.message : "No fue posible cargar el formulario de calificación.");
       } finally {
         setLoading(false);
       }
@@ -167,19 +168,19 @@ export default function CalificarJobPage() {
     const token = getToken();
 
     if (!token || !job || !role) {
-      setError("Sesion invalida. Inicia sesion nuevamente.");
+      setError("Sesión inválida. Inicia sesión nuevamente.");
       return;
     }
 
     const hasAllSubcategories = Object.values(subcategoryRatings).every((value) => value >= 1 && value <= 5);
 
     if (rating < 1 || rating > 5) {
-      setError("Debes seleccionar una calificacion general entre 1 y 5 estrellas.");
+      setError("Debes seleccionar una calificación general entre 1 y 5 estrellas.");
       return;
     }
 
     if (!hasAllSubcategories) {
-      setError("Debes calificar puntualidad, calidad, comunicacion y limpieza.");
+      setError("Debes calificar puntualidad, calidad, comunicación y limpieza.");
       return;
     }
 
@@ -193,8 +194,7 @@ export default function CalificarJobPage() {
     setMessage(null);
 
     try {
-      const endpoint =
-        role === "CLIENTE" ? `/reviews/${job.id}/professional` : `/reviews/${job.id}/client`;
+      const endpoint = role === "CLIENTE" ? `/reviews/${job.id}/professional` : `/reviews/${job.id}/client`;
 
       const payload: ReviewPayload = {
         rating,
@@ -209,11 +209,12 @@ export default function CalificarJobPage() {
       });
 
       setShowConfetti(true);
-      setMessage(response.message || "Gracias por tu calificacion.");
+      setMessage(response.message || "Gracias por tu calificación.");
+      showToast({ message: "Calificación enviada", kind: "success" });
       setTimeout(() => setShowConfetti(false), 2400);
       setTimeout(() => router.push(`/dashboard/job/${job.id}`), 1600);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible enviar la calificacion.");
+      setError(err instanceof Error ? err.message : "No fue posible enviar la calificación.");
     } finally {
       setSending(false);
     }
@@ -221,11 +222,10 @@ export default function CalificarJobPage() {
 
   const remainingChars = 400 - comment.length;
   const targetName = role === "CLIENTE" ? job?.professional.name : job?.client.name;
-  const alreadyReviewed =
-    role === "CLIENTE" ? job?.hasReviewedProfessional ?? false : job?.hasReviewedClient ?? false;
+  const alreadyReviewed = role === "CLIENTE" ? job?.hasReviewedProfessional ?? false : job?.hasReviewedClient ?? false;
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando calificacion...</main>;
+    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando calificación...</main>;
   }
 
   if (!job || !role) {
@@ -237,7 +237,7 @@ export default function CalificarJobPage() {
       <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-8">
         <DashboardHeader userName={userName} onLogout={onLogout} />
         <section className="rounded-2xl border border-[#2f3b4d] bg-[#111827] p-6 text-[#cbd5e1]">
-          Solo puedes calificar cuando el job este completado y con pago liberado.
+          Solo puedes calificar cuando el job esté completado y con pago liberado.
         </section>
       </main>
     );
@@ -248,7 +248,7 @@ export default function CalificarJobPage() {
       <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-8">
         <DashboardHeader userName={userName} onLogout={onLogout} />
         <section className="rounded-2xl border border-[#2f3b4d] bg-[#111827] p-6 text-[#cbd5e1]">
-          Ya registraste una calificacion para este job.
+          Ya registraste una calificación para este job.
         </section>
       </main>
     );
@@ -262,12 +262,14 @@ export default function CalificarJobPage() {
       <section className="rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Calificar servicio</h1>
         <p className="mt-2 text-sm text-[#9ca3af]">
-          Comparte tu experiencia con {targetName}. Tu opinion ayuda a mejorar la calidad de la plataforma.
+          Comparte tu experiencia con {targetName}. Tu opinión ayuda a mejorar la calidad de la plataforma.
         </p>
-        <p className="mt-2 text-sm text-[#7f8da3]">{job.request.category.name}: {job.request.description}</p>
+        <p className="mt-2 text-sm text-[#7f8da3]">
+          {job.request.category.name}: {job.request.description}
+        </p>
 
         <form className="mt-6 space-y-5" onSubmit={onSubmit}>
-          <StarSelector label="Calificacion general" value={rating} onChange={setRating} />
+          <StarSelector label="Calificación general" value={rating} onChange={setRating} />
           <StarSelector
             label="Puntualidad"
             value={subcategoryRatings.puntualidad}
@@ -279,7 +281,7 @@ export default function CalificarJobPage() {
             onChange={(value) => updateSubcategory("calidad", value)}
           />
           <StarSelector
-            label="Comunicacion"
+            label="Comunicación"
             value={subcategoryRatings.comunicacion}
             onChange={(value) => updateSubcategory("comunicacion", value)}
           />
@@ -296,22 +298,22 @@ export default function CalificarJobPage() {
               onChange={(event) => setComment(event.target.value.slice(0, 400))}
               rows={5}
               maxLength={400}
-              className="w-full rounded-xl border border-[#334155] bg-[#0A0F1A] px-4 py-3 text-white outline-none transition focus:border-[#00C9A7] focus:ring-2 focus:ring-[#00C9A7]/25"
-              placeholder="Describe brevemente como fue el servicio."
+              className="w-full rounded-xl border border-[#334155] bg-[#0A0F1A] px-4 py-3 text-white outline-none transition focus:border-[#e94560] focus:ring-2 focus:ring-[#e94560]/25"
+              placeholder="Describe brevemente cómo fue el servicio."
             />
             <p className={`mt-1 text-xs ${remainingChars < 30 ? "text-[#fda4af]" : "text-[#94a3b8]"}`}>
               {remainingChars} caracteres restantes
             </p>
           </div>
 
-          {error && <p className="rounded-xl border border-[#e94560]/30 bg-[#e94560]/15 px-3 py-2 text-sm text-[#ff9bac]">{error}</p>}
-          {message && <p className="rounded-xl border border-[#00C9A7]/30 bg-[#00C9A7]/10 px-3 py-2 text-sm text-[#6ef0d7]">{message}</p>}
+          {error && <p className="premium-error">{error}</p>}
+          {message && <p className="premium-success">{message}</p>}
 
           <button
             disabled={sending}
-            className="rounded-xl bg-[#00C9A7] px-5 py-3 font-semibold text-[#06281f] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2] disabled:opacity-60"
+            className="premium-btn-primary px-5 py-3"
           >
-            {sending ? "Enviando..." : "Enviar calificacion"}
+            {sending ? "Enviando..." : "Enviar calificación"}
           </button>
         </form>
       </section>

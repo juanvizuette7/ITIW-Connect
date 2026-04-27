@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -16,6 +16,14 @@ interface DashboardHeaderProps {
 
 type UnreadCountResponse = {
   unread: number;
+};
+
+type RoleType = "CLIENTE" | "PROFESIONAL" | "ADMIN" | null;
+
+type MobileNavItem = {
+  href: string;
+  label: string;
+  icon: ReactNode;
 };
 
 const pathLabels: Record<string, string> = {
@@ -42,15 +50,44 @@ const pathLabels: Record<string, string> = {
   profesional: "Profesional",
 };
 
-type MobileNavItem = {
-  href: string;
-  label: string;
-  icon: ReactNode;
-};
+function HomeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9">
+      <path d="m3 11 9-7 9 7" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function RequestsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9">
+      <path d="M8 6h12M8 12h12M8 18h12M3 6h.01M3 12h.01M3 18h.01" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.9">
+      <path d="M20 21a8 8 0 1 0-16 0" />
+      <circle cx="12" cy="8" r="4" />
+    </svg>
+  );
+}
 
 function BellIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9">
       <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0a3 3 0 1 1-6 0" />
     </svg>
   );
@@ -59,24 +96,17 @@ function BellIcon() {
 export function DashboardHeader({ userName, onLogout, showNotifications = true }: DashboardHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const displayName = userName?.trim() ? userName.trim() : "Bienvenido";
   const [unread, setUnread] = useState(0);
   const [bounce, setBounce] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [role, setRole] = useState<"CLIENTE" | "PROFESIONAL" | "ADMIN" | null>(null);
+  const [role, setRole] = useState<RoleType>(null);
   const previousUnread = useRef(0);
 
   useEffect(() => {
-    const currentRole = getRole();
-    setRole(currentRole);
-    setIsAdmin(currentRole === "ADMIN");
+    setRole(getRole());
   }, []);
 
   useEffect(() => {
     if (!showNotifications) return;
-
-    const token = getToken();
-    if (!token) return;
 
     let mounted = true;
 
@@ -84,15 +114,16 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
       try {
         const response = await apiRequest<UnreadCountResponse>("/notifications/unread-count", {
           method: "GET",
-          token,
+          token: getToken() || "",
         });
 
         if (!mounted) return;
 
         if (response.unread > previousUnread.current) {
           setBounce(true);
-          setTimeout(() => setBounce(false), 600);
+          setTimeout(() => setBounce(false), 650);
         }
+
         previousUnread.current = response.unread;
         setUnread(response.unread);
       } catch {
@@ -126,34 +157,35 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
   }, [pathname]);
 
   const showBack = pathname !== "/dashboard" && pathname !== "/admin/dashboard";
+  const displayName = userName?.trim() ? userName.trim() : "Bienvenido";
 
   const mobileItems = useMemo<MobileNavItem[]>(() => {
     if (role === "ADMIN") {
       return [
-        { href: "/admin/dashboard", label: "Inicio", icon: <span>H</span> },
-        { href: "/buscar", label: "Buscar", icon: <span>B</span> },
-        { href: "/admin/profesionales", label: "Admin", icon: <span>A</span> },
-        { href: "/dashboard/notificaciones", label: "Alertas", icon: <span>N</span> },
-        { href: "/dashboard/profile", label: "Perfil", icon: <span>P</span> },
+        { href: "/admin/dashboard", label: "Inicio", icon: <HomeIcon /> },
+        { href: "/buscar", label: "Buscar", icon: <SearchIcon /> },
+        { href: "/admin/profesionales", label: "Admin", icon: <RequestsIcon /> },
+        { href: "/dashboard/notificaciones", label: "Alertas", icon: <BellIcon /> },
+        { href: "/dashboard/profile", label: "Perfil", icon: <UserIcon /> },
       ];
     }
 
     if (role === "PROFESIONAL") {
       return [
-        { href: "/dashboard", label: "Inicio", icon: <span>H</span> },
-        { href: "/buscar", label: "Buscar", icon: <span>B</span> },
-        { href: "/dashboard/solicitudes-disponibles", label: "Solicitudes", icon: <span>S</span> },
-        { href: "/dashboard/notificaciones", label: "Alertas", icon: <span>N</span> },
-        { href: "/dashboard/profile", label: "Perfil", icon: <span>P</span> },
+        { href: "/dashboard", label: "Inicio", icon: <HomeIcon /> },
+        { href: "/buscar", label: "Buscar", icon: <SearchIcon /> },
+        { href: "/dashboard/solicitudes-disponibles", label: "Solicitudes", icon: <RequestsIcon /> },
+        { href: "/dashboard/notificaciones", label: "Alertas", icon: <BellIcon /> },
+        { href: "/dashboard/profile", label: "Perfil", icon: <UserIcon /> },
       ];
     }
 
     return [
-      { href: "/dashboard", label: "Inicio", icon: <span>H</span> },
-      { href: "/buscar", label: "Buscar", icon: <span>B</span> },
-      { href: "/dashboard/mis-solicitudes", label: "Solicitudes", icon: <span>S</span> },
-      { href: "/dashboard/notificaciones", label: "Alertas", icon: <span>N</span> },
-      { href: "/dashboard/profile", label: "Perfil", icon: <span>P</span> },
+      { href: "/dashboard", label: "Inicio", icon: <HomeIcon /> },
+      { href: "/buscar", label: "Buscar", icon: <SearchIcon /> },
+      { href: "/dashboard/mis-solicitudes", label: "Solicitudes", icon: <RequestsIcon /> },
+      { href: "/dashboard/notificaciones", label: "Alertas", icon: <BellIcon /> },
+      { href: "/dashboard/profile", label: "Perfil", icon: <UserIcon /> },
     ];
   }, [role]);
 
@@ -161,20 +193,20 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
     <>
       <header className="mb-8 premium-panel-strong px-4 py-3 md:px-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <BrandLogo href="/dashboard" imgClassName="h-11 w-auto md:h-[3.25rem]" />
+          <BrandLogo href="/dashboard" imgClassName="h-12 w-auto md:h-[3.5rem]" />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <Link
               href="/buscar"
-              className="hidden rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-[#d6e2f5] transition hover:-translate-y-0.5 hover:bg-white/10 md:inline-flex"
+              className="hidden rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-[#d6e2f5] transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/50 hover:bg-[var(--brand-accent)]/12 md:inline-flex"
             >
               Buscar
             </Link>
 
-            {isAdmin && (
+            {role === "ADMIN" && (
               <Link
                 href="/admin/dashboard"
-                className="rounded-xl border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-3 py-2 text-xs font-semibold text-[#82ffe8] transition hover:-translate-y-0.5 hover:bg-[#00C9A7]/20"
+                className="rounded-xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-2 text-xs font-semibold text-[#82ffe8] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/20"
               >
                 Admin
               </Link>
@@ -183,13 +215,13 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
             {showNotifications && (
               <Link
                 href="/dashboard/notificaciones"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[#d6e2f5] transition hover:-translate-y-0.5 hover:bg-white/10"
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[#d6e2f5] transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12"
                 aria-label="Ver notificaciones"
               >
                 <BellIcon />
                 {unread > 0 && (
                   <span
-                    className={`absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#e94560] px-1.5 text-[10px] font-bold text-white ${bounce ? "animate-badge-bounce" : ""}`}
+                    className={`absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#ff526e] px-1.5 text-[10px] font-bold text-white ${bounce ? "animate-badge-bounce" : ""}`}
                   >
                     {unread > 99 ? "99+" : unread}
                   </span>
@@ -197,11 +229,11 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
               </Link>
             )}
 
-            <span className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-[#c5d0e3]">
+            <span className="hidden rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-[#c5d0e3] md:inline-flex">
               {displayName}
             </span>
-            <button type="button" onClick={onLogout} className="premium-btn-secondary px-4 py-2 text-sm">
-              Cerrar sesion
+            <button type="button" onClick={onLogout} className="premium-btn-secondary px-3 py-2 text-xs md:text-sm">
+              Cerrar sesión
             </button>
           </div>
         </div>
@@ -235,7 +267,7 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
                 }
                 router.push("/dashboard");
               }}
-              className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#d6e2f5] transition hover:bg-white/10"
+              className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#d6e2f5] transition hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12"
             >
               Volver
             </button>
@@ -243,7 +275,7 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
         </div>
       </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#0a0f1a]/95 px-2 pb-2 pt-2 backdrop-blur-md md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[var(--dark)]/96 px-2 pb-2 pt-2 backdrop-blur-md md:hidden">
         <ul className="grid grid-cols-5 gap-1">
           {mobileItems.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -251,15 +283,13 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`flex flex-col items-center justify-center rounded-xl px-2 py-2 text-[11px] ${
+                  className={`flex flex-col items-center justify-center rounded-xl px-2 py-2 text-[11px] transition ${
                     active
-                      ? "bg-[#00C9A7]/18 text-[#87ffe9]"
-                      : "bg-white/[0.03] text-[#9fb0ca]"
+                      ? "border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/15 text-[#8affec]"
+                      : "border border-transparent bg-white/[0.03] text-[#9fb0ca]"
                   }`}
                 >
-                  <span className="mb-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-bold">
-                    {item.icon}
-                  </span>
+                  <span className="mb-0.5 inline-flex h-5 w-5 items-center justify-center">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               </li>
@@ -271,3 +301,4 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
     </>
   );
 }
+

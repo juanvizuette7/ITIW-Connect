@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -203,7 +203,7 @@ export default function JobDetailPage() {
           )}
 
           {showRateButton && (
-            <Link href={`/dashboard/job/${job.id}/calificar`} className="rounded-xl bg-[#00C9A7] px-5 py-3 font-semibold text-[#06281f] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2]">
+            <Link href={`/dashboard/job/${job.id}/calificar`} className="rounded-xl bg-[#e94560] px-5 py-3 font-semibold text-[#06281f] transition hover:-translate-y-0.5 hover:bg-[#2fe0c2]">
               Calificar servicio
             </Link>
           )}
@@ -225,23 +225,24 @@ export default function JobDetailPage() {
       </section>
 
       {confirmDisputeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#30425a] bg-[#0A0F1A] p-5">
+        <div className="fixed inset-0 z-50 bg-black/65">
+          <button type="button" aria-label="Cerrar" className="absolute inset-0" onClick={() => setConfirmDisputeOpen(false)} />
+          <div className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-white/10 bg-[#0A0F1A] p-5 shadow-[0_-18px_40px_rgba(0,0,0,0.45)] md:left-1/2 md:max-w-md md:-translate-x-1/2 md:bottom-6 md:rounded-2xl">
             <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Confirmar disputa</h2>
             <p className="mt-2 text-sm text-brand-muted">
               Abrir una disputa congelara el proceso normal de conciliacion hasta revision.
             </p>
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-5 flex gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmDisputeOpen(false)}
-                className="premium-btn-secondary px-4 py-2 text-sm"
+                className="premium-btn-secondary w-full px-4 py-2 text-sm"
               >
                 Volver
               </button>
               <Link
                 href={`/dashboard/disputas/nueva/${job.id}`}
-                className="rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25"
+                className="w-full rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-center text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25"
               >
                 Continuar
               </Link>
@@ -252,3 +253,4 @@ export default function JobDetailPage() {
     </main>
   );
 }
+

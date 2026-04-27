@@ -273,7 +273,7 @@ export default function NotificacionesPage() {
             type="button"
             onClick={onMarkAllRead}
             disabled={unreadCount === 0}
-            className="rounded-xl border border-[#00C9A7]/35 bg-[#00C9A7]/12 px-4 py-2 text-sm font-semibold text-[#82ffe8] transition hover:bg-[#00C9A7]/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 px-4 py-2 text-sm font-semibold text-[#82ffe8] transition hover:bg-[#e94560]/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Marcar todas como leidas
           </button>
@@ -296,7 +296,7 @@ export default function NotificacionesPage() {
                   className={`rounded-xl border p-4 transition-all duration-300 ${
                     item.isRead
                       ? "border-white/10 bg-white/[0.03]"
-                      : "border-[#00C9A7]/35 bg-[#00C9A7]/12"
+                      : "border-[#e94560]/35 bg-[#e94560]/12"
                   } ${isFading ? "opacity-40" : "opacity-100"}`}
                   style={{
                     animation: `notif-slide-in 400ms ease both`,
@@ -310,8 +310,8 @@ export default function NotificacionesPage() {
                         {typeLabel(item.type)}
                       </span>
                       {!item.isRead && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-[#00C9A7]/40 bg-[#00C9A7]/15 px-2 py-0.5 text-[11px] text-[#83fce5]">
-                          <span className="h-2 w-2 rounded-full bg-[#00C9A7] animate-teal-pulse" />
+                        <span className="inline-flex items-center gap-1 rounded-full border border-[#e94560]/40 bg-[#e94560]/15 px-2 py-0.5 text-[11px] text-[#83fce5]">
+                          <span className="h-2 w-2 rounded-full bg-[#e94560] animate-teal-pulse" />
                           Nueva
                         </span>
                       )}
@@ -326,7 +326,7 @@ export default function NotificacionesPage() {
                     <button
                       type="button"
                       onClick={() => onMarkRead(item.id)}
-                      className="mt-3 rounded-lg border border-[#00C9A7]/40 bg-[#00C9A7]/10 px-3 py-1.5 text-xs font-semibold text-[#83fce5] transition hover:bg-[#00C9A7]/20"
+                      className="mt-3 rounded-lg border border-[#e94560]/40 bg-[#e94560]/10 px-3 py-1.5 text-xs font-semibold text-[#83fce5] transition hover:bg-[#e94560]/20"
                     >
                       Marcar como leida
                     </button>
@@ -353,3 +353,4 @@ export default function NotificacionesPage() {
     </main>
   );
 }
+
