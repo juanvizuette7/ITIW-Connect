@@ -2,7 +2,6 @@ import { Router } from "express";
 import {
   forgotPassword,
   getGoogleOauthStatus,
-  googleAuthCallbackSuccess,
   login,
   register,
   resendOtp,
@@ -13,8 +12,8 @@ import { authRateLimiter, loginRateLimiter } from "../middlewares/rate-limit.mid
 import { asyncHandler } from "../utils/asyncHandler";
 import {
   getPassportGoogleAuthMiddleware,
-  getPassportGoogleCallbackMiddleware,
   isGoogleOauthConfigured,
+  runGoogleAuthCallback,
 } from "../config/passport";
 import { env } from "../config/env";
 
@@ -38,7 +37,7 @@ authRouter.get("/google/callback", (req, res, next) => {
   if (!isGoogleOauthConfigured()) {
     return res.redirect(`${env.frontendUrl}/auth/login?oauthError=configuracion`);
   }
-  return getPassportGoogleCallbackMiddleware()(req, res, next);
-}, asyncHandler(googleAuthCallbackSuccess));
+  return runGoogleAuthCallback(req, res, next);
+});
 
 export default authRouter;

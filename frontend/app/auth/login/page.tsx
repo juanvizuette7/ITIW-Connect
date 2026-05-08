@@ -27,6 +27,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const oauthError =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("oauthError")
+      : null;
+
+  const oauthErrorMessage = oauthError
+    ? decodeURIComponent(oauthError)
+        .replace("google_failed", "No fue posible completar el acceso con Google.")
+        .replace("token_invalido", "Google respondio sin token valido.")
+        .replace("configuracion", "Google OAuth aun no esta configurado en el servidor.")
+    : null;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,13 +129,13 @@ export default function LoginPage() {
 
         <GoogleAuthButton onError={setError} />
 
-        {error && (
+        {(error || oauthErrorMessage) && (
           <p className="premium-error">
             <span className="inline-flex items-center gap-2">
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[#ff9bac]/60 text-xs">
                 !
               </span>
-              <span>{error}</span>
+              <span>{error || oauthErrorMessage}</span>
             </span>
           </p>
         )}

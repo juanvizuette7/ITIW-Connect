@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
+import { NextFunction, Request, Response } from "express";
 import passport from "passport";
 import { Profile, Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { v4 as uuidv4 } from "uuid";
@@ -184,4 +185,26 @@ export function getPassportGoogleCallbackMiddleware() {
     session: false,
     failureRedirect: `${env.frontendUrl}/auth/login?oauthError=google_failed`,
   });
+}
+
+export function runGoogleAuthCallback(req: Request, res: Response, next: NextFunction) {
+  return passport.authenticate(
+    "google",
+    { session: false },
+    (error: Error | null, user?: OauthSessionUser) => {
+      if (error) {
+        return res.redirect(
+          `${env.frontendUrl}/auth/login?oauthError=${encodeURIComponent(error.message || "google_failed")}`,
+        );
+      }
+
+      if (!user?.token) {
+        return res.redirect(`${env.frontendUrl}/auth/login?oauthError=token_invalido`);
+      }
+
+      return res.redirect(
+        `${env.frontendUrl}/auth/oauth-success?token=${encodeURIComponent(user.token)}`,
+      );
+    },
+  )(req, res, next);
 }
