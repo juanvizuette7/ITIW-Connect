@@ -1,11 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { apiRequest } from "@/lib/api";
-
-type GoogleStatusResponse = {
-  configured: boolean;
-};
 
 type GoogleAuthButtonProps = {
   onError: (message: string) => void;
@@ -25,24 +20,14 @@ function GoogleIcon() {
 export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
   const [loading, setLoading] = useState(false);
 
-  async function onClick() {
+  function onClick() {
     setLoading(true);
     try {
-      const status = await apiRequest<GoogleStatusResponse>("/auth/google/status", {
-        method: "GET",
-      });
-
-      if (!status.configured) {
-        onError("OAuth en configuracion.");
-        return;
-      }
-
-      const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api").replace(/\/api$/, "");
+      const apiBase = (process.env.NEXT_PUBLIC_API_URL || "https://itiw-connect.onrender.com/api").replace(/\/api$/, "");
       window.location.href = `${apiBase}/api/auth/google`;
     } catch {
-      onError("No fue posible iniciar OAuth con Google.");
-    } finally {
       setLoading(false);
+      onError("No fue posible iniciar OAuth con Google.");
     }
   }
 
@@ -60,4 +45,3 @@ export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
     </button>
   );
 }
-
