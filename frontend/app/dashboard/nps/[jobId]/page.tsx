@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -48,7 +48,7 @@ export default function NpsPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {

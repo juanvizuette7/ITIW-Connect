@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -103,7 +103,7 @@ export default function NuevaDisputaPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {

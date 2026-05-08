@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   if (loading) {
@@ -207,7 +207,7 @@ export default function OnboardingPage() {
 
                 {step.done ? (
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/35 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-300 text-[10px] text-[#093025]">✓</span>
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-300 text-[10px] text-[#093025]">?</span>
                     Completado
                   </span>
                 ) : (
@@ -263,4 +263,5 @@ export default function OnboardingPage() {
     </main>
   );
 }
+
 

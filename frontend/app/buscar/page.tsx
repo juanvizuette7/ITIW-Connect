@@ -154,7 +154,7 @@ export default function BuscarPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   const hasFilters = useMemo(
@@ -318,4 +318,5 @@ export default function BuscarPage() {
     </main>
   );
 }
+
 

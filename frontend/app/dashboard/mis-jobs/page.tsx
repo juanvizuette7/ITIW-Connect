@@ -77,7 +77,7 @@ export default function MisJobsPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   if (loading) {
@@ -131,3 +131,4 @@ export default function MisJobsPage() {
     </main>
   );
 }
+

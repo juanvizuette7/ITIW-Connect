@@ -1,7 +1,21 @@
+import { clearSession } from "./auth";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 interface RequestOptions extends RequestInit {
   token?: string;
+}
+
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(message: string, status = 500, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -19,15 +33,29 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       },
     });
   } catch {
-    throw new Error(
-      "No fue posible conectar con el servidor. Verifica que el backend este corriendo en http://localhost:4000.",
+    throw new ApiError(
+      "Servicio no disponible, intenta de nuevo en unos minutos.",
+      503,
+      "SERVICE_UNAVAILABLE",
     );
   }
 
-  const data = await response.json().catch(() => ({}));
+  const data = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    message?: string;
+    code?: string;
+  };
 
   if (!response.ok) {
-    throw new Error(data.error || data.message || "No fue posible completar la solicitud.");
+    const message = data.error || data.message || "No fue posible completar la solicitud.";
+    const code = data.code || undefined;
+
+    if (response.status === 401 && token && typeof window !== "undefined") {
+      clearSession();
+      window.location.href = "/auth/login";
+    }
+
+    throw new ApiError(message, response.status, code);
   }
 
   return data as T;

@@ -73,7 +73,7 @@ export default function DisputaDetailPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   if (loading) {

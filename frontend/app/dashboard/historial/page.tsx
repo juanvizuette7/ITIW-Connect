@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -161,7 +161,7 @@ export default function HistorialPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   async function onApplyFilters() {
@@ -364,4 +364,5 @@ export default function HistorialPage() {
     </main>
   );
 }
+
 

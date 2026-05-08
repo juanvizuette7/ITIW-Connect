@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -151,7 +151,7 @@ export default function ProfilePage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   function addSpecialty(rawValue: string) {
@@ -608,4 +608,5 @@ export default function ProfilePage() {
     </main>
   );
 }
+
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -102,7 +102,7 @@ export default function AdminDisputasPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   async function onResolve(disputeId: string, outcome: "LIBERAR" | "REEMBOLSAR") {
@@ -195,7 +195,7 @@ export default function AdminDisputasPage() {
                     <p className="mt-2 text-sm text-[#d5dded]">{item.reason}</p>
                     <p className="mt-1 text-sm text-brand-muted">{item.description}</p>
                     <p className="mt-2 text-xs text-[#8ea0b9]">
-                      {new Date(item.createdAt).toLocaleString("es-CO")} · Estado pago: {item.job.paymentStatus}
+                      {new Date(item.createdAt).toLocaleString("es-CO")} � Estado pago: {item.job.paymentStatus}
                     </p>
 
                     <label className="mt-4 block text-sm text-[#cfd7e7]">
@@ -249,3 +249,4 @@ export default function AdminDisputasPage() {
     </main>
   );
 }
+

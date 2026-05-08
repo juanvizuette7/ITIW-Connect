@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -75,24 +75,24 @@ function formatCop(value: number) {
 
 function TileIcon({ name }: { name: "new" | "list" | "briefcase" | "money" | "history" | "notif" | "profile" }) {
   if (name === "new") {
-    return <span className="text-lg">➕</span>;
+    return <span className="text-lg">?</span>;
   }
   if (name === "list") {
-    return <span className="text-lg">📋</span>;
+    return <span className="text-lg">??</span>;
   }
   if (name === "briefcase") {
-    return <span className="text-lg">🧰</span>;
+    return <span className="text-lg">??</span>;
   }
   if (name === "money") {
-    return <span className="text-lg">💳</span>;
+    return <span className="text-lg">??</span>;
   }
   if (name === "history") {
-    return <span className="text-lg">🧾</span>;
+    return <span className="text-lg">??</span>;
   }
   if (name === "notif") {
-    return <span className="text-lg">🔔</span>;
+    return <span className="text-lg">??</span>;
   }
-  return <span className="text-lg">👤</span>;
+  return <span className="text-lg">??</span>;
 }
 
 export default function DashboardPage() {
@@ -200,7 +200,7 @@ export default function DashboardPage() {
         value: completedJobs,
       },
       {
-        title: "Calificación promedio",
+        title: "Calificaci�n promedio",
         value: avgRating === null ? "Sin calificar" : avgRating.toFixed(1),
       },
     ],
@@ -247,7 +247,7 @@ export default function DashboardPage() {
       {
         icon: <TileIcon name="notif" />,
         title: "Notificaciones",
-        description: "Mantente al día con alertas importantes.",
+        description: "Mantente al d�a con alertas importantes.",
         countLabel: unreadNotifications > 0 ? `${unreadNotifications} nuevas` : "Sin pendientes",
         href: "/dashboard/notificaciones",
       },
@@ -260,7 +260,7 @@ export default function DashboardPage() {
       {
         icon: <TileIcon name="briefcase" />,
         title: "Solicitudes disponibles",
-        description: "Explora trabajos activos y envía tu propuesta.",
+        description: "Explora trabajos activos y env�a tu propuesta.",
         countLabel: `${availableRequestsCount} nuevas`,
         href: "/dashboard/solicitudes-disponibles",
       },
@@ -305,7 +305,7 @@ export default function DashboardPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   if (loading) {
@@ -339,7 +339,7 @@ export default function DashboardPage() {
 
       <section className="premium-panel p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel principal</h1>
-        <p className="mt-2 text-brand-muted">Resumen rápido de tu actividad y accesos principales.</p>
+        <p className="mt-2 text-brand-muted">Resumen r�pido de tu actividad y accesos principales.</p>
 
         {error && <p className="premium-error mt-4">{error}</p>}
 
@@ -372,4 +372,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
 

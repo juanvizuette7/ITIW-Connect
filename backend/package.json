@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "load:test": "ts-node scripts/load-test.ts",
+    "e2e:test": "ts-node scripts/e2e-test.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "set PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=1&& prisma migrate deploy",
@@ -16,6 +17,7 @@
   "dependencies": {
     "@prisma/client": "^6.6.0",
     "bcrypt": "^5.1.1",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
@@ -30,6 +32,7 @@
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",

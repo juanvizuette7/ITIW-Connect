@@ -101,7 +101,7 @@ export default function JobChatPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   async function onSend(event: FormEvent) {

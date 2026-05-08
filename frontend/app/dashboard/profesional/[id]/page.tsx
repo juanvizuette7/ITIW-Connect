@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -148,7 +148,7 @@ export default function ProfessionalPublicPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   const average = useMemo(() => (profile ? toNumber(profile.professionalProfile.avgRating) : 0), [profile]);

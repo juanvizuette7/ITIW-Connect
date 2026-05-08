@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
@@ -77,7 +77,7 @@ export default function SolicitudesDisponiblesPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   async function onSubmitQuote(event: FormEvent<HTMLFormElement>) {
@@ -218,3 +218,4 @@ export default function SolicitudesDisponiblesPage() {
     </main>
   );
 }
+

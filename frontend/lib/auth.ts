@@ -26,9 +26,7 @@ export function saveSession(token: string, role?: UserRole) {
 }
 
 export function clearSession() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(ROLE_KEY);
-  localStorage.removeItem(EMAIL_KEY);
+  localStorage.clear();
 }
 
 export function getToken() {

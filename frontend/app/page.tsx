@@ -37,18 +37,15 @@ const fallbackCategories: Category[] = [
 const heroSteps = [
   {
     title: "Publica tu solicitud",
-    description:
-      "Selecciona una categoria general y explica tu problema con fotos y detalles para recibir mejores respuestas.",
+    description: "Selecciona una categoria general y explica tu problema con fotos y detalles para recibir mejores respuestas.",
   },
   {
     title: "Recibe cotizaciones",
-    description:
-      "Compara montos, tiempo estimado y experiencia del profesional desde un solo panel claro y ordenado.",
+    description: "Compara montos, tiempo estimado y experiencia del profesional desde un solo panel claro y ordenado.",
   },
   {
     title: "Paga con escrow",
-    description:
-      "Tu dinero se mantiene protegido y solo se libera cuando confirmas que el trabajo se completo correctamente.",
+    description: "Tu dinero se mantiene protegido y solo se libera cuando confirmas que el trabajo se completo correctamente.",
   },
 ];
 
@@ -59,25 +56,25 @@ const trustPoints = [
 ];
 
 const categoryEmojiMap: Record<string, string> = {
-  electricidad: "⚡",
-  plomeria: "🔧",
-  carpinteria: "🪵",
-  pintura: "🎨",
-  "aires acondicionados": "❄️",
-  cerrajeria: "🔐",
-  reformas: "🏗️",
-  jardineria: "🌿",
-  limpieza: "🧼",
-  mudanzas: "📦",
-  fumigacion: "🛡️",
-  impermeabilizacion: "🌧️",
-  "instalacion de pisos": "🧱",
-  "techos y cubiertas": "🏠",
-  soldadura: "🔥",
-  vidrieria: "🪟",
-  "alarmas y cctv": "📹",
-  electrodomesticos: "🔌",
-  otro: "✨",
+  electricidad: "\u26A1",
+  plomeria: "\u{1F527}",
+  carpinteria: "\u{1FAB5}",
+  pintura: "\u{1F3A8}",
+  "aires acondicionados": "\u2744\uFE0F",
+  cerrajeria: "\u{1F510}",
+  reformas: "\u{1F3D7}\uFE0F",
+  jardineria: "\u{1F33F}",
+  limpieza: "\u{1F9FC}",
+  mudanzas: "\u{1F4E6}",
+  fumigacion: "\u{1F6E1}\uFE0F",
+  impermeabilizacion: "\u{1F327}\uFE0F",
+  "instalacion de pisos": "\u{1F9F1}",
+  "techos y cubiertas": "\u{1F3E0}",
+  soldadura: "\u{1F525}",
+  vidrieria: "\u{1FA9F}",
+  "alarmas y cctv": "\u{1F4F9}",
+  electrodomesticos: "\u{1F50C}",
+  otro: "\u2728",
 };
 
 const categoryGlowPalette = [
@@ -105,7 +102,7 @@ function categoryInitials(name: string) {
 }
 
 function categoryEmoji(name: string) {
-  return categoryEmojiMap[normalizeCategoryName(name)] || "🛠️";
+  return categoryEmojiMap[normalizeCategoryName(name)] || "\u{1F6E0}\uFE0F";
 }
 
 export default function HomePage() {
@@ -118,12 +115,9 @@ export default function HomePage() {
     async function loadCategories() {
       try {
         const response = await fetch(`${API_URL}/categories`);
-        if (!response.ok) {
-          throw new Error("Categorias no disponibles");
-        }
+        if (!response.ok) throw new Error("Categorias no disponibles");
 
         const data = (await response.json()) as Category[];
-
         if (Array.isArray(data) && data.length > 0) {
           setCategories(data);
           setUsingFallbackCategories(false);
@@ -215,18 +209,10 @@ export default function HomePage() {
           </div>
 
           <div className="hidden items-center justify-center gap-8 text-sm text-brand-muted md:flex">
-            <a href="#como-funciona" className="transition hover:text-white">
-              Como funciona
-            </a>
-            <a href="#categorias" className="transition hover:text-white">
-              Categorias
-            </a>
-            <Link href="/buscar" className="transition hover:text-white">
-              Buscar
-            </Link>
-            <Link href="/auth/login" className="transition hover:text-white">
-              Iniciar sesion
-            </Link>
+            <a href="#como-funciona" className="transition hover:text-white">Como funciona</a>
+            <a href="#categorias" className="transition hover:text-white">Categorias</a>
+            <Link href="/buscar" className="transition hover:text-white">Buscar</Link>
+            <Link href="/auth/login" className="transition hover:text-white">Iniciar sesion</Link>
           </div>
 
           <Link href="/auth/register" className="premium-btn-primary brand-shine px-4 py-2 text-sm">
@@ -245,22 +231,18 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-[1.06rem] text-brand-muted md:text-lg">
-              Encuentra electricistas, plomeros, carpinteros y mas profesionales verificados cerca de ti. Publica tu
-              solicitud en minutos, recibe varias cotizaciones y elige con informacion clara, sin improvisaciones.
+              Encuentra electricistas, plomeros, carpinteros y mas profesionales verificados cerca de ti.
+              Publica tu solicitud en minutos, recibe varias cotizaciones y elige con informacion clara.
             </p>
 
             <p className="mt-3 max-w-2xl text-sm text-[#b8c3d7] md:text-base">
-              ITIW Connect organiza cada etapa del servicio: solicitud, cotizacion, pago seguro y seguimiento hasta la
-              entrega final del trabajo.
+              ITIW Connect organiza cada etapa del servicio: solicitud, cotizacion, pago seguro y seguimiento
+              hasta la entrega final del trabajo.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/auth/login" className="premium-btn-primary brand-shine">
-                Buscar profesional
-              </Link>
-              <Link href="/auth/register" className="premium-btn-secondary">
-                Quiero ofrecer mis servicios
-              </Link>
+              <Link href="/auth/login" className="premium-btn-primary brand-shine">Buscar profesional</Link>
+              <Link href="/auth/register" className="premium-btn-secondary">Quiero ofrecer mis servicios</Link>
             </div>
 
             <div className="mt-8 grid gap-3 md:grid-cols-3">
@@ -285,25 +267,20 @@ export default function HomePage() {
                 Publica mejor, cotiza mejor
               </h2>
               <p className="mt-2 text-sm text-brand-muted">
-                Una solicitud clara aumenta la calidad de cotizaciones. Te ayudamos a estructurar la informacion para
-                que compares ofertas reales y tomes mejores decisiones.
+                Una solicitud clara aumenta la calidad de cotizaciones y acelera la contratacion correcta.
               </p>
 
               <div id="como-funciona" className="mt-5 space-y-3">
                 {heroSteps.map((step, index) => (
                   <article key={step.title} className="premium-panel reveal-item premium-hover-card p-4">
-                    <p className="text-sm font-semibold text-white">
-                      {index + 1}. {step.title}
-                    </p>
+                    <p className="text-sm font-semibold text-white">{index + 1}. {step.title}</p>
                     <p className="mt-1 text-xs text-brand-muted">{step.description}</p>
                   </article>
                 ))}
               </div>
 
               <div className="mt-5 rounded-2xl border border-white/10 bg-[#0a1628]/55 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#d6deee]">
-                  Que ganas con ITIW Connect
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#d6deee]">Que ganas con ITIW Connect</p>
                 <ul className="mt-3 space-y-2 text-sm text-brand-muted">
                   {trustPoints.map((point) => (
                     <li key={point} className="flex items-start gap-2">
@@ -324,19 +301,14 @@ export default function HomePage() {
                 Categorias generales de servicios
               </h2>
               <p className="mt-2 text-sm text-brand-muted md:text-base">
-                Selecciona la categoria que mas se acerque al trabajo. Si no aplica, usa "Otro" y especifica el caso
-                en la descripcion.
+                Selecciona la categoria que mas se acerque al trabajo. Si no aplica, usa "Otro" y especifica el caso en la descripcion.
               </p>
             </div>
-            <span className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs text-[#d5dded]">
-              18 principales + Otro
-            </span>
+            <span className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs text-[#d5dded]">18 principales + Otro</span>
           </div>
 
           {usingFallbackCategories && (
-            <p className="mt-3 text-xs text-[#ffb2bf]">
-              Mostrando categorias base mientras se restablece la conexion con el backend.
-            </p>
+            <p className="mt-3 text-xs text-[#ffb2bf]">Mostrando categorias base mientras se restablece la conexion con el backend.</p>
           )}
 
           {loadingCategories ? (
@@ -344,9 +316,7 @@ export default function HomePage() {
           ) : orderedCategories.length === 0 ? (
             <div className="mt-6 premium-panel p-6 text-center">
               <p className="text-brand-muted">Aun no hay categorias disponibles. Intenta nuevamente.</p>
-              <Link href="/auth/register" className="premium-btn-primary mt-4 inline-block">
-                Crear cuenta
-              </Link>
+              <Link href="/auth/register" className="premium-btn-primary mt-4 inline-block">Crear cuenta</Link>
             </div>
           ) : (
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -355,36 +325,39 @@ export default function HomePage() {
                 const glowClass = categoryGlowPalette[index % categoryGlowPalette.length];
 
                 return (
-                <article
-                  key={category.id}
-                  className="premium-panel reveal-item premium-hover-card group relative flex items-center gap-3 overflow-hidden p-4"
-                >
-                  <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${glowClass} opacity-0 transition duration-300 group-hover:opacity-100`} />
-                  <div className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-white/10 blur-2xl opacity-0 transition duration-300 group-hover:opacity-80" />
+                  <article
+                    key={category.id}
+                    className="premium-panel reveal-item premium-hover-card group relative flex items-center gap-3 overflow-hidden p-4"
+                  >
+                    <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${glowClass} opacity-0 transition duration-300 group-hover:opacity-100`} />
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-white/10 blur-2xl opacity-0 transition duration-300 group-hover:opacity-80" />
 
-                  {category.iconUrl && !failedIconIds[category.id] ? (
-                    <div className="relative z-10">
-                      <img
-                        src={category.iconUrl}
-                        alt={category.name}
-                        className="h-10 w-10 rounded-md object-cover ring-1 ring-white/20"
-                        onError={() => onIconError(category.id)}
-                      />
-                      <span className="absolute -bottom-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-[#0b1323]/90 text-[11px]">
-                        {emoji}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-[#0f3460]/78 text-lg shadow-[0_0_20px_rgba(15,52,96,0.35)]">
-                      <span className="drop-shadow-[0_0_8px_rgba(233,69,96,0.35)]">{emoji}</span>
-                    </div>
-                  )}
+                    {category.iconUrl && !failedIconIds[category.id] ? (
+                      <div className="relative z-10">
+                        <img
+                          src={category.iconUrl}
+                          alt={category.name}
+                          loading="lazy"
+                          className="h-10 w-10 rounded-md object-cover ring-1 ring-white/20"
+                          onError={() => onIconError(category.id)}
+                        />
+                        <span className="absolute -bottom-2 -right-2 inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-[#0b1323]/90 text-[11px]">
+                          {emoji}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-[#0f3460]/78 text-lg shadow-[0_0_20px_rgba(15,52,96,0.35)]">
+                        <span className="drop-shadow-[0_0_8px_rgba(233,69,96,0.35)]">{emoji}</span>
+                      </div>
+                    )}
 
-                  <div className="relative z-10 min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-white">{category.name}</p>
-                    <p className="text-xs text-brand-muted transition group-hover:text-[#d9e3f7]">Categoria general · {categoryInitials(category.name)}</p>
-                  </div>
-                </article>
+                    <div className="relative z-10 min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-white">{category.name}</p>
+                      <p className="text-xs text-brand-muted transition group-hover:text-[#d9e3f7]">
+                        Categoria general � {categoryInitials(category.name)}
+                      </p>
+                    </div>
+                  </article>
                 );
               })}
             </div>
@@ -392,7 +365,11 @@ export default function HomePage() {
         </section>
 
         <footer className="mt-10 border-t border-white/10 py-6 text-center text-sm text-brand-muted">
-          ITIW Connect (c) 2026 - Conectando personas con expertos locales en Colombia
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <span>ITIW Connect � 2026 - Conectando personas con expertos locales en Colombia</span>
+            <Link href="/terminos" className="hover:text-white">T�rminos</Link>
+            <Link href="/privacidad" className="hover:text-white">Privacidad</Link>
+          </div>
         </footer>
       </div>
     </main>

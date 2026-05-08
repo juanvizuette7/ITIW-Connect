@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import routes from "./routes";
 import { env } from "./config/env";
 import { errorHandler } from "./middlewares/error.middleware";
@@ -41,6 +42,7 @@ app.use(
   }),
 );
 app.use(generalRateLimiter);
+app.use(compression());
 app.use(express.json());
 app.use(normalizeErrorResponse);
 app.use(sanitizeInputs);

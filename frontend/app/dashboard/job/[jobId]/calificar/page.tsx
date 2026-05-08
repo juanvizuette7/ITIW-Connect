@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -156,7 +156,7 @@ export default function CalificarJobPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   function updateSubcategory(key: keyof typeof subcategoryRatings, value: number) {

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -31,8 +31,8 @@ type CreatePayResponse = {
 };
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
-const stripePromise = publishableKey ? loadStripe(publishableKey) : Promise.resolve(null);
-const isMockStripeKey = publishableKey.includes("usa_esta_clave_publica");
+const stripeConfigured = Boolean(publishableKey) && !publishableKey.includes("usa_esta_clave_publica");
+const stripePromise = stripeConfigured ? loadStripe(publishableKey) : Promise.resolve(null);
 
 function formatCop(value: number): string {
   return `$${new Intl.NumberFormat("es-CO").format(Math.round(value))} COP`;
@@ -59,26 +59,8 @@ function CardField() {
   );
 }
 
-function MockCardFields() {
-  return (
-    <div className="grid gap-3">
-      <input className="premium-input" placeholder="4242 4242 4242 4242" />
-      <div className="grid grid-cols-2 gap-3">
-        <input className="premium-input" placeholder="12/26" />
-        <input className="premium-input" placeholder="123" />
-      </div>
-      <p className="text-xs text-brand-muted">Usa la tarjeta de prueba 4242 4242 4242 4242.</p>
-    </div>
-  );
-}
-
 function EscrowSteps() {
-  const steps = [
-    "Pago retenido",
-    "Trabajo ejecutado",
-    "Confirmas",
-    "Profesional cobra",
-  ];
+  const steps = ["Pago retenido", "Trabajo ejecutado", "Confirmas", "Profesional cobra"];
 
   return (
     <div className="grid gap-3 md:grid-cols-4">
@@ -119,31 +101,31 @@ function PayForm({
     setLoading(true);
 
     try {
+      if (!stripeConfigured) {
+        throw new Error("Stripe aun no esta configurado con llaves reales.");
+      }
+
       const create = await apiRequest<CreatePayResponse>(`/jobs/${job.id}/pay`, {
         method: "POST",
         token,
         body: JSON.stringify({ action: "create" }),
       });
 
-      if (!isMockStripeKey) {
-        if (!stripe || !elements) {
-          throw new Error("Stripe no está disponible en este momento.");
-        }
+      if (!stripe || !elements) {
+        throw new Error("Stripe no esta disponible en este momento.");
+      }
 
-        const card = elements.getElement(CardElement);
-        if (!card) {
-          throw new Error("No fue posible cargar el formulario de tarjeta.");
-        }
+      const card = elements.getElement(CardElement);
+      if (!card) {
+        throw new Error("No fue posible cargar el formulario de tarjeta.");
+      }
 
-        const confirmed = await stripe.confirmCardPayment(create.clientSecret, {
-          payment_method: {
-            card,
-          },
-        });
+      const confirmed = await stripe.confirmCardPayment(create.clientSecret, {
+        payment_method: { card },
+      });
 
-        if (confirmed.error) {
-          throw new Error(confirmed.error.message || "El pago no fue confirmado por Stripe.");
-        }
+      if (confirmed.error) {
+        throw new Error(confirmed.error.message || "El pago no fue confirmado por Stripe.");
       }
 
       await apiRequest<{ message: string }>(`/jobs/${job.id}/pay`, {
@@ -175,21 +157,23 @@ function PayForm({
           <span className="text-white">{formatCop(service)}</span>
         </div>
         <div className="mt-2 flex items-center justify-between text-sm">
-          <span className="text-brand-muted">Comisión 10%</span>
+          <span className="text-brand-muted">Comision 10%</span>
           <span className="text-white">{formatCop(commission)}</span>
         </div>
         <div className="mt-3 border-t border-white/10 pt-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-brand-muted">Total</span>
-            <span className="font-[var(--font-heading)] text-2xl font-bold text-[var(--brand-accent)]">{formatCop(total)}</span>
+            <span className="font-[var(--font-heading)] text-2xl font-bold text-[var(--brand-accent)]">
+              {formatCop(total)}
+            </span>
           </div>
         </div>
       </div>
 
-      {isMockStripeKey ? <MockCardFields /> : <CardField />}
+      <CardField />
 
       <p className="rounded-xl border border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/10 px-3 py-2 text-sm text-[#83ffe8]">
-        Tu dinero está protegido hasta que confirmes que el trabajo quedó bien.
+        Tu dinero esta protegido hasta que confirmes que el trabajo quedo bien.
       </p>
 
       {error && <p className="premium-error">{error}</p>}
@@ -231,7 +215,10 @@ export default function JobPayPage() {
       setToken(authToken);
 
       try {
-        const profile = await apiRequest<ProfileMeResponse>("/profile/me", { method: "GET", token: authToken });
+        const profile = await apiRequest<ProfileMeResponse>("/profile/me", {
+          method: "GET",
+          token: authToken,
+        });
         setUserName(profile.name);
         await loadJob(authToken);
       } catch (err) {
@@ -246,7 +233,7 @@ export default function JobPayPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   const canPay = useMemo(() => job?.paymentStatus === "PENDIENTE", [job]);
@@ -264,8 +251,16 @@ export default function JobPayPage() {
       <DashboardHeader userName={userName} onLogout={onLogout} />
 
       <section className="premium-panel p-6 md:p-8">
-        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Pago seguro en escrow</h1>
+        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">
+          Pago seguro en escrow
+        </h1>
         <p className="mt-2 text-brand-muted">{job.request.description}</p>
+
+        {!stripeConfigured ? (
+          <p className="mt-4 rounded-xl border border-amber-400/40 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+            Configura NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY y STRIPE_SECRET_KEY con llaves reales para procesar pagos.
+          </p>
+        ) : null}
 
         {error && <p className="premium-error mt-4">{error}</p>}
 
@@ -282,4 +277,3 @@ export default function JobPayPage() {
     </main>
   );
 }
-

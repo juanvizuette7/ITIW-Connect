@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -111,7 +111,7 @@ export default function MisSolicitudesPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   async function onConfirmCancel() {
@@ -161,7 +161,7 @@ export default function MisSolicitudesPage() {
             <div className="mx-auto mb-3 inline-flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-[#9fb4d4]">
               <FolderIcon />
             </div>
-            <p className="text-lg font-semibold text-white">Aún no tienes solicitudes</p>
+            <p className="text-lg font-semibold text-white">A�n no tienes solicitudes</p>
             <p className="mt-1 text-sm text-brand-muted">Crea tu primera solicitud y recibe cotizaciones de profesionales verificados.</p>
             <Link href="/dashboard/nueva-solicitud" className="premium-btn-primary mt-5 inline-flex px-5 py-2.5 text-sm">
               Crear primera solicitud
@@ -228,7 +228,7 @@ export default function MisSolicitudesPage() {
               Anterior
             </button>
             <span className="text-brand-muted">
-              Página {currentPage} de {totalPages}
+              P�gina {currentPage} de {totalPages}
             </span>
             <button
               type="button"
@@ -246,8 +246,8 @@ export default function MisSolicitudesPage() {
         <div className="fixed inset-0 z-50 bg-black/65">
           <button type="button" aria-label="Cerrar" className="absolute inset-0" onClick={() => setCancelModalId(null)} />
           <div className="absolute inset-x-0 bottom-0 rounded-t-3xl border border-white/10 bg-[#0A0F1A] p-5 shadow-[0_-18px_40px_rgba(0,0,0,0.45)] md:left-1/2 md:max-w-md md:-translate-x-1/2 md:bottom-6 md:rounded-2xl">
-            <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Confirmar cancelación</h2>
-            <p className="mt-2 text-sm text-brand-muted">Esta acción es irreversible. La solicitud pasará a estado CANCELADA.</p>
+            <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Confirmar cancelaci�n</h2>
+            <p className="mt-2 text-sm text-brand-muted">Esta acci�n es irreversible. La solicitud pasar� a estado CANCELADA.</p>
             <div className="mt-5 flex gap-2">
               <button
                 type="button"
@@ -271,4 +271,5 @@ export default function MisSolicitudesPage() {
     </main>
   );
 }
+
 

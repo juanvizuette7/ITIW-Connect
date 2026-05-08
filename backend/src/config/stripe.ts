@@ -1,7 +1,8 @@
 import Stripe from "stripe";
 import { env } from "./env";
 
-const isMockStripe = env.stripeSecretKey.includes("usa_esta_clave");
+const hasPlaceholderKey = env.stripeSecretKey.includes("usa_esta_clave");
+const isMockStripe = env.nodeEnv !== "production" && hasPlaceholderKey;
 
 const stripeClient = isMockStripe ? null : new Stripe(env.stripeSecretKey);
 
@@ -14,7 +15,15 @@ export function stripeIsMockMode() {
   return isMockStripe;
 }
 
+function ensureStripeConfigured() {
+  if (env.nodeEnv === "production" && hasPlaceholderKey) {
+    throw new Error("Stripe no esta configurado en produccion.");
+  }
+}
+
 export async function createPaymentIntent(jobId: string, amountCop: number): Promise<CreatedIntent> {
+  ensureStripeConfigured();
+
   if (isMockStripe) {
     const id = `pi_mock_${jobId}_${Date.now()}`;
     return {
@@ -42,6 +51,8 @@ export async function createPaymentIntent(jobId: string, amountCop: number): Pro
 }
 
 export async function getPaymentIntentClientSecret(paymentIntentId: string): Promise<string> {
+  ensureStripeConfigured();
+
   if (isMockStripe) {
     return `${paymentIntentId}_secret_mock`;
   }
@@ -51,6 +62,8 @@ export async function getPaymentIntentClientSecret(paymentIntentId: string): Pro
 }
 
 export async function validatePaymentIntentForEscrow(paymentIntentId: string): Promise<boolean> {
+  ensureStripeConfigured();
+
   if (isMockStripe) {
     return true;
   }
@@ -64,6 +77,8 @@ export async function validatePaymentIntentForEscrow(paymentIntentId: string): P
 }
 
 export async function capturePaymentIntent(paymentIntentId: string): Promise<void> {
+  ensureStripeConfigured();
+
   if (isMockStripe) {
     return;
   }

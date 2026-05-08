@@ -76,7 +76,7 @@ export default function DisputasPage() {
 
   function onLogout() {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   }
 
   if (loading) {
@@ -133,4 +133,5 @@ export default function DisputasPage() {
     </main>
   );
 }
+
 

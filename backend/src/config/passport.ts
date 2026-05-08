@@ -132,12 +132,18 @@ export function configurePassport() {
     return;
   }
 
+  const explicitCallbackUrl = process.env.GOOGLE_CALLBACK_URL?.trim();
+  const renderExternalUrl = process.env.RENDER_EXTERNAL_URL?.trim();
+  const callbackURL = explicitCallbackUrl
+    || (renderExternalUrl ? `${renderExternalUrl.replace(/\/$/, "")}/api/auth/google/callback` : "")
+    || `http://localhost:${env.port}/api/auth/google/callback`;
+
   passport.use(
     new GoogleStrategy(
       {
         clientID: env.googleClientId,
         clientSecret: env.googleClientSecret,
-        callbackURL: `http://localhost:${env.port}/api/auth/google/callback`,
+        callbackURL,
       },
       async (_accessToken, _refreshToken, profile, done) => {
         try {

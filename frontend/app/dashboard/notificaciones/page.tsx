@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -212,7 +212,7 @@ export default function NotificacionesPage() {
 
   const onLogout = () => {
     clearSession();
-    router.push("/auth/login");
+    router.push("/");
   };
 
   const onMarkRead = async (id: string) => {
@@ -265,7 +265,7 @@ export default function NotificacionesPage() {
             <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Notificaciones</h1>
             <p className="mt-2 text-sm text-brand-muted">
               Polling automatico cada 10 segundos. No leidas: {unreadCount}
-              {refreshing ? " · sincronizando..." : ""}
+              {refreshing ? " � sincronizando..." : ""}
             </p>
           </div>
 
@@ -353,4 +353,5 @@ export default function NotificacionesPage() {
     </main>
   );
 }
+
 
