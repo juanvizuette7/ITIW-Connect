@@ -188,6 +188,17 @@ export function getPassportGoogleCallbackMiddleware() {
 }
 
 export function runGoogleAuthCallback(req: Request, res: Response, next: NextFunction) {
+  const providerError = typeof req.query.error === "string" ? req.query.error : "";
+  const providerErrorDescription =
+    typeof req.query.error_description === "string" ? req.query.error_description : "";
+
+  if (providerError || providerErrorDescription) {
+    const reason = providerErrorDescription || providerError;
+    return res.redirect(
+      `${env.frontendUrl}/auth/login?oauthError=${encodeURIComponent(reason)}`,
+    );
+  }
+
   return passport.authenticate(
     "google",
     { session: false },
@@ -199,7 +210,9 @@ export function runGoogleAuthCallback(req: Request, res: Response, next: NextFun
       }
 
       if (!user?.token) {
-        return res.redirect(`${env.frontendUrl}/auth/login?oauthError=token_invalido`);
+        return res.redirect(
+          `${env.frontendUrl}/auth/login?oauthError=${encodeURIComponent("No se pudo validar la cuenta de Google.")}`,
+        );
       }
 
       return res.redirect(
