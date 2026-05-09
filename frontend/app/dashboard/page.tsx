@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest } from "@/lib/api";
-import { clearSession, getRole, getToken, UserRole } from "@/lib/auth";
+import { ApiError, apiRequest } from "@/lib/api";
+import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 
 type ClientRequest = {
@@ -73,6 +73,37 @@ function formatCop(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(Math.round(value))} COP`;
 }
 
+function isUnauthorizedError(error: unknown) {
+  return error instanceof ApiError && error.status === 401;
+}
+
+async function optionalApi<T>(request: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await request;
+  } catch (error) {
+    if (isUnauthorizedError(error)) {
+      throw error;
+    }
+
+    return fallback;
+  }
+}
+
+function emptyPaymentHistory(): PaymentHistoryResponse {
+  return {
+    data: [],
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+    totals: {
+      totalPagado: 0,
+      totalComisiones: 0,
+      totalNeto: 0,
+    },
+  };
+}
+
 function TileIcon({ name }: { name: "new" | "list" | "briefcase" | "money" | "history" | "notif" | "profile" }) {
   if (name === "new") {
     return <span className="text-lg">?</span>;
@@ -114,9 +145,8 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadDashboard() {
       const token = getToken();
-      const savedRole = getRole();
 
-      if (!token || !savedRole) {
+      if (!token) {
         router.replace("/auth/login");
         return;
       }
@@ -136,19 +166,22 @@ export default function DashboardPage() {
         }
 
         const [jobs, currentMonthHistory, unread] = await Promise.all([
-          apiRequest<JobItem[]>("/jobs", { method: "GET", token }),
+          optionalApi(apiRequest<JobItem[]>("/jobs", { method: "GET", token }), []),
           (() => {
             const monthStart = new Date();
             monthStart.setDate(1);
             monthStart.setHours(0, 0, 0, 0);
             const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
             const query = `?fechaInicio=${encodeURIComponent(monthStart.toISOString())}&fechaFin=${encodeURIComponent(monthEnd.toISOString())}`;
-            return apiRequest<PaymentHistoryResponse>(`/payments/history${query}`, {
-              method: "GET",
-              token,
-            });
+            return optionalApi(
+              apiRequest<PaymentHistoryResponse>(`/payments/history${query}`, {
+                method: "GET",
+                token,
+              }),
+              emptyPaymentHistory(),
+            );
           })(),
-          apiRequest<UnreadCountResponse>("/notifications/unread-count", { method: "GET", token }),
+          optionalApi(apiRequest<UnreadCountResponse>("/notifications/unread-count", { method: "GET", token }), { unread: 0 }),
         ]);
 
         setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
@@ -157,20 +190,34 @@ export default function DashboardPage() {
         setUnreadNotifications(unread.unread);
 
         if (profile.role === "CLIENTE") {
-          const requests = await apiRequest<PaginatedClientRequests>("/requests?page=1&limit=200", {
-            method: "GET",
-            token,
-          });
+          const requests = await optionalApi(
+            apiRequest<PaginatedClientRequests>("/requests?page=1&limit=200", {
+              method: "GET",
+              token,
+            }),
+            { data: [] },
+          );
           setActiveRequestsCount(requests.data.filter((request) => request.status === "ACTIVA").length);
           setAvgRating(null);
         }
 
         if (profile.role === "PROFESIONAL") {
           const [availableRequests, myQuotes, onboardingStatus, professionalPublic] = await Promise.all([
-            apiRequest<AvailableRequest[]>("/requests/available", { method: "GET", token }),
-            apiRequest<ProfessionalQuote[]>("/requests/my-quotes", { method: "GET", token }),
-            apiRequest<OnboardingStatusResponse>("/onboarding/status", { method: "GET", token }),
-            apiRequest<ProfessionalStatsResponse>(`/profile/professional/${profile.id}`, { method: "GET", token }),
+            optionalApi(apiRequest<AvailableRequest[]>("/requests/available", { method: "GET", token }), []),
+            optionalApi(apiRequest<ProfessionalQuote[]>("/requests/my-quotes", { method: "GET", token }), []),
+            optionalApi(apiRequest<OnboardingStatusResponse>("/onboarding/status", { method: "GET", token }), {
+              onboardingCompleted: true,
+              progress: {
+                completed: 0,
+                total: 4,
+                percentage: 0,
+              },
+            }),
+            optionalApi(apiRequest<ProfessionalStatsResponse>(`/profile/professional/${profile.id}`, { method: "GET", token }), {
+              professionalProfile: {
+                avgRating: 0,
+              },
+            }),
           ]);
           setAvailableRequestsCount(availableRequests.length);
           setPendingQuotesCount(myQuotes.filter((quote) => quote.status === "PENDIENTE").length);
@@ -178,8 +225,12 @@ export default function DashboardPage() {
           setAvgRating(Number(professionalPublic.professionalProfile?.avgRating || 0));
         }
       } catch (err) {
-        clearSession();
-        router.replace("/auth/login");
+        if (isUnauthorizedError(err)) {
+          clearSession();
+          router.replace("/auth/login");
+          return;
+        }
+
         setError(err instanceof Error ? err.message : "No fue posible cargar el dashboard.");
       } finally {
         setLoading(false);

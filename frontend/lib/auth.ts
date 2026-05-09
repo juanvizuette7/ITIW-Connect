@@ -8,7 +8,13 @@ function decodePayload(token: string): Record<string, unknown> | null {
   try {
     const payload = token.split(".")[1];
     if (!payload) return null;
-    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const json = decodeURIComponent(
+      Array.from(atob(padded))
+        .map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, "0")}`)
+        .join(""),
+    );
     return JSON.parse(json) as Record<string, unknown>;
   } catch {
     return null;
