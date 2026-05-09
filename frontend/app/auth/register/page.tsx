@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
@@ -12,6 +12,24 @@ type Role = "CLIENTE" | "PROFESIONAL";
 interface RegisterResponse {
   message: string;
   requiresVerification?: boolean;
+}
+
+function RoleIcon({ type }: { type: Role }) {
+  if (type === "CLIENTE") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M20 21a8 8 0 1 0-16 0" />
+        <circle cx="12" cy="8" r="4" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4" />
+      <path d="m15 5 4 4" />
+    </svg>
+  );
 }
 
 export default function RegisterPage() {
@@ -53,11 +71,11 @@ export default function RegisterPage() {
   return (
     <AuthSplitLayout
       leftTitle="Empieza hoy en ITIW Connect"
-      leftDescription="Construimos una red de servicios del hogar confiable, rapida y segura para toda Colombia."
+      leftDescription="Construimos una red de servicios del hogar confiable, rápida y segura para toda Colombia."
       benefits={[
         "Registro gratis para clientes y profesionales.",
-        "Validacion de cuentas y reputacion por calificaciones.",
-        "Pagos protegidos y comunicacion centralizada.",
+        "Validación de cuentas y reputación por calificaciones.",
+        "Pagos protegidos y comunicación centralizada.",
       ]}
     >
       <div className="inline-flex items-center gap-2 rounded-full border border-[#e94560]/35 bg-[#e94560]/12 px-3 py-1 text-xs font-semibold text-[#9bfde9]">
@@ -68,42 +86,34 @@ export default function RegisterPage() {
         Crear cuenta
       </h1>
       <p className="mt-3 text-sm leading-relaxed text-brand-muted">
-        Completa tus datos para empezar a recibir o solicitar servicios con pagos seguros, reputacion verificable y
-        seguimiento completó.
+        Completa tus datos para solicitar servicios o crear tu perfil profesional con pagos seguros,
+        reputación verificable y seguimiento completo.
       </p>
 
-      <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-1.5">
-        <button
-          type="button"
-          onClick={() => setForm((prev) => ({ ...prev, role: "CLIENTE" }))}
-          className={`rounded-lg px-3 py-2.5 text-sm transition ${
-            form.role === "CLIENTE"
-              ? "bg-brand-accent text-white shadow-[0_12px_24px_rgba(233,69,96,0.25)]"
-              : "bg-transparent text-brand-muted hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <span>ðŸ‘¤</span>
-            <span>Soy cliente</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setForm((prev) => ({ ...prev, role: "PROFESIONAL" }))}
-          className={`rounded-lg px-3 py-2.5 text-sm transition ${
-            form.role === "PROFESIONAL"
-              ? "bg-brand-accent text-white shadow-[0_12px_24px_rgba(233,69,96,0.25)]"
-              : "bg-transparent text-brand-muted hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          <span className="inline-flex items-center gap-1.5">
-            <span>ðŸ› ï¸</span>
-            <span>Soy profesional</span>
-          </span>
-        </button>
+      <div className="mt-6 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5 sm:grid-cols-2">
+        {(["CLIENTE", "PROFESIONAL"] as Role[]).map((roleOption) => {
+          const active = form.role === roleOption;
+          return (
+            <button
+              key={roleOption}
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, role: roleOption }))}
+              className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                active
+                  ? "bg-brand-accent text-white shadow-[0_12px_28px_rgba(233,69,96,0.30)]"
+                  : "bg-transparent text-[#aab7cd] hover:bg-white/6 hover:text-white"
+              }`}
+            >
+              <span className="inline-flex items-center justify-center gap-2">
+                <RoleIcon type={roleOption} />
+                <span>{roleOption === "CLIENTE" ? "Soy cliente" : "Soy profesional"}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      <form className="mt-6 space-y-4.5" onSubmit={onSubmit}>
+      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <div>
           <label className="mb-1.5 block text-sm text-[#d5dded]">Nombre</label>
           <input
@@ -111,7 +121,7 @@ export default function RegisterPage() {
             value={form.name}
             onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
             className="premium-input"
-            placeholder="Tu nombre completó"
+            placeholder="Tu nombre completo"
           />
         </div>
 
@@ -128,7 +138,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm text-[#d5dded]">Telefono</label>
+          <label className="mb-1.5 block text-sm text-[#d5dded]">Teléfono</label>
           <input
             required
             value={form.phone}
@@ -139,7 +149,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm text-[#d5dded]">Contrasena</label>
+          <label className="mb-1.5 block text-sm text-[#d5dded]">Contraseña</label>
           <input
             required
             type="password"
@@ -147,11 +157,18 @@ export default function RegisterPage() {
             value={form.password}
             onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
             className="premium-input"
-            placeholder="Minimo 8 caracteres"
+            placeholder="Mínimo 8 caracteres"
           />
         </div>
 
-        <GoogleAuthButton onError={setError} />
+        <div className="space-y-3 pt-1">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.16em] text-[#7f8ca5]">
+            <span className="h-px flex-1 bg-white/10" />
+            <span>o continúa con Google</span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+          <GoogleAuthButton onError={setError} role={form.role} />
+        </div>
 
         {error && (
           <p className="premium-error">
@@ -171,12 +188,11 @@ export default function RegisterPage() {
       </form>
 
       <p className="mt-5 text-sm text-brand-muted">
-        Ya tienes cuenta?{" "}
+        ¿Ya tienes cuenta?{" "}
         <Link href="/auth/login" className="font-medium text-brand-accent hover:underline">
-          Inicia sesion
+          Inicia sesión
         </Link>
       </p>
     </AuthSplitLayout>
   );
 }
-

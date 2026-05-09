@@ -53,7 +53,7 @@ export default function VerifyOtpPage() {
     setMessage(null);
 
     if (otpCode.length !== 6) {
-      setError("Ingresa el código completó de 6 digitos.");
+      setError("Ingresa el código completo de 6 dígitos.");
       return;
     }
 
@@ -144,7 +144,7 @@ export default function VerifyOtpPage() {
           disabled={resending}
           className="mt-5 text-sm font-medium text-brand-accent transition hover:underline disabled:opacity-60"
         >
-          No llegó? Reenviar código
+          ¿No llegó? Reenviar código
         </button>
 
         <p className="mt-5 text-sm text-brand-muted">

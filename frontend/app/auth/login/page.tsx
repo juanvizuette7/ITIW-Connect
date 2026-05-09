@@ -35,8 +35,8 @@ export default function LoginPage() {
   const oauthErrorMessage = oauthError
     ? decodeURIComponent(oauthError)
         .replace("google_failed", "No fue posible completar el acceso con Google.")
-        .replace("token_invalido", "Google respondio sin token valido.")
-        .replace("configuracion", "Google OAuth aun no esta configurado en el servidor.")
+        .replace("token_invalido", "Google respondió sin token válido.")
+        .replace("configuracion", "Google OAuth aún no está configurado en el servidor.")
     : null;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible iniciar sesion.");
+      setError(err instanceof Error ? err.message : "No fue posible iniciar sesión.");
     } finally {
       setLoading(false);
     }
@@ -86,11 +86,11 @@ export default function LoginPage() {
   return (
     <AuthSplitLayout
       leftTitle="Bienvenido de vuelta"
-      leftDescription="Inicia sesion para administrar tus solicitudes o tu perfil profesional en segundos."
+      leftDescription="Inicia sesión para administrar tus solicitudes o tu perfil profesional en segundos."
       benefits={[
-        "Historial completó de solicitudes y cotizaciones.",
-        "Respuestas rapidas desde una sola bandeja.",
-        "Perfil y reputacion centralizada en la plataforma.",
+        "Historial completo de solicitudes y cotizaciones.",
+        "Respuestas rápidas desde una sola bandeja.",
+        "Perfil y reputación centralizada en la plataforma.",
       ]}
     >
       <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Iniciar sesión</h1>
@@ -110,7 +110,7 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm text-[#d5dded]">Contrasena</label>
+          <label className="mb-1.5 block text-sm text-[#d5dded]">Contraseña</label>
           <input
             required
             type="password"
@@ -123,7 +123,7 @@ export default function LoginPage() {
 
         <div className="text-right">
           <Link href="/auth/forgot-password" className="text-sm text-brand-accent hover:underline">
-            Olvidaste tu contraseña?
+            ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
@@ -141,14 +141,14 @@ export default function LoginPage() {
         )}
 
         <button disabled={loading} className="premium-btn-primary w-full">
-          {loading ? "Ingresando..." : "Iniciar sesión ?"}
+          {loading ? "Ingresando..." : "Iniciar sesión ->"}
         </button>
       </form>
 
       <p className="mt-5 text-sm text-brand-muted">
-        Aún no tienes cuenta?{" "}
+        ¿Aún no tienes cuenta?{" "}
         <Link href="/auth/register" className="font-medium text-brand-accent hover:underline">
-          Registrate
+          Regístrate
         </Link>
       </p>
     </AuthSplitLayout>

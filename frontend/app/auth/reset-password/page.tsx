@@ -32,7 +32,7 @@ export default function ResetPasswordPage() {
     }
 
     if (password !== confirmPassword) {
-      setError("Las contrasenas no coinciden.");
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -68,7 +68,7 @@ export default function ResetPasswordPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimo 8 caracteres"
+              placeholder="Mínimo 8 caracteres"
               className="premium-input"
             />
           </div>
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
 
         <p className="mt-5 text-sm text-brand-muted">
           <Link href="/auth/login" className="text-brand-accent hover:underline">
-            Ir a iniciar sesion
+            Ir a iniciar sesión
           </Link>
         </p>
       </section>

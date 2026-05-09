@@ -12,6 +12,8 @@ type OauthSessionUser = JwtPayload & {
   token: string;
 };
 
+type RequestedOauthRole = "CLIENTE" | "PROFESIONAL";
+
 function isPlaceholder(value: string) {
   return value.trim().toLowerCase().includes("placeholder");
 }
@@ -37,7 +39,48 @@ async function generateUniquePhone(): Promise<string> {
   return `3${Date.now().toString().slice(-9)}`;
 }
 
-async function findOrCreateOauthUser(profile: Profile) {
+function resolveRequestedRole(value: unknown): RequestedOauthRole {
+  return value === Role.PROFESIONAL ? Role.PROFESIONAL : Role.CLIENTE;
+}
+
+async function userHasRoleActivity(userId: string) {
+  const [requestsAsClient, jobsAsClient, jobsAsProfessional, quotesAsProfessional] = await Promise.all([
+    prisma.serviceRequest.count({ where: { clientId: userId } }),
+    prisma.job.count({ where: { clientId: userId } }),
+    prisma.job.count({ where: { professionalId: userId } }),
+    prisma.quote.count({ where: { professionalId: userId } }),
+  ]);
+
+  return requestsAsClient + jobsAsClient + jobsAsProfessional + quotesAsProfessional > 0;
+}
+
+async function ensureProfileForRole(userId: string, role: RequestedOauthRole, name: string) {
+  if (role === Role.CLIENTE) {
+    await prisma.clientProfile.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        name,
+      },
+    });
+    return;
+  }
+
+  await prisma.professionalProfile.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      userId,
+      name,
+      specialties: [],
+      hourlyRate: 25000,
+      coverageRadiusKm: 5,
+    },
+  });
+}
+
+async function findOrCreateOauthUser(profile: Profile, requestedRole: RequestedOauthRole) {
   const email = profile.emails?.[0]?.value?.trim().toLowerCase();
   if (!email) {
     throw new Error("Google no envio un correo valido para autenticar la cuenta.");
@@ -66,35 +109,51 @@ async function findOrCreateOauthUser(profile: Profile) {
       throw new Error("Tu cuenta esta desactivada temporalmente. Contacta soporte.");
     }
 
-    if (existingUser.role === Role.CLIENTE && !existingUser.clientProfile) {
-      await prisma.clientProfile.create({
-        data: {
-          userId: existingUser.id,
-          name: displayName,
+    let resolvedRole = existingUser.role;
+    if (existingUser.role !== requestedRole) {
+      const hasActivity = await userHasRoleActivity(existingUser.id);
+      if (hasActivity) {
+        throw new Error(
+          existingUser.role === Role.CLIENTE
+            ? "Este correo ya esta registrado como cliente. Usa otro correo para crear perfil profesional."
+            : "Este correo ya esta registrado como profesional. Usa otro correo para crear perfil cliente.",
+        );
+      }
+
+      const switchedUser = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { role: requestedRole },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          isActive: true,
+          clientProfile: {
+            select: { id: true, name: true },
+          },
+          professionalProfile: {
+            select: { id: true, name: true },
+          },
         },
       });
+      resolvedRole = switchedUser.role;
     }
 
-    if (existingUser.role === Role.PROFESIONAL && !existingUser.professionalProfile) {
-      await prisma.professionalProfile.create({
-        data: {
-          userId: existingUser.id,
-          name: displayName,
-          specialties: [],
-          hourlyRate: 25000,
-          coverageRadiusKm: 5,
-        },
-      });
-    }
+    await ensureProfileForRole(existingUser.id, resolvedRole as RequestedOauthRole, displayName);
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: existingUser.id },
       data: {
         isEmailVerified: true,
       },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+      },
     });
 
-    return existingUser;
+    return updatedUser;
   }
 
   const generatedPhone = await generateUniquePhone();
@@ -105,13 +164,27 @@ async function findOrCreateOauthUser(profile: Profile) {
       email,
       phone: generatedPhone,
       passwordHash,
-      role: Role.CLIENTE,
+      role: requestedRole,
       isEmailVerified: true,
-      clientProfile: {
-        create: {
-          name: displayName,
-        },
-      },
+      clientProfile:
+        requestedRole === Role.CLIENTE
+          ? {
+              create: {
+                name: displayName,
+              },
+            }
+          : undefined,
+      professionalProfile:
+        requestedRole === Role.PROFESIONAL
+          ? {
+              create: {
+                name: displayName,
+                specialties: [],
+                hourlyRate: 25000,
+                coverageRadiusKm: 5,
+              },
+            }
+          : undefined,
     },
     select: {
       id: true,
@@ -145,10 +218,12 @@ export function configurePassport() {
         clientID: env.googleClientId,
         clientSecret: env.googleClientSecret,
         callbackURL,
+        passReqToCallback: true,
       },
-      async (_accessToken, _refreshToken, profile, done) => {
+      async (req: Request, _accessToken, _refreshToken, profile, done) => {
         try {
-          const user = await findOrCreateOauthUser(profile);
+          const requestedRole = resolveRequestedRole(req.query.state);
+          const user = await findOrCreateOauthUser(profile, requestedRole);
           const token = signToken({
             userId: user.id,
             role: user.role,
@@ -172,11 +247,14 @@ export function configurePassport() {
   );
 }
 
-export function getPassportGoogleAuthMiddleware() {
+export function getPassportGoogleAuthMiddleware(role?: string) {
+  const requestedRole = resolveRequestedRole(role);
+
   return passport.authenticate("google", {
     scope: ["profile", "email"],
     session: false,
     prompt: "select_account",
+    state: requestedRole,
   });
 }
 

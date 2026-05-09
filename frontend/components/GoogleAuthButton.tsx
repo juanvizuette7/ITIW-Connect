@@ -5,6 +5,7 @@ import { getApiUrl } from "@/lib/api";
 
 type GoogleAuthButtonProps = {
   onError: (message: string) => void;
+  role?: "CLIENTE" | "PROFESIONAL";
 };
 
 function GoogleIcon() {
@@ -18,14 +19,17 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
+export function GoogleAuthButton({ onError, role }: GoogleAuthButtonProps) {
   const [loading, setLoading] = useState(false);
 
   function onClick() {
     setLoading(true);
     try {
       const apiBase = getApiUrl().replace(/\/api$/, "");
-      window.location.href = `${apiBase}/api/auth/google`;
+      const params = new URLSearchParams();
+      if (role) params.set("role", role);
+      const query = params.toString();
+      window.location.href = `${apiBase}/api/auth/google${query ? `?${query}` : ""}`;
     } catch {
       setLoading(false);
       onError("No fue posible iniciar OAuth con Google.");

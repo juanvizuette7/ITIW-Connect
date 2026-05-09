@@ -31,7 +31,8 @@ authRouter.get("/google", (req, res, next) => {
   if (!isGoogleOauthConfigured()) {
     return res.status(503).json({ message: "OAuth en configuracion." });
   }
-  return getPassportGoogleAuthMiddleware()(req, res, next);
+  const requestedRole = typeof req.query.role === "string" ? req.query.role : undefined;
+  return getPassportGoogleAuthMiddleware(requestedRole)(req, res, next);
 });
 authRouter.get("/google/callback", (req, res, next) => {
   if (!isGoogleOauthConfigured()) {
