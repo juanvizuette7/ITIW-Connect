@@ -339,7 +339,7 @@ export default function ProfilePage() {
 
       <section className="premium-panel p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">{profileTitle}</h1>
-        <p className="mt-2 text-brand-muted">Actualiza la informacion de tu cuenta en ITIW Connect.</p>
+        <p className="mt-2 text-brand-muted">Actualiza la información de tu cuenta en ITIW Connect.</p>
 
         {error && <p className="premium-error mt-4">{error}</p>}
         {message && <p className="premium-success mt-4">{message}</p>}
@@ -353,7 +353,7 @@ export default function ProfilePage() {
                 value={clientForm.name}
                 onChange={(e) => setClientForm((prev) => ({ ...prev, name: e.target.value }))}
                 className="premium-input"
-                placeholder="Nombre completo"
+                placeholder="Nombre completó"
               />
             </div>
 
@@ -552,7 +552,7 @@ export default function ProfilePage() {
                       </article>
                     ))}
                     {portfolioPhotos.length === 0 && (
-                      <p className="col-span-full text-sm text-brand-muted">Aun no has agregado fotos a tu portafolio.</p>
+                      <p className="col-span-full text-sm text-brand-muted">Aún no has agregado fotos a tu portafolio.</p>
                     )}
                   </div>
                 </div>

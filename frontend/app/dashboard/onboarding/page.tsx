@@ -48,7 +48,7 @@ export default function OnboardingPage() {
 
     setStatus(onboardingStatus);
     if (onboardingStatus.onboardingCompleted) {
-      setMessage("Tu onboarding ya esta completo. Excelente trabajo.");
+      setMessage("Tu onboarding ya esta completó. Excelente trabajo.");
     }
   }
 
@@ -106,7 +106,7 @@ export default function OnboardingPage() {
       {
         key: "identidadVerificada",
         title: "Verifica tu identidad",
-        detail: "La verificacion es gestionada por administracion.",
+        detail: "La verificación es gestionada por administracion.",
         done: status.steps.identidadVerificada,
         href: "/dashboard/profile",
       },

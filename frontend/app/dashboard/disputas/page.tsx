@@ -105,7 +105,7 @@ export default function DisputasPage() {
         <div className="mt-6 space-y-3">
           {items.length === 0 ? (
             <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-brand-muted">
-              Aun no tienes disputas registradas.
+              Aún no tienes disputas registradas.
             </article>
           ) : (
             items.map((item) => (

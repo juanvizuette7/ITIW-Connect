@@ -177,7 +177,7 @@ export default function BuscarPage() {
       <section className="rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Buscar profesionales</h1>
         <p className="mt-2 text-sm text-brand-muted">
-          Filtra por nombre, especialidad, categoria, calificacion y radio de cobertura.
+          Filtra por nombre, especialidad, categoría, calificacion y radio de cobertura.
         </p>
 
         <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -193,7 +193,7 @@ export default function BuscarPage() {
             onChange={(event) => setCategoryId(event.target.value)}
             className="premium-input"
           >
-            <option value="">Todas las categorias</option>
+            <option value="">Todas las categorías</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id} className="bg-[#0f1f35] text-white">
                 {category.name}

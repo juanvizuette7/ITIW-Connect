@@ -238,7 +238,7 @@ export default function AdminProfesionalesPage() {
                     <td className="px-3 py-3 align-top font-semibold text-[#7efbe7]">{item.aiScore.toFixed(2)}</td>
                     <td className="px-3 py-3 align-top">
                       <p className="text-[#f4c15a]">{stars(item.avgRating)}</p>
-                      <p className="text-xs text-[#8ea0b9]">{item.avgRating.toFixed(2)} � {item.reviewCount} rese�as</p>
+                      <p className="text-xs text-[#8ea0b9]">{item.avgRating.toFixed(2)} · {item.reviewCount} reseñas</p>
                     </td>
                     <td className="px-3 py-3 align-top">{item.totalJobs}</td>
                     <td className="px-3 py-3 align-top text-xs text-[#8ea0b9]">{new Date(item.createdAt).toLocaleDateString("es-CO")}</td>

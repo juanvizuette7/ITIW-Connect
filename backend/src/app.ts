@@ -16,6 +16,7 @@ export const app = express();
 const allowedOrigins = new Set<string>([
   env.frontendUrl,
   "http://localhost:3000",
+  "https://itiw-connect.vercel.app",
 ]);
 
 app.use(

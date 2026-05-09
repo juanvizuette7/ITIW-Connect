@@ -36,9 +36,9 @@ export default function ForgotPasswordPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
       <section className="premium-panel w-full max-w-lg p-6 shadow-glow md:p-8">
-        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Recuperar contrasena</h1>
+        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Recuperar contraseña</h1>
         <p className="mt-3 text-sm text-brand-muted">
-          Ingresa tu correo y te enviaremos un enlace seguro para crear una nueva contrasena.
+          Ingresa tu correo y te enviaremos un enlace seguro para crear una nueva contraseña.
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>

@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
       setPassword("");
       setConfirmPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible cambiar la contrasena.");
+      setError(err instanceof Error ? err.message : "No fue posible cambiar la contraseña.");
     } finally {
       setLoading(false);
     }
@@ -56,12 +56,12 @@ export default function ResetPasswordPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
       <section className="premium-panel w-full max-w-lg p-6 shadow-glow md:p-8">
-        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Nueva contrasena</h1>
-        <p className="mt-3 text-sm text-brand-muted">Define una contrasena segura para recuperar el acceso.</p>
+        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Nueva contraseña</h1>
+        <p className="mt-3 text-sm text-brand-muted">Define una contraseña segura para recuperar el acceso.</p>
 
         <form className="mt-6 space-y-4" onSubmit={onSubmit}>
           <div>
-            <label className="mb-1.5 block text-sm text-[#d5dded]">Nueva contrasena</label>
+            <label className="mb-1.5 block text-sm text-[#d5dded]">Nueva contraseña</label>
             <input
               required
               minLength={8}
@@ -74,14 +74,14 @@ export default function ResetPasswordPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm text-[#d5dded]">Confirmar contrasena</label>
+            <label className="mb-1.5 block text-sm text-[#d5dded]">Confirmar contraseña</label>
             <input
               required
               minLength={8}
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repite tu contrasena"
+              placeholder="Repite tu contraseña"
               className="premium-input"
             />
           </div>
@@ -90,7 +90,7 @@ export default function ResetPasswordPage() {
           {message && <p className="premium-success">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            {loading ? "Actualizando..." : "Guardar contrasena"}
+            {loading ? "Actualizando..." : "Guardar contraseña"}
           </button>
         </form>
 

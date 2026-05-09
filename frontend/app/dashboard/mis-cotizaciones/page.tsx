@@ -99,7 +99,7 @@ export default function MisCotizacionesPage() {
 
         {quotes.length === 0 ? (
           <div className="mt-6 premium-panel p-5 text-center">
-            <p className="text-brand-muted">Aun no has enviado cotizaciones. Revisa solicitudes disponibles y envia tu primera propuesta.</p>
+            <p className="text-brand-muted">Aún no has enviado cotizaciones. Revisa solicitudes disponibles y envia tu primera propuesta.</p>
             <Link href="/dashboard/solicitudes-disponibles" className="premium-btn-primary mt-4 inline-block">
               Ver solicitudes disponibles
             </Link>

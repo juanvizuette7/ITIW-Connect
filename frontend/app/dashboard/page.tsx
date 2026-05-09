@@ -105,25 +105,61 @@ function emptyPaymentHistory(): PaymentHistoryResponse {
 }
 
 function TileIcon({ name }: { name: "new" | "list" | "briefcase" | "money" | "history" | "notif" | "profile" }) {
+  const common = "h-5 w-5";
+
   if (name === "new") {
-    return <span className="text-lg">?</span>;
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 5v14M5 12h14" />
+      </svg>
+    );
   }
   if (name === "list") {
-    return <span className="text-lg">??</span>;
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
+      </svg>
+    );
   }
   if (name === "briefcase") {
-    return <span className="text-lg">??</span>;
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M10 6h4a2 2 0 0 1 2 2v2H8V8a2 2 0 0 1 2-2Z" />
+        <path d="M4 10h16v9H4z" />
+      </svg>
+    );
   }
   if (name === "money") {
-    return <span className="text-lg">??</span>;
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 7h16v10H4z" />
+        <circle cx="12" cy="12" r="2.5" />
+        <path d="M7 10v.01M17 14v.01" />
+      </svg>
+    );
   }
   if (name === "history") {
-    return <span className="text-lg">??</span>;
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 12a8 8 0 1 0 2.3-5.7L4 8" />
+        <path d="M4 4v4h4M12 8v5l3 2" />
+      </svg>
+    );
   }
   if (name === "notif") {
-    return <span className="text-lg">??</span>;
+    return (
+      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" />
+        <path d="M15 17a3 3 0 0 1-6 0" />
+      </svg>
+    );
   }
-  return <span className="text-lg">??</span>;
+  return (
+    <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M20 21a8 8 0 1 0-16 0" />
+      <circle cx="12" cy="8" r="4" />
+    </svg>
+  );
 }
 
 export default function DashboardPage() {
@@ -251,7 +287,7 @@ export default function DashboardPage() {
         value: completedJobs,
       },
       {
-        title: "Calificaci�n promedio",
+        title: "Calificación promedio",
         value: avgRating === null ? "Sin calificar" : avgRating.toFixed(1),
       },
     ],
@@ -298,7 +334,7 @@ export default function DashboardPage() {
       {
         icon: <TileIcon name="notif" />,
         title: "Notificaciones",
-        description: "Mantente al d�a con alertas importantes.",
+        description: "Mantente al día con alertas importantes.",
         countLabel: unreadNotifications > 0 ? `${unreadNotifications} nuevas` : "Sin pendientes",
         href: "/dashboard/notificaciones",
       },
@@ -311,7 +347,7 @@ export default function DashboardPage() {
       {
         icon: <TileIcon name="briefcase" />,
         title: "Solicitudes disponibles",
-        description: "Explora trabajos activos y env�a tu propuesta.",
+        description: "Explora trabajos activos y envía tu propuesta.",
         countLabel: `${availableRequestsCount} nuevas`,
         href: "/dashboard/solicitudes-disponibles",
       },
@@ -390,7 +426,7 @@ export default function DashboardPage() {
 
       <section className="premium-panel p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel principal</h1>
-        <p className="mt-2 text-brand-muted">Resumen r�pido de tu actividad y accesos principales.</p>
+        <p className="mt-2 text-brand-muted">Resumen rápido de tu actividad y accesos principales.</p>
 
         {error && <p className="premium-error mt-4">{error}</p>}
 

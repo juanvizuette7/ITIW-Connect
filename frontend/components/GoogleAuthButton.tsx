@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { getApiUrl } from "@/lib/api";
 
 type GoogleAuthButtonProps = {
   onError: (message: string) => void;
@@ -23,7 +24,7 @@ export function GoogleAuthButton({ onError }: GoogleAuthButtonProps) {
   function onClick() {
     setLoading(true);
     try {
-      const apiBase = (process.env.NEXT_PUBLIC_API_URL || "https://itiw-connect.onrender.com/api").replace(/\/api$/, "");
+      const apiBase = getApiUrl().replace(/\/api$/, "");
       window.location.href = `${apiBase}/api/auth/google`;
     } catch {
       setLoading(false);

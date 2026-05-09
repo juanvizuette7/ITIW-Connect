@@ -85,7 +85,7 @@ export default function NuevaDisputaPage() {
         setUserName(me.name);
         setJob(jobDetail);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "No fue posible cargar la informacion del trabajo.");
+        setError(err instanceof Error ? err.message : "No fue posible cargar la información del trabajo.");
       } finally {
         setLoading(false);
       }
@@ -164,7 +164,7 @@ export default function NuevaDisputaPage() {
 
         {job && (
           <article className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-[#d5dded]">
-            <p><span className="text-brand-muted">Categoria:</span> {job.request.category.name}</p>
+            <p><span className="text-brand-muted">Categoría:</span> {job.request.category.name}</p>
             <p className="mt-1"><span className="text-brand-muted">Descripcion:</span> {job.request.description}</p>
             <p className="mt-1 text-[#8ddfce]">{timeLeftText(job.updatedAt)}</p>
           </article>

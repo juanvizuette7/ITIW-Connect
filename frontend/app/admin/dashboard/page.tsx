@@ -175,7 +175,7 @@ export default function AdminDashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel de administracion</h1>
-            <p className="mt-2 text-sm text-brand-muted">M�tricas reales y monitoreo de la beta cerrada.</p>
+            <p className="mt-2 text-sm text-brand-muted">Métricas reales y monitoreo de la beta cerrada.</p>
           </div>
 
           <Link href="/admin/profesionales" className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 px-4 py-2 text-sm font-semibold text-[#7efbe7] transition hover:-translate-y-0.5 hover:bg-[#e94560]/20">

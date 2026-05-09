@@ -61,7 +61,7 @@ export default function RegisterPage() {
       ]}
     >
       <div className="inline-flex items-center gap-2 rounded-full border border-[#e94560]/35 bg-[#e94560]/12 px-3 py-1 text-xs font-semibold text-[#9bfde9]">
-        Registro rÃ¡pido
+        Registro rápido
       </div>
 
       <h1 className="mt-4 font-[var(--font-heading)] text-4xl font-extrabold leading-none text-white md:text-[2.8rem]">
@@ -69,7 +69,7 @@ export default function RegisterPage() {
       </h1>
       <p className="mt-3 text-sm leading-relaxed text-brand-muted">
         Completa tus datos para empezar a recibir o solicitar servicios con pagos seguros, reputacion verificable y
-        seguimiento completo.
+        seguimiento completó.
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-1.5">
@@ -111,7 +111,7 @@ export default function RegisterPage() {
             value={form.name}
             onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
             className="premium-input"
-            placeholder="Tu nombre completo"
+            placeholder="Tu nombre completó"
           />
         </div>
 

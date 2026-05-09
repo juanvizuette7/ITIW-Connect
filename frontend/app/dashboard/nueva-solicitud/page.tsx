@@ -30,7 +30,7 @@ type LocationState = {
 };
 
 const scheduleOptions = [
-  "Ma�ana (8am-12pm)",
+  "Mañana (8am-12pm)",
   "Tarde (12pm-6pm)",
   "Noche (6pm-10pm)",
 ] as const;
@@ -65,7 +65,7 @@ export default function NuevaSolicitudPage() {
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [location, setLocation] = useState<LocationState | null>(null);
   const [detectingLocation, setDetectingLocation] = useState(false);
-  const [locationMessage, setLocationMessage] = useState("Toca para compartir tu ubicaci�n");
+  const [locationMessage, setLocationMessage] = useState("Toca para compartir tu ubicación");
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export default function NuevaSolicitudPage() {
           setCategoryId(categoryList[0].id);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "No fue posible cargar la informaci�n inicial.");
+        setError(err instanceof Error ? err.message : "No fue posible cargar la información inicial.");
       } finally {
         setInitialLoading(false);
       }
@@ -118,7 +118,7 @@ export default function NuevaSolicitudPage() {
     const selected = files.slice(0, availableSlots);
 
     if (selected.length === 0) {
-      setError("Ya alcanzaste el m�ximo de 5 fotos adjuntas.");
+      setError("Ya alcanzaste el máximo de 5 fotos adjuntas.");
       return;
     }
 
@@ -127,7 +127,7 @@ export default function NuevaSolicitudPage() {
         (file) =>
           new Promise<PhotoItem>((resolve, reject) => {
             if (!file.type.startsWith("image/")) {
-              reject(new Error("Solo se permiten im�genes."));
+              reject(new Error("Solo se permiten imágenes."));
               return;
             }
 
@@ -138,7 +138,7 @@ export default function NuevaSolicitudPage() {
                 preview: String(reader.result || ""),
               });
             };
-            reader.onerror = () => reject(new Error("No fue posible procesar una de las im�genes."));
+            reader.onerror = () => reject(new Error("No fue posible procesar una de las imágenes."));
             reader.readAsDataURL(file);
           }),
       ),
@@ -157,21 +157,21 @@ export default function NuevaSolicitudPage() {
   }
 
   function formatLocationLabel(value: LocationState | null) {
-    if (!value) return "Ubicaci�n no compartida";
-    return `Lat ${value.lat.toFixed(5)}, Lng ${value.lng.toFixed(5)} � �${Math.round(value.accuracy)}m`;
+    if (!value) return "Ubicación no compartida";
+    return `Lat ${value.lat.toFixed(5)}, Lng ${value.lng.toFixed(5)} · ±${Math.round(value.accuracy)}m`;
   }
 
   function onDetectLocation() {
     if (detectingLocation) return;
 
     if (!("geolocation" in navigator)) {
-      setError("Tu navegador no soporta geolocalizaci�n.");
+      setError("Tu navegador no soporta geolocalización.");
       return;
     }
 
     setDetectingLocation(true);
     setError(null);
-    setLocationMessage("Detectando ubicaci�n...");
+    setLocationMessage("Detectando ubicación...");
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -182,19 +182,19 @@ export default function NuevaSolicitudPage() {
           detectedAt: new Date().toISOString(),
         };
         setLocation(nextLocation);
-        setLocationMessage("Ubicaci�n compartida correctamente");
-        showToast({ message: "Ubicaci�n detectada", kind: "success" });
+        setLocationMessage("Ubicación compartida correctamente");
+        showToast({ message: "Ubicación detectada", kind: "success" });
         setDetectingLocation(false);
       },
       (geoError) => {
         if (geoError.code === 1) {
-          setError("Permiso de ubicaci�n denegado. Habil�talo para compartir tu ubicaci�n.");
+          setError("Permiso de ubicación denegado. Habilítalo para compartir tu ubicación.");
         } else if (geoError.code === 2) {
-          setError("No fue posible obtener tu ubicaci�n. Revisa tu conexi�n y GPS.");
+          setError("No fue posible obtener tu ubicación. Revisa tu conexión y GPS.");
         } else {
-          setError("La detecci�n de ubicaci�n tard� demasiado. Int�ntalo de nuevo.");
+          setError("La detección de ubicación tardó demasiado. Inténtalo de nuevo.");
         }
-        setLocationMessage("Toca para compartir tu ubicaci�n");
+        setLocationMessage("Toca para compartir tu ubicación");
         setDetectingLocation(false);
       },
       {
@@ -215,7 +215,7 @@ export default function NuevaSolicitudPage() {
 
     try {
       const locationLabel = formatLocationLabel(location);
-      const fullDescription = `${description.trim()}\n\nHorario preferido: ${preferredSchedule}\nUbicaci�n detectada: ${locationLabel}${location ? `\nFecha detecci�n: ${new Date(location.detectedAt).toLocaleString("es-CO")}` : ""}`;
+      const fullDescription = `${description.trim()}\n\nHorario preferido: ${preferredSchedule}\nUbicación detectada: ${locationLabel}${location ? `\nFecha detección: ${new Date(location.detectedAt).toLocaleString("es-CO")}` : ""}`;
 
       await apiRequest<{ message: string }>("/requests", {
         method: "POST",
@@ -226,9 +226,9 @@ export default function NuevaSolicitudPage() {
       setDescription("");
       setPhotos([]);
       setLocation(null);
-      setLocationMessage("Toca para compartir tu ubicaci�n");
+      setLocationMessage("Toca para compartir tu ubicación");
       setPreferredSchedule(scheduleOptions[0]);
-      showToast({ message: "Solicitud creada con �xito", kind: "success" });
+      showToast({ message: "Solicitud creada con éxito", kind: "success" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible crear la solicitud.");
     } finally {
@@ -247,12 +247,12 @@ export default function NuevaSolicitudPage() {
       <section className="premium-panel p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Nueva solicitud</h1>
         <p className="mt-2 text-brand-muted">
-          Cuanto m�s detalle incluyas, m�s precisas ser�n las cotizaciones de los profesionales.
+          Cuanto más detalle incluyas, más precisas serán las cotizaciones de los profesionales.
         </p>
 
         <form className="mt-6 space-y-5" onSubmit={onSubmit}>
           <div>
-            <label className="mb-1.5 block text-sm text-[#d5dded]">Categor�a</label>
+            <label className="mb-1.5 block text-sm text-[#d5dded]">Categoría</label>
             <select
               value={categoryId}
               onChange={(event) => setCategoryId(event.target.value)}
@@ -268,14 +268,14 @@ export default function NuevaSolicitudPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm text-[#d5dded]">Descripci�n</label>
+            <label className="mb-1.5 block text-sm text-[#d5dded]">Descripción</label>
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               className="premium-input"
               rows={5}
               required
-              placeholder="Explica con detalle qu� necesitas. Cuanto m�s detalle, mejores cotizaciones recibir�s..."
+              placeholder="Explica con detalle qué necesitas. Cuanto más detalle, mejores cotizaciones recibirás..."
             />
           </div>
 
@@ -297,7 +297,7 @@ export default function NuevaSolicitudPage() {
             </div>
 
             {photos.length === 0 ? (
-              <p className="mt-3 text-xs text-brand-muted">No has adjuntado im�genes a�n.</p>
+              <p className="mt-3 text-xs text-brand-muted">No has adjuntado imágenes aún.</p>
             ) : (
               <div className="mt-3 grid grid-cols-3 gap-2 md:grid-cols-5">
                 {photos.map((photo) => (
@@ -307,9 +307,7 @@ export default function NuevaSolicitudPage() {
                       type="button"
                       onClick={() => removePhoto(photo.id)}
                       className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-xs font-bold text-white"
-                    >
-                      �
-                    </button>
+                    >×</button>
                   </article>
                 ))}
               </div>
@@ -317,7 +315,7 @@ export default function NuevaSolicitudPage() {
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[#0f2034] to-[#0b1a2c] p-4">
-            <p className="mb-2 text-sm font-semibold text-white">Ubicaci�n</p>
+            <p className="mb-2 text-sm font-semibold text-white">Ubicación</p>
             <button
               type="button"
               onClick={onDetectLocation}
@@ -330,10 +328,10 @@ export default function NuevaSolicitudPage() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-white">
-                    {detectingLocation ? "Detectando ubicaci�n..." : locationMessage}
+                    {detectingLocation ? "Detectando ubicación..." : locationMessage}
                   </p>
                   <p className="text-xs text-[var(--brand-accent)]">
-                    {location ? formatLocationLabel(location) : "Toca para compartir tu ubicaci�n"}
+                    {location ? formatLocationLabel(location) : "Toca para compartir tu ubicación"}
                   </p>
                 </div>
               </div>

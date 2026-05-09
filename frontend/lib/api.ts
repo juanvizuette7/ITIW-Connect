@@ -1,6 +1,23 @@
 import { clearSession } from "./auth";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+const LOCAL_API_URL = "http://localhost:4000/api";
+const PRODUCTION_API_URL = "https://itiw-connect.onrender.com/api";
+
+function isLocalBrowserHost(hostname: string) {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+export function getApiUrl() {
+  const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (typeof window !== "undefined" && !isLocalBrowserHost(window.location.hostname)) {
+    if (!configuredUrl || configuredUrl.includes("localhost") || configuredUrl.includes("127.0.0.1")) {
+      return PRODUCTION_API_URL;
+    }
+  }
+
+  return configuredUrl || LOCAL_API_URL;
+}
 
 interface RequestOptions extends RequestInit {
   token?: string;
@@ -24,7 +41,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   let response: Response;
 
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    response = await fetch(`${getApiUrl()}${path}`, {
       ...rest,
       headers: {
         "Content-Type": "application/json",

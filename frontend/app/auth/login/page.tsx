@@ -88,13 +88,13 @@ export default function LoginPage() {
       leftTitle="Bienvenido de vuelta"
       leftDescription="Inicia sesion para administrar tus solicitudes o tu perfil profesional en segundos."
       benefits={[
-        "Historial completo de solicitudes y cotizaciones.",
+        "Historial completó de solicitudes y cotizaciones.",
         "Respuestas rapidas desde una sola bandeja.",
         "Perfil y reputacion centralizada en la plataforma.",
       ]}
     >
-      <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Iniciar sesion</h1>
-      <p className="mt-2 text-sm text-brand-muted">Accede con tu correo y contrasena.</p>
+      <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Iniciar sesión</h1>
+      <p className="mt-2 text-sm text-brand-muted">Accede con tu correo y contraseña.</p>
 
       <form className="mt-6 space-y-4" onSubmit={onSubmit}>
         <div>
@@ -117,13 +117,13 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="premium-input"
-            placeholder="Tu contrasena"
+            placeholder="Tu contraseña"
           />
         </div>
 
         <div className="text-right">
           <Link href="/auth/forgot-password" className="text-sm text-brand-accent hover:underline">
-            Olvidaste tu contrasena?
+            Olvidaste tu contraseña?
           </Link>
         </div>
 
@@ -141,12 +141,12 @@ export default function LoginPage() {
         )}
 
         <button disabled={loading} className="premium-btn-primary w-full">
-          {loading ? "Ingresando..." : "Iniciar sesion ?"}
+          {loading ? "Ingresando..." : "Iniciar sesión ?"}
         </button>
       </form>
 
       <p className="mt-5 text-sm text-brand-muted">
-        Aun no tienes cuenta?{" "}
+        Aún no tienes cuenta?{" "}
         <Link href="/auth/register" className="font-medium text-brand-accent hover:underline">
           Registrate
         </Link>

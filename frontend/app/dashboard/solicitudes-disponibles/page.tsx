@@ -108,7 +108,7 @@ export default function SolicitudesDisponiblesPage() {
       showToast({ message: "Presupuesto enviado", kind: "success" });
       await loadRequests(token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible enviar la cotizacion.");
+      setError(err instanceof Error ? err.message : "No fue posible enviar la cotización.");
     } finally {
       setSubmitting(false);
     }
@@ -206,7 +206,7 @@ export default function SolicitudesDisponiblesPage() {
                     />
 
                     <button disabled={submitting} className="premium-btn-primary px-4 py-2 text-sm">
-                      {submitting ? "Enviando..." : "Enviar cotizacion"}
+                      {submitting ? "Enviando..." : "Enviar cotización"}
                     </button>
                   </form>
                 )}

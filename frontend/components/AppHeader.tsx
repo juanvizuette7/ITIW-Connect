@@ -8,7 +8,7 @@ export function AppHeader() {
         <BrandLogo href="/" imgClassName="h-12 w-auto md:h-[3.45rem]" />
         <nav className="hidden items-center gap-6 text-sm text-[#c5d0e3] md:flex">
           <a href="#como-funciona" className="transition hover:text-white">
-            Como funciona
+            Cómo funciona
           </a>
           <a href="#beneficios" className="transition hover:text-white">
             Beneficios
@@ -17,7 +17,7 @@ export function AppHeader() {
             Buscar
           </Link>
           <Link href="/auth/login" className="transition hover:text-white">
-            Iniciar sesion
+            Iniciar sesión
           </Link>
           <Link href="/auth/register" className="premium-btn-primary brand-shine px-4 py-2 text-sm">
             Registrarse

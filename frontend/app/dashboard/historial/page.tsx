@@ -183,7 +183,7 @@ export default function HistorialPage() {
     const headers = [
       "Fecha",
       "Estado",
-      "Categoria",
+      "Categoría",
       "Descripcion",
       "Monto total",
       "Comision",

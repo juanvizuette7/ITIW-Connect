@@ -53,7 +53,7 @@ export default function VerifyOtpPage() {
     setMessage(null);
 
     if (otpCode.length !== 6) {
-      setError("Ingresa el codigo completo de 6 digitos.");
+      setError("Ingresa el código completó de 6 digitos.");
       return;
     }
 
@@ -67,7 +67,7 @@ export default function VerifyOtpPage() {
       setMessage(data.message);
       setTimeout(() => router.push("/auth/login"), 700);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible validar el codigo.");
+      setError(err instanceof Error ? err.message : "No fue posible validar el código.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export default function VerifyOtpPage() {
       refs.current[0]?.focus();
       setMessage(data.message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible reenviar el codigo.");
+      setError(err instanceof Error ? err.message : "No fue posible reenviar el código.");
     } finally {
       setResending(false);
     }
@@ -97,7 +97,7 @@ export default function VerifyOtpPage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-12">
       <section className="premium-panel w-full max-w-lg p-6 text-center shadow-glow md:p-10">
         <h1 className="font-[var(--font-heading)] text-4xl font-extrabold text-white">Verificar OTP</h1>
-        <p className="mt-3 text-brand-muted">Ingresa el codigo de seguridad enviado a tu correo.</p>
+        <p className="mt-3 text-brand-muted">Ingresa el código de seguridad enviado a tu correo.</p>
 
         <form className="mt-7 space-y-6" onSubmit={onVerify}>
           <input
@@ -134,7 +134,7 @@ export default function VerifyOtpPage() {
           {message && <p className="premium-success text-left">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            {loading ? "Validando..." : "Confirmar codigo"}
+            {loading ? "Validando..." : "Confirmar código"}
           </button>
         </form>
 
@@ -144,7 +144,7 @@ export default function VerifyOtpPage() {
           disabled={resending}
           className="mt-5 text-sm font-medium text-brand-accent transition hover:underline disabled:opacity-60"
         >
-          No llego? Reenviar codigo
+          No llegó? Reenviar código
         </button>
 
         <p className="mt-5 text-sm text-brand-muted">
