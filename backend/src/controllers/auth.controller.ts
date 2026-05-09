@@ -7,7 +7,7 @@ import { env } from "../config/env";
 import { signToken } from "../utils/jwt";
 import { generateOtpCode } from "../utils/otp";
 import { otpEmailTemplate, resetPasswordTemplate } from "../utils/emailTemplates";
-import { sendEmail } from "../config/mailer";
+import { sendEmail, sendEmailSafe } from "../config/mailer";
 import { isGoogleOauthConfigured } from "../config/passport";
 
 type UserRole = "CLIENTE" | "PROFESIONAL";
@@ -133,7 +133,7 @@ export async function register(req: Request, res: Response) {
   });
 
   logOtpInDevelopment(user.email, otpCode);
-  await sendEmail(user.email, "Codigo OTP de ITIW Connect", otpEmailTemplate(normalizedName, otpCode));
+  void sendEmailSafe(user.email, "Codigo OTP de ITIW Connect", otpEmailTemplate(normalizedName, otpCode));
 
   const token = signToken({
     userId: user.id,
@@ -142,7 +142,7 @@ export async function register(req: Request, res: Response) {
   });
 
   return res.status(201).json({
-    message: "Cuenta creada correctamente.",
+    message: "Cuenta creada correctamente. Te enviaremos el codigo de verificacion al correo.",
     token,
     user: {
       id: user.id,
@@ -316,7 +316,13 @@ export async function resendOtp(req: Request, res: Response) {
 
   const name = user.clientProfile?.name || user.professionalProfile?.name || "Usuario";
   logOtpInDevelopment(user.email, otpCode);
-  await sendEmail(user.email, "Nuevo codigo OTP de ITIW Connect", otpEmailTemplate(name, otpCode));
+  const emailSent = await sendEmailSafe(user.email, "Nuevo codigo OTP de ITIW Connect", otpEmailTemplate(name, otpCode));
+
+  if (!emailSent) {
+    return res.status(503).json({
+      message: "No fue posible enviar el codigo en este momento. Intenta de nuevo en un minuto.",
+    });
+  }
 
   return res.status(200).json({ message: "Nuevo codigo OTP enviado al correo." });
 }
@@ -360,7 +366,7 @@ export async function forgotPassword(req: Request, res: Response) {
   const resetUrl = `${env.frontendUrl}/auth/reset-password?token=${resetToken}`;
   const name = user.clientProfile?.name || user.professionalProfile?.name || "Usuario";
 
-  await sendEmail(
+  await sendEmailSafe(
     user.email,
     "Recuperar contrasena - ITIW Connect",
     resetPasswordTemplate(name, resetUrl),
@@ -427,4 +433,3 @@ export async function googleAuthCallbackSuccess(req: Request, res: Response) {
     `${env.frontendUrl}/auth/oauth-success?token=${encodeURIComponent(oauthUser.token)}`,
   );
 }
-

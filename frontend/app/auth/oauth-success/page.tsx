@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { saveSession } from "@/lib/auth";
+import { getRole, saveSession } from "@/lib/auth";
 
 export default function OauthSuccessPage() {
   const router = useRouter();
@@ -18,8 +18,17 @@ export default function OauthSuccessPage() {
     }
 
     saveSession(token);
-    setMessage("Autenticacion completada. Redirigiendo...");
-    setTimeout(() => router.replace("/dashboard"), 500);
+    const role = getRole();
+    setMessage("Autenticación completada. Redirigiendo...");
+
+    setTimeout(() => {
+      if (role === "PROFESIONAL") {
+        router.replace("/dashboard/onboarding");
+        return;
+      }
+
+      router.replace("/dashboard");
+    }, 500);
   }, [router]);
 
   return (

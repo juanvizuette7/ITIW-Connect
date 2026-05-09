@@ -52,7 +52,10 @@ export async function getMyProfile(req: Request, res: Response) {
     return res.status(404).json({ message: "No encontramos tu usuario." });
   }
 
-  const profileName = user.clientProfile?.name || user.professionalProfile?.name || "Usuario";
+  const profileName =
+    user.role === "PROFESIONAL"
+      ? user.professionalProfile?.name || user.clientProfile?.name || "Usuario"
+      : user.clientProfile?.name || user.professionalProfile?.name || "Usuario";
 
   return res.status(200).json({
     id: user.id,
