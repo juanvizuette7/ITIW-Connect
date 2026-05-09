@@ -3,26 +3,17 @@ import { CANONICAL_CATEGORY_NAMES } from "../src/constants/categories";
 
 const prisma = new PrismaClient();
 
-function slugify(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-");
-}
-
 async function main() {
   await Promise.all(
     CANONICAL_CATEGORY_NAMES.map((name) =>
       prisma.category.upsert({
         where: { name },
         update: {
-          iconUrl: `https://cdn.itiwconnect.com/icons/${slugify(name)}.png`,
+          iconUrl: null,
         },
         create: {
           name,
-          iconUrl: `https://cdn.itiwconnect.com/icons/${slugify(name)}.png`,
+          iconUrl: null,
         },
       }),
     ),
