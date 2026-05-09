@@ -6,13 +6,13 @@ import { saveSession } from "@/lib/auth";
 
 export default function OauthSuccessPage() {
   const router = useRouter();
-  const [message, setMessage] = useState("Validando autenticacion...");
+  const [message, setMessage] = useState("Validando autenticación...");
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
 
     if (!token) {
-      setMessage("No se recibio token de autenticacion.");
+      setMessage("No se recibió token de autenticación.");
       setTimeout(() => router.replace("/auth/login"), 900);
       return;
     }
