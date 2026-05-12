@@ -65,7 +65,10 @@ app.use(validateRequestInput);
 app.use(passport.initialize());
 
 app.get("/health", (_req, res) => {
-  res.status(200).json({ message: "API de ITIW Connect activa." });
+  res.status(200).json({
+    message: "API de ITIW Connect activa.",
+    version: "production-fix-2026-05-12",
+  });
 });
 
 app.use("/api", routes);
