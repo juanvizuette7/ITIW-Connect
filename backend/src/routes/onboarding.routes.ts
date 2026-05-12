@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { completeOnboarding, getOnboardingStatus } from "../controllers/onboarding.controller";
 import { authenticateJWT } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";

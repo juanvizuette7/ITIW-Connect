@@ -151,7 +151,7 @@ export default function JobChatPage() {
                   className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
                     own
                       ? "bg-[#14b8a6] text-white"
-                      : "border border-white/10 bg-[#0f3460] text-[#d5dded]"
+                      : "border border-white/10 bg-[#0D2137] text-[#d5dded]"
                   }`}
                 >
                   <p className="mb-1 text-xs opacity-80">{message.sender.name}</p>

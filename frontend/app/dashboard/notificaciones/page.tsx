@@ -273,7 +273,7 @@ export default function NotificacionesPage() {
             type="button"
             onClick={onMarkAllRead}
             disabled={unreadCount === 0}
-            className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 px-4 py-2 text-sm font-semibold text-[#82ffe8] transition hover:bg-[#e94560]/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 px-4 py-2 text-sm font-semibold text-[#ffd0bd] transition hover:bg-[#e94560]/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Marcar todas como leidas
           </button>

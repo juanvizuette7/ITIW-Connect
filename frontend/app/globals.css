@@ -4,13 +4,15 @@
 
 :root {
   color-scheme: dark;
-  --teal: #e94560;
-  --navy: #0f3460;
-  --dark: #0a1628;
+  --orange: #FF6B2C;
+  --teal: #FF6B2C;
+  --navy: #0D2137;
+  --dark: #0A0F1A;
   --card: #111827;
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.06);
   --brand-muted: #8892a4;
-  --brand-accent: #e94560;
+  --brand-accent: #FF6B2C;
+  --brand-danger: #e94560;
 }
 
 * {
@@ -29,10 +31,10 @@ body {
 
 body {
   background-image:
-    radial-gradient(circle at 9% 10%, rgba(233, 69, 96, 0.22), transparent 34%),
-    radial-gradient(circle at 93% 4%, rgba(15, 52, 96, 0.58), transparent 35%),
-    radial-gradient(circle at 52% 95%, rgba(233, 69, 96, 0.1), transparent 42%),
-    #060d1a;
+    radial-gradient(circle at 9% 10%, rgba(255, 107, 44, 0.18), transparent 34%),
+    radial-gradient(circle at 93% 4%, rgba(13, 33, 55, 0.72), transparent 35%),
+    radial-gradient(circle at 52% 95%, rgba(233, 69, 96, 0.12), transparent 42%),
+    #0A0F1A;
 }
 
 a {
@@ -73,11 +75,11 @@ a {
   0%,
   100% {
     opacity: 0.8;
-    box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.55);
+    box-shadow: 0 0 0 0 rgba(255, 107, 44, 0.55);
   }
   55% {
     opacity: 1;
-    box-shadow: 0 0 0 7px rgba(233, 69, 96, 0);
+    box-shadow: 0 0 0 7px rgba(255, 107, 44, 0);
   }
 }
 
@@ -164,17 +166,17 @@ a {
   }
 
   .premium-input:focus {
-    border-color: rgba(233, 69, 96, 0.8);
-    box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.16);
+    border-color: rgba(255, 107, 44, 0.85);
+    box-shadow: 0 0 0 3px rgba(255, 107, 44, 0.16);
   }
 
   .premium-btn-primary {
     @apply rounded-xl px-5 py-3 font-semibold transition duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98];
     color: #ffffff;
-    background: linear-gradient(130deg, #d83752 0%, #e94560 35%, #ff6f86 100%);
+    background: linear-gradient(130deg, #FF6B2C 0%, #ff824d 45%, #ffb089 100%);
     box-shadow:
-      0 14px 28px rgba(233, 69, 96, 0.3),
-      0 6px 14px rgba(233, 69, 96, 0.2);
+      0 14px 28px rgba(255, 107, 44, 0.28),
+      0 6px 14px rgba(255, 107, 44, 0.18);
   }
 
   .premium-btn-primary:hover {
@@ -188,8 +190,8 @@ a {
   }
 
   .premium-btn-secondary:hover {
-    border-color: rgba(233, 69, 96, 0.55);
-    background: rgba(233, 69, 96, 0.12);
+    border-color: rgba(255, 107, 44, 0.55);
+    background: rgba(255, 107, 44, 0.12);
   }
 
   .premium-error {
@@ -212,10 +214,10 @@ a {
 
   .premium-hover-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(233, 69, 96, 0.48);
+    border-color: rgba(255, 107, 44, 0.48);
     box-shadow:
       0 22px 44px rgba(0, 0, 0, 0.38),
-      0 0 0 1px rgba(233, 69, 96, 0.12) inset;
+      0 0 0 1px rgba(255, 107, 44, 0.12) inset;
   }
 
   .brand-grid {

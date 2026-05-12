@@ -66,7 +66,7 @@ function EscrowSteps() {
     <div className="grid gap-3 md:grid-cols-4">
       {steps.map((step, index) => (
         <article key={step} className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-accent)] text-sm font-bold text-[#032920]">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-accent)] text-sm font-bold text-[#2a1106]">
             {index + 1}
           </span>
           <p className="mt-2 text-sm font-semibold text-white">{step}</p>

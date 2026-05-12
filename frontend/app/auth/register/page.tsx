@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { FormEvent, useState } from "react";
 import Link from "next/link";
@@ -78,7 +78,7 @@ export default function RegisterPage() {
         "Pagos protegidos y comunicación centralizada.",
       ]}
     >
-      <div className="inline-flex items-center gap-2 rounded-full border border-[#e94560]/35 bg-[#e94560]/12 px-3 py-1 text-xs font-semibold text-[#9bfde9]">
+      <div className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-1 text-xs font-semibold text-[#ffd0bd]">
         Registro rápido
       </div>
 
@@ -100,7 +100,7 @@ export default function RegisterPage() {
               onClick={() => setForm((prev) => ({ ...prev, role: roleOption }))}
               className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 active
-                  ? "bg-brand-accent text-white shadow-[0_12px_28px_rgba(233,69,96,0.30)]"
+                  ? "bg-brand-accent text-white shadow-[0_12px_28px_rgba(255,107,44,0.30)]"
                   : "bg-transparent text-[#aab7cd] hover:bg-white/6 hover:text-white"
               }`}
             >

@@ -35,7 +35,7 @@ type PaginatedRequestsResponse = {
 };
 
 function statusClasses(status: ServiceRequest["status"]): string {
-  if (status === "ACTIVA") return "bg-[var(--brand-accent)]/18 text-[#8dffea] border-[var(--brand-accent)]/38";
+  if (status === "ACTIVA") return "bg-[var(--brand-accent)]/18 text-[#ffd0bd] border-[var(--brand-accent)]/38";
   if (status === "AGENDADA") return "bg-sky-500/20 text-sky-200 border-sky-500/35";
   if (status === "COMPLETADA") return "bg-emerald-500/20 text-emerald-200 border-emerald-500/35";
   return "bg-rose-500/20 text-rose-200 border-rose-500/35";

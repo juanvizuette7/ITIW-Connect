@@ -52,7 +52,7 @@ export function ToastHost() {
     toast.kind === "error"
       ? "bg-[#ff6b81] text-[#14070b]"
       : toast.kind === "info"
-      ? "bg-[#7de6d4] text-[#05261f]"
+      ? "bg-[#7de6d4] text-[#2a1106]"
       : "bg-[#e94560] text-[#06231d]";
 
   return (

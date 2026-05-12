@@ -163,6 +163,12 @@ model ServiceRequest {
   categoryId  String               @db.Uuid
   description String
   photosUrls  String[]             @default([])
+  preferredDateTime DateTime?
+  preferredSchedule String?
+  locationLabel String?
+  locationLat Float?
+  locationLng Float?
+  locationAccuracy Float?
   status      ServiceRequestStatus @default(ACTIVA)
   createdAt   DateTime             @default(now())
   updatedAt   DateTime             @updatedAt

@@ -223,7 +223,7 @@ export default function ProfessionalPublicPage() {
             type="button"
             onClick={() => setActiveTab("sobre")}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              activeTab === "sobre" ? "bg-[var(--brand-accent)] text-[#032920]" : "text-[#c8d6eb] hover:bg-white/5"
+              activeTab === "sobre" ? "bg-[var(--brand-accent)] text-[#2a1106]" : "text-[#c8d6eb] hover:bg-white/5"
             }`}
           >
             Sobre mí
@@ -232,7 +232,7 @@ export default function ProfessionalPublicPage() {
             type="button"
             onClick={() => setActiveTab("portafolio")}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              activeTab === "portafolio" ? "bg-[var(--brand-accent)] text-[#032920]" : "text-[#c8d6eb] hover:bg-white/5"
+              activeTab === "portafolio" ? "bg-[var(--brand-accent)] text-[#2a1106]" : "text-[#c8d6eb] hover:bg-white/5"
             }`}
           >
             Portafolio
@@ -241,7 +241,7 @@ export default function ProfessionalPublicPage() {
             type="button"
             onClick={() => setActiveTab("resenas")}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              activeTab === "resenas" ? "bg-[var(--brand-accent)] text-[#032920]" : "text-[#c8d6eb] hover:bg-white/5"
+              activeTab === "resenas" ? "bg-[var(--brand-accent)] text-[#2a1106]" : "text-[#c8d6eb] hover:bg-white/5"
             }`}
           >
             Reseñas

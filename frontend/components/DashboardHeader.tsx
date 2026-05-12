@@ -206,7 +206,7 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
             {role === "ADMIN" && (
               <Link
                 href="/admin/dashboard"
-                className="rounded-xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-2 text-xs font-semibold text-[#82ffe8] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/20"
+                className="rounded-xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-2 text-xs font-semibold text-[#ffd0bd] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/20"
               >
                 Admin
               </Link>
@@ -285,7 +285,7 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
                   href={item.href}
                   className={`flex flex-col items-center justify-center rounded-xl px-2 py-2 text-[11px] transition ${
                     active
-                      ? "border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/15 text-[#8affec]"
+                      ? "border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/15 text-[#ffd0bd]"
                       : "border border-transparent bg-white/[0.03] text-[#9fb0ca]"
                   }`}
                 >

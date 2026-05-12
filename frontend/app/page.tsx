@@ -13,30 +13,30 @@ type Category = {
 
 const fallbackCategories: Category[] = [
   { id: "fallback-1", name: "Electricidad", iconUrl: null },
-  { id: "fallback-2", name: "Plomería", iconUrl: null },
-  { id: "fallback-3", name: "Carpintería", iconUrl: null },
+  { id: "fallback-2", name: "Plomeria", iconUrl: null },
+  { id: "fallback-3", name: "Carpinteria", iconUrl: null },
   { id: "fallback-4", name: "Pintura", iconUrl: null },
   { id: "fallback-5", name: "Aires acondicionados", iconUrl: null },
-  { id: "fallback-6", name: "Cerrajería", iconUrl: null },
+  { id: "fallback-6", name: "Cerrajeria", iconUrl: null },
   { id: "fallback-7", name: "Reformas", iconUrl: null },
-  { id: "fallback-8", name: "Jardinería", iconUrl: null },
+  { id: "fallback-8", name: "Jardineria", iconUrl: null },
   { id: "fallback-9", name: "Limpieza", iconUrl: null },
   { id: "fallback-10", name: "Mudanzas", iconUrl: null },
-  { id: "fallback-11", name: "Fumigación", iconUrl: null },
-  { id: "fallback-12", name: "Impermeabilización", iconUrl: null },
-  { id: "fallback-13", name: "Instalación de pisos", iconUrl: null },
+  { id: "fallback-11", name: "Fumigacion", iconUrl: null },
+  { id: "fallback-12", name: "Impermeabilizacion", iconUrl: null },
+  { id: "fallback-13", name: "Instalacion de pisos", iconUrl: null },
   { id: "fallback-14", name: "Techos y cubiertas", iconUrl: null },
   { id: "fallback-15", name: "Soldadura", iconUrl: null },
-  { id: "fallback-16", name: "Vidriería", iconUrl: null },
+  { id: "fallback-16", name: "Vidrieria", iconUrl: null },
   { id: "fallback-17", name: "Alarmas y CCTV", iconUrl: null },
-  { id: "fallback-18", name: "Electrodomésticos", iconUrl: null },
+  { id: "fallback-18", name: "Electrodomesticos", iconUrl: null },
   { id: "fallback-19", name: "Otro", iconUrl: null },
 ];
 
 const heroSteps = [
   {
     title: "Publica tu solicitud",
-    description: "Selecciona una categoría general y explica tu problema con fotos y detalles para recibir mejores respuestas.",
+    description: "Selecciona una categoria general y explica tu problema con fotos y detalles para recibir mejores respuestas.",
   },
   {
     title: "Recibe cotizaciones",
@@ -44,13 +44,13 @@ const heroSteps = [
   },
   {
     title: "Paga con escrow",
-    description: "Tu dinero se mantiene protegido y solo se libera cuando confirmas que el trabajo se completó correctamente.",
+    description: "Tu dinero se mantiene protegido y solo se libera cuando confirmas que el trabajo se completo correctamente.",
   },
 ];
 
 const trustPoints = [
-  "Perfiles con verificación de identidad.",
-  "Comunicación centralizada dentro de la plataforma.",
+  "Perfiles con verificacion de identidad.",
+  "Comunicacion centralizada dentro de la plataforma.",
   "Historial de solicitudes, cotizaciones y pagos seguros.",
 ];
 
@@ -114,7 +114,7 @@ export default function HomePage() {
     async function loadCategories() {
       try {
         const response = await fetch(`${getApiUrl()}/categories`);
-        if (!response.ok) throw new Error("Categorías no disponibles");
+        if (!response.ok) throw new Error("Categorias no disponibles");
 
         const data = (await response.json()) as Category[];
         if (Array.isArray(data) && data.length > 0) {
@@ -169,8 +169,8 @@ export default function HomePage() {
 
   const stats = useMemo(
     () => [
-      "18 categorías disponibles",
-      "Verificación de identidad obligatoria",
+      "18 categorias disponibles",
+      "Verificacion de identidad obligatoria",
       "Pagos 100% seguros con escrow",
     ],
     [],
@@ -192,7 +192,7 @@ export default function HomePage() {
     <main className="relative min-h-screen overflow-hidden bg-brand-bg px-4 pb-14 pt-6 md:px-8 lg:px-12">
       <div className="brand-grid pointer-events-none absolute inset-0 opacity-30" />
       <div className="pointer-events-none absolute -left-20 top-10 h-72 w-72 rounded-full bg-[#e94560]/20 blur-3xl animate-float-slow" />
-      <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 rounded-full bg-[#0f3460]/55 blur-3xl animate-float-fast" />
+      <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 rounded-full bg-[#0D2137]/55 blur-3xl animate-float-fast" />
       <div className="pointer-events-none absolute bottom-8 left-1/3 h-72 w-72 rounded-full bg-[#e94560]/10 blur-3xl animate-float-slow" />
 
       <div className="relative mx-auto max-w-7xl">
@@ -208,10 +208,10 @@ export default function HomePage() {
           </div>
 
           <div className="hidden items-center justify-center gap-8 text-sm text-brand-muted md:flex">
-            <a href="#como-funciona" className="transition hover:text-white">Cómo funciona</a>
-            <a href="#categorías" className="transition hover:text-white">Categorías</a>
+            <a href="#como-funciona" className="transition hover:text-white">Como funciona</a>
+            <a href="#categorias" className="transition hover:text-white">Categorias</a>
             <Link href="/buscar" className="transition hover:text-white">Buscar</Link>
-            <Link href="/auth/login" className="transition hover:text-white">Iniciar sesión</Link>
+            <Link href="/auth/login" className="transition hover:text-white">Iniciar sesion</Link>
           </div>
 
           <Link href="/auth/register" className="premium-btn-primary brand-shine px-4 py-2 text-sm">
@@ -231,11 +231,11 @@ export default function HomePage() {
 
             <p className="mt-5 max-w-2xl text-[1.06rem] text-brand-muted md:text-lg">
               Encuentra electricistas, plomeros, carpinteros y mas profesionales verificados cerca de ti.
-              Publica tu solicitud en minutos, recibe varias cotizaciones y elige con información clara.
+              Publica tu solicitud en minutos, recibe varias cotizaciones y elige con informacion clara.
             </p>
 
             <p className="mt-3 max-w-2xl text-sm text-[#b8c3d7] md:text-base">
-              ITIW Connect organiza cada etapa del servicio: solicitud, cotización, pago seguro y seguimiento
+              ITIW Connect organiza cada etapa del servicio: solicitud, cotizacion, pago seguro y seguimiento
               hasta la entrega final del trabajo.
             </p>
 
@@ -255,7 +255,7 @@ export default function HomePage() {
 
           <aside className="intro-reveal premium-panel-strong relative self-start overflow-hidden p-6 md:p-7">
             <div className="absolute -right-12 -top-14 h-44 w-44 rounded-full bg-[#e94560]/20 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-44 w-44 rounded-full bg-[#0f3460]/40 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-44 w-44 rounded-full bg-[#0D2137]/40 blur-3xl" />
 
             <div className="relative z-10">
               <div className="inline-flex rounded-full border border-emerald-400/35 bg-emerald-400/15 px-3 py-1 text-xs text-emerald-200">
@@ -266,7 +266,7 @@ export default function HomePage() {
                 Publica mejor, cotiza mejor
               </h2>
               <p className="mt-2 text-sm text-brand-muted">
-                Una solicitud clara aumenta la calidad de cotizaciones y acelera la contratación correcta.
+                Una solicitud clara aumenta la calidad de cotizaciones y acelera la contratacion correcta.
               </p>
 
               <div id="como-funciona" className="mt-5 space-y-3">
@@ -278,8 +278,8 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <div className="mt-5 rounded-2xl border border-white/10 bg-[#0a1628]/55 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#d6deee]">Qué ganas con ITIW Connect</p>
+              <div className="mt-5 rounded-2xl border border-white/10 bg-[#0A0F1A]/55 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#d6deee]">Que ganas con ITIW Connect</p>
                 <ul className="mt-3 space-y-2 text-sm text-brand-muted">
                   {trustPoints.map((point) => (
                     <li key={point} className="flex items-start gap-2">
@@ -293,28 +293,28 @@ export default function HomePage() {
           </aside>
         </section>
 
-        <section id="categorías" className="mt-12 reveal-item premium-panel-strong p-6 md:p-8">
+        <section id="categorias" className="mt-12 reveal-item premium-panel-strong p-6 md:p-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white md:text-3xl">
-                Categorías generales de servicios
+                Categorias generales de servicios
               </h2>
               <p className="mt-2 text-sm text-brand-muted md:text-base">
-                Selecciona la categoría que mas se acerque al trabajo. Si no aplica, usa "Otro" y especifica el caso en la descripcion.
+                Selecciona la categoria que mas se acerque al trabajo. Si no aplica, usa "Otro" y especifica el caso en la descripcion.
               </p>
             </div>
             <span className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs text-[#d5dded]">18 principales + Otro</span>
           </div>
 
           {usingFallbackCategories && (
-            <p className="mt-3 text-xs text-[#ffb2bf]">Mostrando categorías base mientras se restablece la conexion con el backend.</p>
+            <p className="mt-3 text-xs text-[#ffb2bf]">Mostrando categorias base mientras se restablece la conexion con el backend.</p>
           )}
 
           {loadingCategories ? (
-            <p className="mt-6 text-brand-muted">Cargando categorías...</p>
+            <p className="mt-6 text-brand-muted">Cargando categorias...</p>
           ) : orderedCategories.length === 0 ? (
             <div className="mt-6 premium-panel p-6 text-center">
-              <p className="text-brand-muted">Aún no hay categorías disponibles. Intenta nuevamente.</p>
+              <p className="text-brand-muted">Aun no hay categorias disponibles. Intenta nuevamente.</p>
               <Link href="/auth/register" className="premium-btn-primary mt-4 inline-block">Crear cuenta</Link>
             </div>
           ) : (
@@ -345,7 +345,7 @@ export default function HomePage() {
                         </span>
                       </div>
                     ) : (
-                      <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-[#0f3460]/78 text-lg shadow-[0_0_20px_rgba(15,52,96,0.35)]">
+                      <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-[#0D2137]/78 text-lg shadow-[0_0_20px_rgba(13,33,55,0.35)]">
                         <span className="drop-shadow-[0_0_8px_rgba(233,69,96,0.35)]">{emoji}</span>
                       </div>
                     )}
@@ -353,7 +353,7 @@ export default function HomePage() {
                     <div className="relative z-10 min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-white">{category.name}</p>
                       <p className="text-xs text-brand-muted transition group-hover:text-[#d9e3f7]">
-                        Categoría general · {categoryInitials(category.name)}
+                        Categoria general - {categoryInitials(category.name)}
                       </p>
                     </div>
                   </article>
@@ -365,8 +365,8 @@ export default function HomePage() {
 
         <footer className="mt-10 border-t border-white/10 py-6 text-center text-sm text-brand-muted">
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <span>ITIW Connect © 2026 - Conectando personas con expertos locales en Colombia</span>
-            <Link href="/terminos" className="hover:text-white">Términos</Link>
+            <span>ITIW Connect (c) 2026 - Conectando personas con expertos locales en Colombia</span>
+            <Link href="/terminos" className="hover:text-white">Terminos</Link>
             <Link href="/privacidad" className="hover:text-white">Privacidad</Link>
           </div>
         </footer>
@@ -374,3 +374,4 @@ export default function HomePage() {
     </main>
   );
 }
+

@@ -1,4 +1,4 @@
-﻿import { NotificationType, Prisma, Role } from "@prisma/client";
+import { NotificationType, Prisma, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
 import { sendEmailSafe } from "../config/mailer";

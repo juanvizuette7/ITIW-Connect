@@ -17,6 +17,57 @@ import {
 import { paginatedResponse, resolvePagination } from "../utils/pagination";
 
 const JOB_ESCROW_HOURS = 72;
+const MAX_REQUEST_PHOTOS = 5;
+const MAX_REQUEST_PHOTO_BYTES = 2 * 1024 * 1024;
+
+type RequestPhotoInput = string;
+
+function estimateBase64Bytes(value: string): number {
+  const base64 = value.includes(",") ? value.split(",").pop() || "" : value;
+  return Math.ceil((base64.replace(/=+$/, "").length * 3) / 4);
+}
+
+function normalizeRequestPhotos(photosUrls?: RequestPhotoInput[]): string[] {
+  if (!Array.isArray(photosUrls)) {
+    return [];
+  }
+
+  const photos = photosUrls.map((photo) => String(photo || "").trim()).filter(Boolean);
+
+  if (photos.length > MAX_REQUEST_PHOTOS) {
+    throw Object.assign(new Error("Puedes adjuntar maximo 5 fotos por solicitud."), { statusCode: 400 });
+  }
+
+  const oversized = photos.find((photo) => estimateBase64Bytes(photo) > MAX_REQUEST_PHOTO_BYTES);
+  if (oversized) {
+    throw Object.assign(
+      new Error("Cada foto debe pesar maximo 2 MB. Comprime la imagen o sube una mas liviana."),
+      { statusCode: 400 },
+    );
+  }
+
+  return photos;
+}
+
+function cleanRequestDescription(description: string): string {
+  return description
+    .replace(/\n\nHorario preferido:[\s\S]*$/i, "")
+    .replace(/\n\nUbicaci[oó]n detectada:[\s\S]*$/i, "")
+    .trim();
+}
+
+function normalizePreferredDateTime(value?: string): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw Object.assign(new Error("La fecha preferida no tiene un formato valido."), { statusCode: 400 });
+  }
+
+  return parsed;
+}
 
 function getProfessionalName(
   professional: {
@@ -54,14 +105,47 @@ function scoreQuote(avgRating: number, totalJobs: number, amountCop: number): nu
 
 export async function createServiceRequest(req: Request, res: Response) {
   const clientId = req.user!.userId;
-  const { categoryId, description, photosUrls } = req.body as {
+  const {
+    categoryId,
+    description,
+    photosUrls,
+    preferredDateTime,
+    preferredSchedule,
+    location,
+    locationLabel,
+  } = req.body as {
     categoryId?: string;
     description?: string;
     photosUrls?: string[];
+    preferredDateTime?: string;
+    preferredSchedule?: string;
+    location?: {
+      lat?: number;
+      lng?: number;
+      accuracy?: number;
+      label?: string;
+    };
+    locationLabel?: string;
   };
 
   if (!categoryId || !description || !description.trim()) {
     return res.status(400).json({ message: "Debes enviar categoryId y descripcion de la solicitud." });
+  }
+
+  let normalizedPhotos: string[];
+  let normalizedPreferredDateTime: Date | undefined;
+
+  try {
+    normalizedPhotos = normalizeRequestPhotos(photosUrls);
+    normalizedPreferredDateTime = normalizePreferredDateTime(preferredDateTime);
+  } catch (error) {
+    const statusCode = typeof (error as { statusCode?: unknown }).statusCode === "number"
+      ? Number((error as { statusCode: number }).statusCode)
+      : 400;
+
+    return res.status(statusCode).json({
+      message: error instanceof Error ? error.message : "No fue posible procesar la solicitud.",
+    });
   }
 
   const category = await prisma.category.findUnique({
@@ -76,8 +160,14 @@ export async function createServiceRequest(req: Request, res: Response) {
     data: {
       clientId,
       categoryId,
-      description: description.trim(),
-      photosUrls: Array.isArray(photosUrls) ? photosUrls.filter(Boolean) : [],
+      description: cleanRequestDescription(description),
+      photosUrls: normalizedPhotos,
+      preferredDateTime: normalizedPreferredDateTime,
+      preferredSchedule: preferredSchedule?.trim() || null,
+      locationLabel: location?.label?.trim() || locationLabel?.trim() || null,
+      locationLat: typeof location?.lat === "number" ? location.lat : null,
+      locationLng: typeof location?.lng === "number" ? location.lng : null,
+      locationAccuracy: typeof location?.accuracy === "number" ? location.accuracy : null,
       status: ServiceRequestStatus.ACTIVA,
     },
     include: {
@@ -309,6 +399,12 @@ export async function getRequestDetail(req: Request, res: Response) {
     status: request.status,
     description: request.description,
     photosUrls: request.photosUrls,
+    preferredDateTime: request.preferredDateTime,
+    preferredSchedule: request.preferredSchedule,
+    locationLabel: request.locationLabel,
+    locationLat: request.locationLat,
+    locationLng: request.locationLng,
+    locationAccuracy: request.locationAccuracy,
     createdAt: request.createdAt,
     updatedAt: request.updatedAt,
     category: request.category,

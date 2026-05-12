@@ -12,12 +12,12 @@ export function AuthSplitLayout({ leftTitle, leftDescription, benefits, children
   return (
     <main className="relative min-h-screen overflow-hidden bg-brand-bg">
       <div className="pointer-events-none absolute -left-20 top-16 h-80 w-80 rounded-full bg-[#e94560]/20 blur-3xl animate-float-slow" />
-      <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 rounded-full bg-[#0f3460]/45 blur-3xl animate-float-fast" />
+      <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 rounded-full bg-[#0D2137]/45 blur-3xl animate-float-fast" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-[#7f5cff]/12 blur-3xl animate-float-slow" />
       <div className="brand-grid pointer-events-none absolute inset-0 opacity-25" />
 
       <div className="relative grid min-h-screen grid-cols-1 lg:grid-cols-2">
-        <section className="relative overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_15%_10%,rgba(233,69,96,0.24),transparent_35%),linear-gradient(160deg,#0f3460_0%,#0a1f3d_55%,#070f1d_100%)] px-7 py-10 lg:border-b-0 lg:border-r lg:px-16 lg:py-16">
+        <section className="relative overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_15%_10%,rgba(233,69,96,0.24),transparent_35%),linear-gradient(160deg,#0D2137_0%,#0a1f3d_55%,#070f1d_100%)] px-7 py-10 lg:border-b-0 lg:border-r lg:px-16 lg:py-16">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20" />
 
           <div className="relative z-10 mx-auto max-w-xl">

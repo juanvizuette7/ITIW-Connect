@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { submitNps } from "../controllers/nps.controller";
 import { authenticateJWT } from "../middlewares/auth.middleware";
 import { asyncHandler } from "../utils/asyncHandler";

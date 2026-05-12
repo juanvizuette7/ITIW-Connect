@@ -453,7 +453,7 @@ export default function DashboardPage() {
               href={card.href}
               className="premium-panel premium-hover-card p-5"
             >
-              <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 text-[#8effea]">
+              <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 text-[#ffd0bd]">
                 {card.icon}
               </div>
               <p className="font-[var(--font-heading)] text-xl font-bold text-white">{card.title}</p>

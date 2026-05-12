@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -353,7 +353,7 @@ export default function ProfilePage() {
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[var(--brand-accent)]/18 blur-3xl" />
         <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 font-[var(--font-heading)] text-2xl font-extrabold text-[#8dffea] shadow-[0_0_32px_rgba(0,201,167,0.12)]">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 font-[var(--font-heading)] text-2xl font-extrabold text-[#ffd0bd] shadow-[0_0_32px_rgba(255,107,44,0.12)]">
               {initials || "IC"}
             </div>
             <div>
@@ -368,7 +368,7 @@ export default function ProfilePage() {
           </div>
 
           {role === "PROFESIONAL" && (
-            <div className="rounded-2xl border border-[var(--brand-accent)]/25 bg-[var(--brand-accent)]/10 p-4 text-sm text-[#dffcf7] md:min-w-64">
+            <div className="rounded-2xl border border-[var(--brand-accent)]/25 bg-[var(--brand-accent)]/10 p-4 text-sm text-[#ffd0bd] md:min-w-64">
               <p className="font-semibold text-white">Progreso del perfil</p>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-[var(--brand-accent)] transition-all" style={{ width: `${Math.round((professionalProgress / 6) * 100)}%` }} />
@@ -410,7 +410,7 @@ export default function ProfilePage() {
             <aside className="rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-5">
               <p className="text-sm font-semibold text-white">Vista rápida</p>
               <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0A0F1A]/70 p-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-accent)]/15 font-bold text-[#8dffea]">{initials || "IC"}</div>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-accent)]/15 font-bold text-[#ffd0bd]">{initials || "IC"}</div>
                 <div>
                   <p className="font-semibold text-white">{clientForm.name || "Sin nombre"}</p>
                   <p className="text-xs text-brand-muted">Cliente ITIW Connect</p>
@@ -466,7 +466,7 @@ export default function ProfilePage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   {specialties.length === 0 && <p className="text-sm text-brand-muted">Aún no agregas especialidades.</p>}
                   {specialties.map((specialty) => (
-                    <span key={specialty} className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-1 text-xs text-[#8dffea]">
+                    <span key={specialty} className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-1 text-xs text-[#ffd0bd]">
                       {specialty}
                       <button type="button" onClick={() => removeSpecialty(specialty)} className="font-bold text-white/80 transition hover:text-white">×</button>
                     </span>
@@ -488,8 +488,8 @@ export default function ProfilePage() {
 
               <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1.2fr]">
                 <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                  <label htmlFor="portfolio-file-input" className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--brand-accent)]/45 bg-[var(--brand-accent)]/8 px-4 py-5 text-sm font-semibold text-[#8dfce8] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/15">
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-accent)] text-lg leading-none text-[#042821]">+</span>
+                  <label htmlFor="portfolio-file-input" className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--brand-accent)]/45 bg-[var(--brand-accent)]/8 px-4 py-5 text-sm font-semibold text-[#ffd0bd] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/15">
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--brand-accent)] text-lg leading-none text-[#2a1106]">+</span>
                     Seleccionar imagen del portafolio
                   </label>
                   <input id="portfolio-file-input" type="file" accept="image/*" onChange={onPickPortfolioFile} className="hidden" />
@@ -501,7 +501,7 @@ export default function ProfilePage() {
 
                   {portfolioPreview && <img src={portfolioPreview} alt="Preview portafolio" className="h-40 w-full rounded-xl border border-white/10 object-cover" />}
 
-                  <button type="button" onClick={onUploadPortfolio} disabled={portfolioSaving || !portfolioBase64 || portfolioPhotos.length >= 10} className="rounded-xl bg-[var(--brand-accent)] px-4 py-2 text-sm font-semibold text-[#052920] transition hover:-translate-y-0.5 hover:bg-[#2ce1c2] disabled:cursor-not-allowed disabled:opacity-60">
+                  <button type="button" onClick={onUploadPortfolio} disabled={portfolioSaving || !portfolioBase64 || portfolioPhotos.length >= 10} className="rounded-xl bg-[var(--brand-accent)] px-4 py-2 text-sm font-semibold text-[#2a1106] transition hover:-translate-y-0.5 hover:bg-[#ff824d] disabled:cursor-not-allowed disabled:opacity-60">
                     {portfolioSaving ? "Subiendo..." : "Subir al portafolio"}
                   </button>
                 </div>

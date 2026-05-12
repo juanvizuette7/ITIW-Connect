@@ -1,4 +1,4 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { retrainProfessionalAiScores } from "../services/aiTraining.service";
 
 export async function retrainAi(req: Request, res: Response) {

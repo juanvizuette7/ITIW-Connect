@@ -193,13 +193,13 @@ export async function openDispute(req: Request, res: Response) {
       type: NotificationType.DISPUTA,
     },
     {
-      emailSubject: "Nueva disputa abierta � ITIW Connect",
+      emailSubject: "Nueva disputa abierta - ITIW Connect",
     },
   );
 
   void sendEmailSafe(
     env.emailUser,
-    "Nueva disputa abierta � ITIW Connect",
+    "Nueva disputa abierta - ITIW Connect",
     disputeOpenedTemplate(openedByName, reason.trim(), description.trim(), job.quote.request.description),
   );
 

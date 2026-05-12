@@ -1,4 +1,4 @@
-﻿import { JobPaymentStatus, JobStatus } from "@prisma/client";
+import { JobPaymentStatus, JobStatus } from "@prisma/client";
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma";
 
