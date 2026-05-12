@@ -20,39 +20,50 @@ function resolveName(user: {
   return user.clientProfile?.name || user.professionalProfile?.name || "Administrador";
 }
 
-async function ensureJobParticipant(requestId: string, userId: string) {
-  const job = await prisma.job.findFirst({
-    where: {
-      quote: {
-        requestId,
-      },
-      OR: [{ clientId: userId }, { professionalId: userId }],
-    },
-    include: {
-      quote: {
-        include: {
-          request: {
+async function resolveChatContext(requestId: string, userId: string, role: Role) {
+  const request = await prisma.serviceRequest.findUnique({
+    where: { id: requestId },
+    select: {
+      id: true,
+      clientId: true,
+      description: true,
+      quotes: {
+        select: {
+          professionalId: true,
+          job: {
             select: {
-              id: true,
-              description: true,
+              clientId: true,
+              professionalId: true,
             },
           },
-        },
-      },
-      client: {
-        select: {
-          id: true,
-        },
-      },
-      professional: {
-        select: {
-          id: true,
         },
       },
     },
   });
 
-  return job;
+  if (!request) {
+    return {
+      request: null,
+      isParticipant: false,
+      participantIds: [] as string[],
+    };
+  }
+
+  const participantIds = Array.from(
+    new Set([
+      request.clientId,
+      ...request.quotes.map((quote) => quote.professionalId),
+      ...request.quotes.flatMap((quote) =>
+        quote.job ? [quote.job.clientId, quote.job.professionalId] : [],
+      ),
+    ]),
+  );
+
+  return {
+    request,
+    isParticipant: role === Role.ADMIN || participantIds.includes(userId),
+    participantIds,
+  };
 }
 
 export async function sendMessage(req: Request, res: Response) {
@@ -64,9 +75,15 @@ export async function sendMessage(req: Request, res: Response) {
     return res.status(400).json({ message: "Debes escribir un mensaje antes de enviarlo." });
   }
 
-  const job = await ensureJobParticipant(requestId, senderId);
-  if (!job) {
-    return res.status(403).json({ message: "Solo los participantes del job pueden enviar mensajes en este chat." });
+  const chat = await resolveChatContext(requestId, senderId, req.user!.role as Role);
+  if (!chat.request) {
+    return res.status(404).json({ message: "No encontramos la solicitud de este chat." });
+  }
+
+  if (!chat.isParticipant) {
+    return res.status(403).json({
+      message: "Solo el cliente y los profesionales que ya cotizaron pueden enviar mensajes en este chat.",
+    });
   }
 
   const message = await prisma.message.create({
@@ -100,14 +117,14 @@ export async function sendMessage(req: Request, res: Response) {
   void sendEmailSafe(
     env.emailUser,
     "Tienes un mensaje nuevo - ITIW Connect",
-    newChatMessageTemplate(senderName, message.content, job.quote.request.description),
+    newChatMessageTemplate(senderName, message.content, chat.request.description),
   );
 
   await notifyManyUsers(
     {
-      userIds: [job.client.id, job.professional.id].filter((id) => id !== senderId),
+      userIds: chat.participantIds.filter((id) => id !== senderId),
       title: "Nuevo mensaje en el chat",
-      body: `${senderName} envio un mensaje en la solicitud: ${job.quote.request.description}`,
+      body: `${senderName} envio un mensaje en la solicitud: ${chat.request.description}`,
       type: NotificationType.MENSAJE,
     },
     {
@@ -132,9 +149,15 @@ export async function getMessages(req: Request, res: Response) {
   const userId = req.user!.userId;
   const { requestId } = req.params;
 
-  const job = await ensureJobParticipant(requestId, userId);
-  if (!job) {
-    return res.status(403).json({ message: "Solo los participantes del job pueden ver este chat." });
+  const chat = await resolveChatContext(requestId, userId, req.user!.role as Role);
+  if (!chat.request) {
+    return res.status(404).json({ message: "No encontramos la solicitud de este chat." });
+  }
+
+  if (!chat.isParticipant) {
+    return res.status(403).json({
+      message: "Solo el cliente y los profesionales que ya cotizaron pueden ver este chat.",
+    });
   }
 
   const messages = await prisma.message.findMany({

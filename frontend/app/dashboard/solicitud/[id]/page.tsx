@@ -104,6 +104,7 @@ export default function SolicitudDetailPage() {
   const [loading, setLoading] = useState(true);
   const [acceptingQuoteId, setAcceptingQuoteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
   const [confirmQuote, setConfirmQuote] = useState<QuoteItem | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -116,12 +117,18 @@ export default function SolicitudDetailPage() {
   }
 
   async function loadMessages(authToken: string) {
-    const response = await apiRequest<MessageItem[]>(`/messages/${params.id}`, {
-      method: "GET",
-      token: authToken,
-    });
-    setMessages(response);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 40);
+    try {
+      const response = await apiRequest<MessageItem[]>(`/messages/${params.id}`, {
+        method: "GET",
+        token: authToken,
+      });
+      setMessages(response);
+      setChatError(null);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 40);
+    } catch (err) {
+      setMessages([]);
+      setChatError(err instanceof Error ? err.message : "No fue posible cargar el chat.");
+    }
   }
 
   useEffect(() => {
@@ -145,7 +152,7 @@ export default function SolicitudDetailPage() {
         setUserName(profile.name);
         setRole(profile.role);
 
-        await Promise.all([loadDetail(savedToken), loadMessages(savedToken)]);
+        await loadDetail(savedToken);
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible cargar el detalle.");
       } finally {
@@ -158,6 +165,8 @@ export default function SolicitudDetailPage() {
 
   useEffect(() => {
     if (!token || activeTab !== "chat") return;
+
+    void loadMessages(token);
 
     const timer = setInterval(() => {
       void loadMessages(token);
@@ -214,7 +223,7 @@ export default function SolicitudDetailPage() {
       setChatInput("");
       await loadMessages(token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible enviar el mensaje.");
+      setChatError(err instanceof Error ? err.message : "No fue posible enviar el mensaje.");
     } finally {
       setSendingChat(false);
     }
@@ -285,9 +294,9 @@ export default function SolicitudDetailPage() {
           <div className="mt-6 space-y-4">
             {requestDetail.quotes.length === 0 ? (
               <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-8 text-center">
-                <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-2xl">💬</div>
-                <p className="text-base font-semibold text-white">Aún no tienes presupuestos</p>
-                <p className="mt-1 text-sm text-brand-muted">Cuando un profesional cotice, aparecerá aquí automáticamente.</p>
+                <div className="mx-auto mb-3 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-2xl">Chat</div>
+                <p className="text-base font-semibold text-white">Aun no tienes presupuestos</p>
+                <p className="mt-1 text-sm text-brand-muted">Cuando un profesional cotice, aparecera aqui automaticamente.</p>
                 <Link href="/dashboard/mis-solicitudes" className="premium-btn-secondary mt-4 inline-flex px-4 py-2 text-sm">
                   Ver mis solicitudes
                 </Link>
@@ -311,7 +320,7 @@ export default function SolicitudDetailPage() {
                         </div>
                         <p className="text-sm text-[#f5cf7a]">{stars(quote.professional.avgRating)}</p>
                         <p className="text-xs text-[#9cb0cd]">
-                          {quote.professional.avgRating.toFixed(1)} · {quote.professional.reviewCount} reseñas
+                          {quote.professional.avgRating.toFixed(1)} - {quote.professional.reviewCount} resenas
                         </p>
                       </div>
                     </div>
@@ -354,12 +363,17 @@ export default function SolicitudDetailPage() {
           </div>
         ) : (
           <section className="mt-6 rounded-2xl border border-white/10 bg-[#0b1828]">
+            {chatError && (
+              <div className="m-4 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-sm text-amber-100">
+                {chatError}
+              </div>
+            )}
             <div className="h-[420px] space-y-3 overflow-y-auto p-4 md:h-[480px]">
               {messages.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
-                  <div className="mb-3 text-3xl">💬</div>
-                  <p className="text-sm font-semibold text-white">Aún no hay mensajes</p>
-                  <p className="mt-1 text-xs text-brand-muted">Inicia la conversación para coordinar detalles del servicio.</p>
+                  <div className="mb-3 text-3xl">Chat</div>
+                  <p className="text-sm font-semibold text-white">Aun no hay mensajes</p>
+                  <p className="mt-1 text-xs text-brand-muted">Inicia la conversacion para coordinar detalles del servicio.</p>
                 </div>
               ) : (
                 messages.map((message) => {
