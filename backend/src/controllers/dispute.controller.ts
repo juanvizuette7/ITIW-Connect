@@ -1,7 +1,7 @@
 import { DisputeStatus, JobPaymentStatus, JobStatus, NotificationType, PaymentStatus, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import { notifyManyUsers } from "../services/notification.service";
 import { disputeOpenedTemplate, notificationEventTemplate } from "../utils/emailTemplates";
@@ -193,13 +193,13 @@ export async function openDispute(req: Request, res: Response) {
       type: NotificationType.DISPUTA,
     },
     {
-      emailSubject: "Nueva disputa abierta — ITIW Connect",
+      emailSubject: "Nueva disputa abierta ï¿½ ITIW Connect",
     },
   );
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
-    "Nueva disputa abierta — ITIW Connect",
+    "Nueva disputa abierta ï¿½ ITIW Connect",
     disputeOpenedTemplate(openedByName, reason.trim(), description.trim(), job.quote.request.description),
   );
 
@@ -424,7 +424,7 @@ export async function resolveDispute(req: Request, res: Response) {
     },
   );
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Disputa resuelta - ITIW Connect",
     notificationEventTemplate(

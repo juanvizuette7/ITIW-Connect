@@ -1,7 +1,7 @@
 import { JobPaymentStatus, JobStatus, NotificationType, PaymentStatus, Prisma, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import {
   capturePaymentIntent,
   createPaymentIntent,
@@ -281,7 +281,7 @@ export async function createOrConfirmEscrowPayment(req: Request, res: Response) 
     return { payment, updatedJob };
   });
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Tu pago esta seguro en escrow - ITIW Connect",
     escrowPaymentTemplate(updated.updatedJob.quote.amountCop, updated.updatedJob.quote.request.description),
@@ -372,7 +372,7 @@ export async function confirmJobCompletion(req: Request, res: Response) {
     return { releasedJob, assignedBadges };
   });
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Pago liberado al profesional - ITIW Connect",
     paymentReleasedTemplate(updated.releasedJob.quote.amountCop, updated.releasedJob.quote.request.description, false),
@@ -390,7 +390,7 @@ export async function confirmJobCompletion(req: Request, res: Response) {
     },
   );
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Califica tu experiencia! - ITIW Connect",
     rateExperienceTemplate(
@@ -400,7 +400,7 @@ export async function confirmJobCompletion(req: Request, res: Response) {
   );
 
   for (const badgeType of updated.assignedBadges) {
-    await sendEmail(
+    void sendEmailSafe(
       env.emailUser,
       "Obtuviste un nuevo badge! - ITIW Connect",
       badgeAwardedTemplate(getDisplayName(updated.releasedJob.professional), badgeType),

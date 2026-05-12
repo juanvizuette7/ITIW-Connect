@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { NotificationType, Role } from "@prisma/client";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import { notifyManyUsers } from "../services/notification.service";
 import { newChatMessageTemplate } from "../utils/emailTemplates";
@@ -97,7 +97,7 @@ export async function sendMessage(req: Request, res: Response) {
 
   const senderName = resolveName(message.sender);
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Tienes un mensaje nuevo - ITIW Connect",
     newChatMessageTemplate(senderName, message.content, job.quote.request.description),

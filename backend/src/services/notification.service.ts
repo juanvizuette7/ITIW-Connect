@@ -1,6 +1,6 @@
 import { NotificationType } from "@prisma/client";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import { notificationEventTemplate } from "../utils/emailTemplates";
 
@@ -37,7 +37,7 @@ export async function notifyUser(input: NotifyUserInput, options: NotifyOptions 
   });
 
   if (sendMirrorEmail) {
-    await sendEmail(
+    void sendEmailSafe(
       env.emailUser,
       emailSubject || `${title} - ITIW Connect`,
       notificationEventTemplate(title, body),
@@ -66,7 +66,7 @@ export async function notifyManyUsers(input: NotifyManyInput, options: NotifyOpt
   });
 
   if (sendMirrorEmail) {
-    await sendEmail(
+    void sendEmailSafe(
       env.emailUser,
       emailSubject || `${title} - ITIW Connect`,
       notificationEventTemplate(title, `${body} (destinatarios: ${uniqueUserIds.length})`),

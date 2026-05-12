@@ -1,7 +1,7 @@
 ﻿import { NotificationType, Prisma, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import {
   adminApprovalTemplate,
@@ -198,7 +198,7 @@ export async function approveProfessional(req: Request, res: Response) {
     },
   );
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Tu perfil fue aprobado — ITIW Connect",
     adminApprovalTemplate(professional.professionalProfile.name, "VERIFICADO"),
@@ -247,7 +247,7 @@ export async function rejectProfessional(req: Request, res: Response) {
     },
   );
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Tu perfil necesita ajustes — ITIW Connect",
     adminRejectionTemplate(professional.professionalProfile.name, reason.trim()),
@@ -288,7 +288,7 @@ export async function deactivateProfessional(req: Request, res: Response) {
     },
   });
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Cuenta profesional desactivada — ITIW Connect",
     notificationEventTemplate(

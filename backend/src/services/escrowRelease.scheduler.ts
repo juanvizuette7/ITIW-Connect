@@ -1,7 +1,7 @@
 import { JobPaymentStatus, JobStatus, NotificationType, PaymentStatus } from "@prisma/client";
 import cron from "node-cron";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import { capturePaymentIntent } from "../config/stripe";
 import { prisma } from "../config/prisma";
 import {
@@ -130,7 +130,7 @@ async function releaseEscrowJobs() {
         };
       });
 
-      await sendEmail(
+      void sendEmailSafe(
         env.emailUser,
         "Pago liberado automaticamente - ITIW Connect",
         paymentReleasedTemplate(updated.completedJob.quote.amountCop, updated.completedJob.quote.request.description, true),
@@ -148,7 +148,7 @@ async function releaseEscrowJobs() {
         },
       );
 
-      await sendEmail(
+      void sendEmailSafe(
         env.emailUser,
         "Califica tu experiencia! - ITIW Connect",
         rateExperienceTemplate(
@@ -163,7 +163,7 @@ async function releaseEscrowJobs() {
         "Profesional";
 
       for (const badgeType of updated.assignedBadges) {
-        await sendEmail(
+        void sendEmailSafe(
           env.emailUser,
           "Obtuviste un nuevo badge! - ITIW Connect",
           badgeAwardedTemplate(professionalName, badgeType),
@@ -227,7 +227,7 @@ async function sendNpsReminders() {
     for (const job of jobs) {
       const surveyUrl = `${env.frontendUrl}/dashboard/nps/${job.id}`;
 
-      await sendEmail(
+      void sendEmailSafe(
         env.emailUser,
         "Como fue tu experiencia? - ITIW Connect",
         npsSurveyTemplate(job.quote.request.description, surveyUrl),
@@ -270,7 +270,7 @@ async function runAiRetrainCycle() {
   try {
     const results = await retrainProfessionalAiScores(72);
 
-    await sendEmail(
+    void sendEmailSafe(
       env.emailUser,
       "Motor IA reentrenado - ITIW Connect",
       aiRetrainCompletedTemplate(results.length),

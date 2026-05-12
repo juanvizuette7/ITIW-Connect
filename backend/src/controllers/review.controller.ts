@@ -1,7 +1,7 @@
 import { BadgeType, JobPaymentStatus, JobStatus, NotificationType, Prisma, Role } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import {
   badgeAwardedTemplate,
@@ -221,7 +221,7 @@ export async function reviewProfessional(req: Request, res: Response) {
     shouldRecalculateProfessional: true,
   });
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Tienes una nueva resena - ITIW Connect",
     reviewReceivedTemplate(reviewedName, validation.rating, validation.comment, job.quote.request.description),
@@ -240,7 +240,7 @@ export async function reviewProfessional(req: Request, res: Response) {
   );
 
   for (const badgeType of result.assignedBadges) {
-    await sendEmail(
+    void sendEmailSafe(
       env.emailUser,
       "Obtuviste un nuevo badge! - ITIW Connect",
       badgeAwardedTemplate(reviewedName, badgeType),
@@ -310,7 +310,7 @@ export async function reviewClient(req: Request, res: Response) {
     shouldRecalculateProfessional: false,
   });
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Tienes una nueva resena - ITIW Connect",
     reviewReceivedTemplate(reviewedName, validation.rating, validation.comment, job.quote.request.description),

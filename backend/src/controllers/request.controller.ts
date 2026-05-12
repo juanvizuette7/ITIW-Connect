@@ -1,7 +1,7 @@
 import { JobPaymentStatus, JobStatus, NotificationType, QuoteStatus, Role, ServiceRequestStatus } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
-import { sendEmail } from "../config/mailer";
+import { sendEmailSafe } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import {
   newQuoteTemplate,
@@ -85,7 +85,7 @@ export async function createServiceRequest(req: Request, res: Response) {
     },
   });
 
-  await sendEmail(
+  void sendEmailSafe(
     env.emailUser,
     "Nueva solicitud creada - ITIW Connect",
     requestCreatedTemplate(request.description, request.category.name),
@@ -571,7 +571,7 @@ export async function createQuote(req: Request, res: Response) {
   const professionalName = getProfessionalName(quote.professional);
   const clientName = getClientName(request.client);
 
-  await sendEmail(
+  void sendEmailSafe(
     request.client.email,
     "Tienes un nuevo presupuesto - ITIW Connect",
     newQuoteTemplate(
@@ -724,7 +724,7 @@ export async function acceptQuote(req: Request, res: Response) {
 
   const professionalName = getProfessionalName(result.acceptedQuote.professional);
 
-  await sendEmail(
+  void sendEmailSafe(
     result.acceptedQuote.professional.email,
     "Tu presupuesto fue aceptado! - ITIW Connect",
     quoteAcceptedTemplate(
