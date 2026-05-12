@@ -16,7 +16,7 @@ export function getApiUrl() {
     }
   }
 
-  return configuredUrl || LOCAL_API_URL;
+  return (configuredUrl || LOCAL_API_URL).replace(/\/+$/, "");
 }
 
 interface RequestOptions extends RequestInit {

@@ -154,7 +154,14 @@ export default function MisSolicitudesPage() {
           </Link>
         </div>
 
-        {error && <p className="premium-error mb-4">{error}</p>}
+        {error && (
+          <div className="premium-error mb-4 flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            <button type="button" onClick={() => window.location.reload()} className="underline">
+              Reintentar
+            </button>
+          </div>
+        )}
 
         {requests.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center">

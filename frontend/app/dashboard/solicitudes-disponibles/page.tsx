@@ -126,7 +126,14 @@ export default function SolicitudesDisponiblesPage() {
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Solicitudes disponibles</h1>
         <p className="mt-2 text-brand-muted">Explora solicitudes activas y envia tu presupuesto.</p>
 
-        {error && <p className="premium-error mt-4">{error}</p>}
+        {error && (
+          <div className="premium-error mt-4 flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            <button type="button" onClick={() => window.location.reload()} className="underline">
+              Reintentar
+            </button>
+          </div>
+        )}
         {success && (
           <div className="premium-success mt-4">
             <p>{success}</p>

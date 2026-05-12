@@ -19,6 +19,15 @@ const allowedOrigins = new Set<string>([
   "https://itiw-connect.vercel.app",
 ]);
 
+function isAllowedVercelOrigin(origin: string) {
+  try {
+    const url = new URL(origin);
+    return url.protocol === "https:" && /^itiw-connect(?:-[a-z0-9-]+)?\.vercel\.app$/i.test(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -28,6 +37,11 @@ app.use(
       }
 
       if (allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      if (isAllowedVercelOrigin(origin)) {
         callback(null, true);
         return;
       }

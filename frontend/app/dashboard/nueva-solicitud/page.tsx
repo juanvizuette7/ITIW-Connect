@@ -353,7 +353,14 @@ export default function NuevaSolicitudPage() {
             </select>
           </div>
 
-          {error && <p className="premium-error">{error}</p>}
+          {error && (
+            <div className="premium-error flex flex-wrap items-center justify-between gap-3">
+              <span>{error}</span>
+              <button type="button" onClick={() => window.location.reload()} className="underline">
+                Reintentar
+              </button>
+            </div>
+          )}
 
           <button disabled={loading} className="premium-btn-primary w-full py-3.5 text-base">
             {loading ? "Publicando solicitud..." : "Publicar solicitud"}

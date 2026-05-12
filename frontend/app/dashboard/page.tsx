@@ -428,7 +428,14 @@ export default function DashboardPage() {
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel principal</h1>
         <p className="mt-2 text-brand-muted">Resumen rápido de tu actividad y accesos principales.</p>
 
-        {error && <p className="premium-error mt-4">{error}</p>}
+        {error && (
+          <div className="premium-error mt-4 flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            <button type="button" onClick={() => window.location.reload()} className="underline">
+              Reintentar
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {stats.map((stat) => (

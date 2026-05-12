@@ -22,6 +22,8 @@ function decodePayload(token: string): Record<string, unknown> | null {
 }
 
 export function saveSession(token: string, role?: UserRole) {
+  if (typeof window === "undefined") return;
+
   const payload = decodePayload(token);
   const inferredRole = (payload?.role as UserRole | undefined) || role;
   const email = payload?.email as string | undefined;
@@ -32,17 +34,47 @@ export function saveSession(token: string, role?: UserRole) {
 }
 
 export function clearSession() {
+  if (typeof window === "undefined") return;
   localStorage.clear();
 }
 
 export function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  if (typeof window === "undefined") return null;
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return null;
+
+  const payload = decodePayload(token);
+  const exp = typeof payload?.exp === "number" ? payload.exp : null;
+
+  if (exp && Date.now() >= exp * 1000) {
+    clearSession();
+    return null;
+  }
+
+  return token;
 }
 
 export function getRole() {
-  return localStorage.getItem(ROLE_KEY) as UserRole | null;
+  if (typeof window === "undefined") return null;
+
+  const storedRole = localStorage.getItem(ROLE_KEY) as UserRole | null;
+  if (storedRole) return storedRole;
+
+  const token = getToken();
+  if (!token) return null;
+
+  const payload = decodePayload(token);
+  const role = payload?.role as UserRole | undefined;
+  if (role) {
+    localStorage.setItem(ROLE_KEY, role);
+    return role;
+  }
+
+  return null;
 }
 
 export function getEmail() {
+  if (typeof window === "undefined") return null;
   return localStorage.getItem(EMAIL_KEY);
 }

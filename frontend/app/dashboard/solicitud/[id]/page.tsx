@@ -272,7 +272,14 @@ export default function SolicitudDetailPage() {
           </button>
         </div>
 
-        {error && <p className="premium-error mt-4">{error}</p>}
+        {error && (
+          <div className="premium-error mt-4 flex flex-wrap items-center justify-between gap-3">
+            <span>{error}</span>
+            <button type="button" onClick={() => window.location.reload()} className="underline">
+              Reintentar
+            </button>
+          </div>
+        )}
 
         {activeTab === "presupuestos" ? (
           <div className="mt-6 space-y-4">

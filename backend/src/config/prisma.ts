@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prismaClient = new PrismaClient();
 
-const RETRYABLE_CODES = new Set(["P1001", "P1002"]);
+const RETRYABLE_CODES = new Set(["P1001", "P1002", "P1017", "P2024"]);
 const MAX_QUERY_ATTEMPTS = 6;
 const BASE_DELAY_MS = 500;
 
