@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -363,18 +363,23 @@ export default function ProfilePage() {
               </span>
               <h1 className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-white md:text-4xl">{profileTitle}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-muted">
-                Mantén tu información lista para que la plataforma pueda conectar solicitudes, cotizaciones y pagos sin fricción.
+                MantÃ©n tu informaciÃ³n lista para que la plataforma pueda conectar solicitudes, cotizaciones y pagos sin fricciÃ³n.
               </p>
             </div>
           </div>
 
           {role === "PROFESIONAL" && (
             <div className="rounded-2xl border border-[var(--brand-accent)]/25 bg-[var(--brand-accent)]/10 p-4 text-sm text-[#ffd0bd] md:min-w-64">
-              <p className="font-semibold text-white">Progreso del perfil</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-white">Progreso del perfil</p>
+                <span className="font-[var(--font-heading)] text-2xl font-extrabold text-[var(--brand-accent)]">
+                  {Math.round((professionalProgress / 6) * 100)}%
+                </span>
+              </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-[var(--brand-accent)] transition-all" style={{ width: `${Math.round((professionalProgress / 6) * 100)}%` }} />
               </div>
-              <p className="mt-2 text-xs text-brand-muted">{professionalProgress}/6 elementos completados</p>
+              <p className="mt-2 text-xs text-brand-muted">{professionalProgress}/6 elementos completados. Completa cada seccion para recibir solicitudes mejor filtradas.</p>
             </div>
           )}
         </div>
@@ -403,13 +408,13 @@ export default function ProfilePage() {
 
                 <div>
                   <label className="mb-1.5 block text-sm text-[#d5dded]">Direcciones guardadas</label>
-                  <textarea rows={5} value={clientForm.savedAddresses} onChange={(e) => setClientForm((prev) => ({ ...prev, savedAddresses: e.target.value }))} className="premium-input" placeholder="Una dirección por línea" />
+                  <textarea rows={5} value={clientForm.savedAddresses} onChange={(e) => setClientForm((prev) => ({ ...prev, savedAddresses: e.target.value }))} className="premium-input" placeholder="Una direcciÃ³n por lÃ­nea" />
                 </div>
               </div>
             </div>
 
             <aside className="rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-5">
-              <p className="text-sm font-semibold text-white">Vista rápida</p>
+              <p className="text-sm font-semibold text-white">Vista rÃ¡pida</p>
               <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0A0F1A]/70 p-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-accent)]/15 font-bold text-[#ffd0bd]">{initials || "IC"}</div>
                 <div>
@@ -418,7 +423,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-brand-muted">Guarda varias direcciones para reutilizarlas cuando publiques solicitudes nuevas.</p>
-              <button disabled={saving} className="premium-btn-primary mt-5 w-full">{saving ? "Guardando..." : "Guardar cambios"}</button>
+              <button disabled={saving} className="premium-btn-primary mt-5 w-full">{"Guardar cambios"}</button>
             </aside>
           </form>
         )}
@@ -427,8 +432,8 @@ export default function ProfilePage() {
           <>
             <form className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]" onSubmit={onSaveProfessional}>
               <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-                <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Perfil público</h2>
-                <p className="mt-2 text-sm text-brand-muted">Esta información aparece cuando un cliente revisa tus cotizaciones.</p>
+                <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Perfil pÃºblico</h2>
+                <p className="mt-2 text-sm text-brand-muted">Esta informaciÃ³n aparece cuando un cliente revisa tus cotizaciones.</p>
 
                 <div className="mt-5 space-y-4">
                   <div>
@@ -441,7 +446,7 @@ export default function ProfilePage() {
                       <span>Bio profesional</span>
                       <span className={`${bioCount > 300 ? "text-[#ff9bac]" : "text-brand-muted"}`}>{bioCount}/300</span>
                     </div>
-                    <textarea rows={5} maxLength={300} value={professionalForm.bio} onChange={(e) => setProfessionalForm((prev) => ({ ...prev, bio: e.target.value }))} className="premium-input" placeholder="Ej: Electricista certificado con 10 años de experiencia en instalaciones residenciales." />
+                    <textarea rows={5} maxLength={300} value={professionalForm.bio} onChange={(e) => setProfessionalForm((prev) => ({ ...prev, bio: e.target.value }))} className="premium-input" placeholder="Ej: Electricista certificado con 10 aÃ±os de experiencia en instalaciones residenciales." />
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
@@ -453,28 +458,39 @@ export default function ProfilePage() {
                     <div>
                       <label className="mb-1.5 block text-sm text-[#d5dded]">Zona de cobertura (km)</label>
                       <input required type="number" min={1} value={professionalForm.coverageRadiusKm} onChange={(e) => setProfessionalForm((prev) => ({ ...prev, coverageRadiusKm: e.target.value }))} className="premium-input" placeholder="Ej: 10" />
+                      <input
+                        type="range"
+                        min={1}
+                        max={50}
+                        value={Number(professionalForm.coverageRadiusKm || 1)}
+                        onChange={(e) => setProfessionalForm((prev) => ({ ...prev, coverageRadiusKm: e.target.value }))}
+                        className="mt-3 h-2 w-full cursor-pointer accent-[var(--brand-accent)]"
+                      />
+                      <p className="mt-2 text-xs text-brand-muted">
+                        Ajusta cuantos kilometros puedes cubrir. Una zona real evita solicitudes que no puedes atender.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <aside className="rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-5">
+              <aside className="rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-5 lg:sticky lg:top-6">
                 <h3 className="font-[var(--font-heading)] text-xl font-bold text-white">Especialidades</h3>
-                <p className="mt-2 text-sm text-brand-muted">Agrega hasta 5 servicios principales. Usa categorías claras para aparecer mejor en búsqueda.</p>
+                <p className="mt-2 text-sm text-brand-muted">Agrega hasta 5 servicios principales. Usa categorÃ­as claras para aparecer mejor en bÃºsqueda.</p>
 
                 <input value={specialtyInput} onChange={(e) => setSpecialtyInput(e.target.value)} onKeyDown={onSpecialtyKeyDown} onBlur={() => addSpecialty(specialtyInput)} className="premium-input mt-4" placeholder="Ej: Electricidad" />
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {specialties.length === 0 && <p className="text-sm text-brand-muted">Aún no agregas especialidades.</p>}
+                  {specialties.length === 0 && <p className="text-sm text-brand-muted">AÃºn no agregas especialidades.</p>}
                   {specialties.map((specialty) => (
                     <span key={specialty} className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-1 text-xs text-[#ffd0bd]">
                       {specialty}
-                      <button type="button" onClick={() => removeSpecialty(specialty)} className="font-bold text-white/80 transition hover:text-white">×</button>
+                      <button type="button" onClick={() => removeSpecialty(specialty)} className="font-bold text-white/80 transition hover:text-white">Ã—</button>
                     </span>
                   ))}
                 </div>
 
-                <button disabled={saving} className="premium-btn-primary mt-6 w-full">{saving ? "Guardando..." : "Guardar perfil profesional"}</button>
+                <button disabled={saving} className="premium-btn-primary mt-6 w-full">{"Guardar perfil profesional"}</button>
               </aside>
             </form>
 
@@ -482,9 +498,9 @@ export default function ProfilePage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Portafolio</h2>
-                  <p className="mt-1 text-sm text-brand-muted">Sube trabajos reales para que los clientes confíen más rápido.</p>
+                  <p className="mt-1 text-sm text-brand-muted">Sube trabajos reales para que los clientes confÃ­en mÃ¡s rÃ¡pido.</p>
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-brand-muted">Máximo 10 fotos</span>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-brand-muted">MÃ¡ximo 10 fotos</span>
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1.2fr]">
@@ -496,14 +512,14 @@ export default function ProfilePage() {
                   <input id="portfolio-file-input" type="file" accept="image/*" onChange={onPickPortfolioFile} className="hidden" />
 
                   <label className="block text-sm text-[#d5dded]">
-                    Descripción (opcional)
+                    DescripciÃ³n (opcional)
                     <input value={portfolioDescription} onChange={(event) => setPortfolioDescription(event.target.value)} maxLength={180} className="premium-input mt-1" placeholder="Describe el trabajo mostrado" />
                   </label>
 
                   {portfolioPreview && <img src={portfolioPreview} alt="Preview portafolio" className="h-40 w-full rounded-xl border border-white/10 object-cover" />}
 
                   <button type="button" onClick={onUploadPortfolio} disabled={portfolioSaving || !portfolioBase64 || portfolioPhotos.length >= 10} className="rounded-xl bg-[var(--brand-accent)] px-4 py-2 text-sm font-semibold text-[#2a1106] transition hover:-translate-y-0.5 hover:bg-[#ff824d] disabled:cursor-not-allowed disabled:opacity-60">
-                    {portfolioSaving ? "Subiendo..." : "Subir al portafolio"}
+                    {"Subir al portafolio"}
                   </button>
                 </div>
 
@@ -511,11 +527,11 @@ export default function ProfilePage() {
                   {portfolioPhotos.map((photo, index) => (
                     <article key={photo.id} className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] opacity-0" style={{ animation: "portfolio-fade-in 360ms ease forwards", animationDelay: `${index * 65}ms` }}>
                       <img src={photo.photoUrl} alt={photo.description || "Foto de portafolio"} className="h-28 w-full object-cover" />
-                      <button type="button" onClick={() => setConfirmDeletePhotoId(photo.id)} disabled={portfolioDeletingId === photo.id} className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-rose-300/50 bg-rose-500/70 text-xs font-bold text-white transition hover:bg-rose-500">×</button>
+                      <button type="button" onClick={() => setConfirmDeletePhotoId(photo.id)} disabled={portfolioDeletingId === photo.id} className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-rose-300/50 bg-rose-500/70 text-xs font-bold text-white transition hover:bg-rose-500">Ã—</button>
                       {photo.description && <p className="line-clamp-2 px-2 py-1 text-[11px] text-[#dce6f7]">{photo.description}</p>}
                     </article>
                   ))}
-                  {portfolioPhotos.length === 0 && <p className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-brand-muted">Aún no has agregado fotos a tu portafolio.</p>}
+                  {portfolioPhotos.length === 0 && <p className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-brand-muted">AÃºn no has agregado fotos a tu portafolio.</p>}
                 </div>
               </div>
             </section>
@@ -527,7 +543,7 @@ export default function ProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
           <div className="w-full max-w-md rounded-2xl border border-[#30425a] bg-[#0A0F1A] p-5">
             <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Eliminar foto</h2>
-            <p className="mt-2 text-sm text-brand-muted">Esta acción no se puede deshacer. La foto se eliminará de tu portafolio.</p>
+            <p className="mt-2 text-sm text-brand-muted">Esta acciÃ³n no se puede deshacer. La foto se eliminarÃ¡ de tu portafolio.</p>
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" onClick={() => setConfirmDeletePhotoId(null)} className="premium-btn-secondary px-4 py-2 text-sm">Volver</button>
               <button type="button" onClick={async () => { await onDeletePortfolio(confirmDeletePhotoId); setConfirmDeletePhotoId(null); }} disabled={portfolioDeletingId === confirmDeletePhotoId} className="rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25 disabled:opacity-60">
@@ -547,3 +563,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+

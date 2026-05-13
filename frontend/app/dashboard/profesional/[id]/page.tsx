@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -80,14 +80,14 @@ function toNumber(value: string | number): number {
 
 function stars(value: number) {
   const amount = Math.max(0, Math.min(5, Math.round(value)));
-  return amount > 0 ? "★".repeat(amount) : "Sin calificaciones";
+  return amount > 0 ? "?".repeat(amount) : "Sin calificaciones";
 }
 
 function badgeClass(type: string) {
   if (type === "VERIFICADO") return "border-emerald-400/40 bg-emerald-400/15 text-emerald-200";
   if (type === "TOP_RATED") return "border-[var(--brand-accent)]/40 bg-[var(--brand-accent)]/15 text-[#7cfce6]";
   if (type === "EXPERTO") return "border-amber-300/40 bg-amber-300/15 text-amber-200";
-  return "border-sky-400/40 bg-sky-400/15 text-sky-200";
+  return "border-orange-400/40 bg-orange-400/15 text-orange-200";
 }
 
 function safeSubcategoryRatings(value: ReviewItem["subcategoryRatings"]) {
@@ -192,7 +192,7 @@ export default function ProfessionalPublicPage() {
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <article className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
-            <p className="text-xs uppercase tracking-wide text-[#9cb0cd]">Calificación promedio</p>
+            <p className="text-xs uppercase tracking-wide text-[#9cb0cd]">CalificaciÃ³n promedio</p>
             <p className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{average.toFixed(1)}</p>
             <p className="text-sm text-[#f5cf7a]">{stars(average)}</p>
           </article>
@@ -201,7 +201,7 @@ export default function ProfessionalPublicPage() {
             <p className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{profile.professionalProfile.totalJobs}</p>
           </article>
           <article className="rounded-2xl border border-[var(--border)] bg-[#0f1d2e] p-4">
-            <p className="text-xs uppercase tracking-wide text-[#9cb0cd]">Años de experiencia</p>
+            <p className="text-xs uppercase tracking-wide text-[#9cb0cd]">AÃ±os de experiencia</p>
             <p className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{yearsExp}</p>
             <p className="text-xs text-[#8ea3bf]">Estimado por historial</p>
           </article>
@@ -227,7 +227,7 @@ export default function ProfessionalPublicPage() {
               activeTab === "sobre" ? "bg-[var(--brand-accent)] text-[#2a1106]" : "text-[#c8d6eb] hover:bg-white/5"
             }`}
           >
-            Sobre mí
+            Sobre mÃ­
           </button>
           <button
             type="button"
@@ -245,21 +245,21 @@ export default function ProfessionalPublicPage() {
               activeTab === "resenas" ? "bg-[var(--brand-accent)] text-[#2a1106]" : "text-[#c8d6eb] hover:bg-white/5"
             }`}
           >
-            Reseñas
+            ReseÃ±as
           </button>
         </div>
 
         {activeTab === "sobre" && (
           <div className="mt-5 space-y-4">
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-sm text-[#d6e1f4]">{profile.professionalProfile.bio || "Este profesional aún no agregó una biografía."}</p>
+              <p className="text-sm text-[#d6e1f4]">{profile.professionalProfile.bio || "Este profesional aÃºn no agregÃ³ una biografÃ­a."}</p>
             </div>
 
             <div>
               <p className="mb-2 text-sm font-semibold text-white">Especialidades</p>
               <div className="flex flex-wrap gap-2">
                 {profile.professionalProfile.specialties.length === 0 ? (
-                  <span className="text-sm text-brand-muted">Aún no registra especialidades.</span>
+                  <span className="text-sm text-brand-muted">AÃºn no registra especialidades.</span>
                 ) : (
                   profile.professionalProfile.specialties.map((specialty) => (
                     <span key={specialty} className="rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-1 text-xs text-[#84ffe8]">
@@ -287,7 +287,7 @@ export default function ProfessionalPublicPage() {
           <div className="mt-5">
             {portfolioPhotos.length === 0 ? (
               <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm text-brand-muted">
-                Este profesional aún no tiene fotos en su portafolio.
+                Este profesional aÃºn no tiene fotos en su portafolio.
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -306,7 +306,7 @@ export default function ProfessionalPublicPage() {
           <div className="mt-5 space-y-3">
             {reviews.length === 0 ? (
               <div className="rounded-xl border border-white/10 bg-white/[0.02] p-8 text-center text-sm text-brand-muted">
-                Este profesional aún no tiene reseñas públicas.
+                Este profesional aÃºn no tiene reseÃ±as pÃºblicas.
               </div>
             ) : (
               reviews.map((review, index) => {
@@ -333,7 +333,7 @@ export default function ProfessionalPublicPage() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Puntualidad {subcategories.puntualidad}/5</span>
                       <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Calidad {subcategories.calidad}/5</span>
-                      <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Comunicación {subcategories.comunicacion}/5</span>
+                      <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">ComunicaciÃ³n {subcategories.comunicacion}/5</span>
                       <span className="rounded-full border border-white/12 bg-white/[0.03] px-2 py-0.5 text-[11px] text-[#d6e1f4]">Limpieza {subcategories.limpieza}/5</span>
                     </div>
                     <p className="mt-3 text-sm text-[#c8d6eb]">{review.comment}</p>
@@ -363,7 +363,7 @@ export default function ProfessionalPublicPage() {
                   Anterior
                 </button>
                 <span className="text-brand-muted">
-                  Página {reviewsPage} de {reviewsTotalPages}
+                  PÃ¡gina {reviewsPage} de {reviewsTotalPages}
                 </span>
                 <button
                   type="button"
@@ -404,4 +404,5 @@ export default function ProfessionalPublicPage() {
     </main>
   );
 }
+
 

@@ -1,13 +1,13 @@
-function emailLayout(title: string, contentHtml: string, ctaLabel?: string, ctaUrl?: string) {
+﻿function emailLayout(title: string, contentHtml: string, ctaLabel?: string, ctaUrl?: string) {
   return `
   <div style="background:#f3f5f8; padding:24px; font-family: Arial, sans-serif; color:#1e293b;">
     <div style="max-width:620px; margin:0 auto; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; overflow:hidden;">
-      <div style="background:#0f3460; color:#ffffff; padding:18px 24px; font-size:22px; font-weight:700;">ITIW Connect</div>
+      <div style="background:#111827; color:#ffffff; padding:18px 24px; font-size:22px; font-weight:700;">ITIW Connect</div>
       <div style="padding:24px;">
-        <h2 style="margin:0 0 14px; color:#0f3460; font-size:22px;">${title}</h2>
+        <h2 style="margin:0 0 14px; color:#111827; font-size:22px;">${title}</h2>
         ${contentHtml}
         ${ctaLabel && ctaUrl
-          ? `<a href="${ctaUrl}" style="display:inline-block; margin-top:18px; background:#e94560; color:#ffffff; text-decoration:none; padding:12px 16px; border-radius:10px; font-weight:600;">${ctaLabel}</a>`
+          ? `<a href="${ctaUrl}" style="display:inline-block; margin-top:18px; background:#FF6B2C; color:#ffffff; text-decoration:none; padding:12px 16px; border-radius:10px; font-weight:600;">${ctaLabel}</a>`
           : ""}
         <p style="margin:22px 0 0; color:#64748b; font-size:13px;">Equipo ITIW Connect</p>
       </div>
@@ -24,7 +24,7 @@ export function otpEmailTemplate(name: string, code: string): string {
     "Codigo de verificacion",
     `<p style="margin:0 0 12px;">Hola ${name},</p>
      <p style="margin:0 0 16px;">Tu codigo OTP es:</p>
-     <div style="font-size:34px; letter-spacing:8px; font-weight:700; color:#0f3460; margin-bottom:12px;">${code}</div>
+     <div style="font-size:34px; letter-spacing:8px; font-weight:700; color:#111827; margin-bottom:12px;">${code}</div>
      <p style="margin:0;">Este codigo vence en <strong>5 minutos</strong>.</p>`,
   );
 }
@@ -234,3 +234,4 @@ export function aiRetrainCompletedTemplate(totalProfessionals: number): string {
      <p style="margin:0;"><strong>Profesionales actualizados:</strong> ${totalProfessionals}</p>`,
   );
 }
+

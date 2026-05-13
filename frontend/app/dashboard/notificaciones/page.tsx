@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -114,9 +114,9 @@ function typeIcon(type: NotificationType) {
 }
 
 function typeClass(type: NotificationType) {
-  if (type === "SOLICITUD") return "border-cyan-400/40 bg-cyan-400/15 text-cyan-200";
+  if (type === "SOLICITUD") return "border-orange-400/40 bg-orange-400/15 text-orange-200";
   if (type === "PRESUPUESTO") return "border-fuchsia-400/40 bg-fuchsia-400/15 text-fuchsia-200";
-  if (type === "MENSAJE") return "border-sky-400/40 bg-sky-400/15 text-sky-200";
+  if (type === "MENSAJE") return "border-orange-400/40 bg-orange-400/15 text-orange-200";
   if (type === "PAGO") return "border-emerald-400/40 bg-emerald-400/15 text-emerald-200";
   if (type === "CALIFICACION") return "border-amber-400/40 bg-amber-400/15 text-amber-200";
   if (type === "BADGE") return "border-violet-400/40 bg-violet-400/15 text-violet-200";
@@ -266,7 +266,7 @@ export default function NotificacionesPage() {
             <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Notificaciones</h1>
             <p className="mt-2 text-sm text-brand-muted">
               Polling automatico cada 10 segundos. No leidas: {unreadCount}
-              {refreshing ? " · sincronizando..." : ""}
+              {refreshing ? " Â· sincronizando..." : ""}
             </p>
           </div>
 
@@ -285,7 +285,7 @@ export default function NotificacionesPage() {
         <div className="mt-6 space-y-3">
           {notifications.length === 0 ? (
             <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-brand-muted">
-              Aún no tienes notificaciones.
+              AÃºn no tienes notificaciones.
             </article>
           ) : (
             notifications.map((item, index) => {
@@ -312,7 +312,7 @@ export default function NotificacionesPage() {
                       </span>
                       {!item.isRead && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-[#e94560]/40 bg-[#e94560]/15 px-2 py-0.5 text-[11px] text-[#83fce5]">
-                          <span className="h-2 w-2 rounded-full bg-[#e94560] animate-teal-pulse" />
+                          <span className="h-2 w-2 rounded-full bg-[#e94560] animate-orange-pulse" />
                           Nueva
                         </span>
                       )}
@@ -354,5 +354,6 @@ export default function NotificacionesPage() {
     </main>
   );
 }
+
 
 

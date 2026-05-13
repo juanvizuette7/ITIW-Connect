@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -96,7 +96,7 @@ function formatDate(value: string | null) {
 
 function statusClass(status: RequestDetail["status"]) {
   if (status === "ACTIVA") return "border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/15 text-[#ffd0bd]";
-  if (status === "AGENDADA") return "border-sky-400/35 bg-sky-400/15 text-sky-200";
+  if (status === "AGENDADA") return "border-orange-400/35 bg-orange-400/15 text-orange-200";
   if (status === "COMPLETADA") return "border-emerald-400/35 bg-emerald-400/15 text-emerald-200";
   return "border-rose-400/35 bg-rose-400/15 text-rose-200";
 }
@@ -424,3 +424,4 @@ export default function SolicitudDetailPage() {
     </main>
   );
 }
+

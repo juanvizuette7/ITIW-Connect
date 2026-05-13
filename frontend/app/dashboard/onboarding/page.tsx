@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -49,7 +49,7 @@ export default function OnboardingPage() {
 
     setStatus(onboardingStatus);
     if (onboardingStatus.onboardingCompleted) {
-      setMessage("Tu onboarding ya esta completó. Excelente trabajo.");
+      setMessage("Tu onboarding ya esta completÃ³. Excelente trabajo.");
     }
   }
 
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
       {
         key: "identidadVerificada",
         title: "Verifica tu identidad",
-        detail: "La verificación es gestionada por administracion.",
+        detail: "La verificaciÃ³n es gestionada por administracion.",
         done: status.steps.identidadVerificada,
         href: "/dashboard/profile",
       },
@@ -228,7 +228,7 @@ export default function OnboardingPage() {
             disabled={saving || !status?.allCompleted}
             className="rounded-xl bg-[#e94560] px-5 py-3 font-semibold text-[#03261d] transition hover:-translate-y-0.5 hover:bg-[#35e0c3] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {saving ? "Guardando..." : "Finalizar onboarding"}
+            {"Finalizar onboarding"}
           </button>
 
           <Link href="/dashboard" className="premium-btn-secondary px-5 py-3">
@@ -264,5 +264,6 @@ export default function OnboardingPage() {
     </main>
   );
 }
+
 
 

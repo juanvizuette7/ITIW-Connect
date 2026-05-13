@@ -49,6 +49,22 @@ function todayForInput() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function toInputDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatMonthTitle(date: Date) {
+  return new Intl.DateTimeFormat("es-CO", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+const weekDays = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
+
 function bytesFromDataUrl(value: string) {
   const base64 = value.includes(",") ? value.split(",").pop() || "" : value;
   return Math.ceil((base64.replace(/=+$/, "").length * 3) / 4);
@@ -128,6 +144,7 @@ export default function NuevaSolicitudPage() {
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [preferredDate, setPreferredDate] = useState(todayForInput());
+  const [calendarCursor, setCalendarCursor] = useState(() => new Date());
   const [preferredSchedule, setPreferredSchedule] = useState("TARDE");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [location, setLocation] = useState<LocationState | null>(null);
@@ -167,6 +184,26 @@ export default function NuevaSolicitudPage() {
     () => categories.find((category) => category.id === categoryId),
     [categories, categoryId],
   );
+
+  const calendarDays = useMemo(() => {
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const days: Array<{ iso: string; day: number } | null> = [];
+
+    for (let index = 0; index < startOffset; index += 1) {
+      days.push(null);
+    }
+
+    for (let day = 1; day <= totalDays; day += 1) {
+      const date = new Date(year, month, day);
+      days.push({ iso: toInputDate(date), day });
+    }
+
+    return days;
+  }, [calendarCursor]);
 
   function onLogout() {
     clearSession();
@@ -390,9 +427,62 @@ export default function NuevaSolicitudPage() {
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--brand-accent)]">Paso 3</p>
               <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Fecha, horario y ubicacion</h2>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-white">Fecha preferida</label>
-                  <input type="date" min={todayForInput()} value={preferredDate} onChange={(event) => setPreferredDate(event.target.value)} className="premium-input" />
+                <div className="rounded-2xl border border-white/10 bg-[#111827] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-white">Fecha preferida</label>
+                      <p className="text-xs text-brand-muted">Elige un dia disponible. Los dias pasados se bloquean.</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
+                      >
+                        ›
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-center text-sm font-semibold capitalize text-[#ffd0bd]">{formatMonthTitle(calendarCursor)}</p>
+                  <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase text-brand-muted">
+                    {weekDays.map((day) => <span key={day}>{day}</span>)}
+                  </div>
+                  <div className="mt-2 grid grid-cols-7 gap-1">
+                    {calendarDays.map((day, index) => {
+                      if (!day) {
+                        return <span key={`empty-${index}`} className="h-9" />;
+                      }
+
+                      const disabled = day.iso < todayForInput();
+                      const active = day.iso === preferredDate;
+
+                      return (
+                        <button
+                          key={day.iso}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => setPreferredDate(day.iso)}
+                          className={`h-9 rounded-xl text-sm font-semibold transition duration-200 ${
+                            active
+                              ? "bg-[var(--brand-accent)] text-[#261006] shadow-[0_0_18px_rgba(255,107,44,0.25)]"
+                              : disabled
+                                ? "cursor-not-allowed bg-white/[0.02] text-white/25"
+                                : "border border-white/10 bg-white/[0.03] text-white hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/50"
+                          }`}
+                        >
+                          {day.day}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-white">Ubicacion legible</label>

@@ -2,12 +2,6 @@ import { JobPaymentStatus, JobStatus, NotificationType, PaymentStatus, Prisma, R
 import { Request, Response } from "express";
 import { env } from "../config/env";
 import { sendEmailSafe } from "../config/mailer";
-import {
-  capturePaymentIntent,
-  createPaymentIntent,
-  getPaymentIntentClientSecret,
-  validatePaymentIntentForEscrow,
-} from "../config/stripe";
 import { prisma } from "../config/prisma";
 import {
   badgeAwardedTemplate,
@@ -167,10 +161,6 @@ function mapJob(job: JobWithRelations) {
 export async function createOrConfirmEscrowPayment(req: Request, res: Response) {
   const clientId = req.user!.userId;
   const { jobId } = req.params;
-  const { action, paymentIntentId } = req.body as {
-    action?: "create" | "confirm";
-    paymentIntentId?: string;
-  };
 
   const job = await prisma.job.findUnique({
     where: { id: jobId },
@@ -189,81 +179,37 @@ export async function createOrConfirmEscrowPayment(req: Request, res: Response) 
     return res.status(400).json({ message: "Este job ya tiene el pago liberado." });
   }
 
-  const selectedAction = action || "create";
+  if (job.paymentStatus === JobPaymentStatus.RETENIDO) {
+    return res.status(200).json({
+      message: "El pago ya esta retenido de forma segura en escrow.",
+      job: mapJob(job),
+      payment: job.payment,
+    });
+  }
 
-  if (selectedAction === "create") {
-    const amountCop = toCop(job.quote.amountCop);
-    const commissionCop = toCop(amountCop * COMMISSION_RATE);
-    const netProfessionalCop = toCop(amountCop - commissionCop);
+  const serviceCop = toCop(job.quote.amountCop);
+  const commissionCop = toCop(serviceCop * COMMISSION_RATE);
+  const amountCop = serviceCop + commissionCop;
+  const netProfessionalCop = serviceCop;
+  const simulatedPaymentId =
+    job.payment?.stripePaymentIntentId || `simulated_escrow_${job.id}_${Date.now()}`;
 
-    let clientSecret = "";
-    let stripePaymentIntentId = job.payment?.stripePaymentIntentId;
-
-    if (stripePaymentIntentId) {
-      clientSecret = await getPaymentIntentClientSecret(stripePaymentIntentId);
-    } else {
-      const intent = await createPaymentIntent(job.id, amountCop);
-      stripePaymentIntentId = intent.id;
-      clientSecret = intent.clientSecret;
-    }
-
-    const payment = await prisma.payment.upsert({
+  const updated = await prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.upsert({
       where: { jobId: job.id },
       create: {
         jobId: job.id,
-        stripePaymentIntentId,
+        stripePaymentIntentId: simulatedPaymentId,
         amountCop,
         commissionCop,
         netProfessionalCop,
-        status: PaymentStatus.PENDIENTE,
+        status: PaymentStatus.COMPLETADO,
       },
       update: {
-        stripePaymentIntentId,
+        stripePaymentIntentId: simulatedPaymentId,
         amountCop,
         commissionCop,
         netProfessionalCop,
-      },
-    });
-
-    return res.status(200).json({
-      message: "PaymentIntent generado correctamente.",
-      clientSecret,
-      paymentIntentId: stripePaymentIntentId,
-      payment: {
-        id: payment.id,
-        amountCop: payment.amountCop,
-        commissionCop: payment.commissionCop,
-        netProfessionalCop: payment.netProfessionalCop,
-        status: payment.status,
-        createdAt: payment.createdAt,
-      },
-      amountCop,
-      commissionCop,
-      netProfessionalCop,
-    });
-  }
-
-  const existingPayment = await prisma.payment.findUnique({
-    where: { jobId: job.id },
-  });
-
-  if (!existingPayment) {
-    return res.status(400).json({ message: "Primero debes iniciar el pago del job." });
-  }
-
-  if (paymentIntentId && paymentIntentId !== existingPayment.stripePaymentIntentId) {
-    return res.status(400).json({ message: "El PaymentIntent no coincide con el registrado para este job." });
-  }
-
-  const isValidIntent = await validatePaymentIntentForEscrow(existingPayment.stripePaymentIntentId);
-  if (!isValidIntent) {
-    return res.status(400).json({ message: "El pago no fue confirmado por Stripe. Intenta nuevamente." });
-  }
-
-  const updated = await prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.update({
-      where: { jobId: job.id },
-      data: {
         status: PaymentStatus.COMPLETADO,
       },
     });
@@ -284,7 +230,7 @@ export async function createOrConfirmEscrowPayment(req: Request, res: Response) 
   void sendEmailSafe(
     env.emailUser,
     "Tu pago esta seguro en escrow - ITIW Connect",
-    escrowPaymentTemplate(updated.updatedJob.quote.amountCop, updated.updatedJob.quote.request.description),
+    escrowPaymentTemplate(updated.payment.amountCop, updated.updatedJob.quote.request.description),
   );
 
   await notifyManyUsers(
@@ -300,7 +246,7 @@ export async function createOrConfirmEscrowPayment(req: Request, res: Response) 
   );
 
   return res.status(200).json({
-    message: "Pago procesado y retenido en escrow correctamente.",
+    message: "Pago procesado. Tu dinero esta seguro en escrow.",
     job: mapJob(updated.updatedJob),
     payment: {
       id: updated.payment.id,
@@ -337,8 +283,6 @@ export async function confirmJobCompletion(req: Request, res: Response) {
   if (!job.payment) {
     return res.status(400).json({ message: "No encontramos el registro de pago para este job." });
   }
-
-  await capturePaymentIntent(job.payment.stripePaymentIntentId);
 
   const updated = await prisma.$transaction(async (tx) => {
     await tx.payment.update({
@@ -420,7 +364,7 @@ export async function confirmJobCompletion(req: Request, res: Response) {
   }
 
   return res.status(200).json({
-    message: "Trabajo confirmado y pago liberado al profesional.",
+    message: "Pago liberado al profesional.",
     job: mapJob(updated.releasedJob),
   });
 }

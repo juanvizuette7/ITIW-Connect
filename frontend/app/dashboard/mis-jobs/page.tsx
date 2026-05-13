@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -34,7 +34,7 @@ type ProfileMeResponse = {
 
 function paymentStatusClass(status: JobItem["paymentStatus"]): string {
   if (status === "PENDIENTE") return "bg-amber-500/20 border-amber-500/35 text-amber-300";
-  if (status === "RETENIDO") return "bg-sky-500/20 border-sky-500/35 text-sky-300";
+  if (status === "RETENIDO") return "bg-orange-500/20 border-orange-500/35 text-orange-200";
   if (status === "LIBERADO") return "bg-emerald-500/20 border-emerald-500/35 text-emerald-300";
   return "bg-slate-500/20 border-slate-500/35 text-slate-300";
 }
@@ -97,7 +97,7 @@ export default function MisJobsPage() {
 
         {jobs.length === 0 ? (
           <div className="mt-6 premium-panel p-5 text-center">
-            <p className="text-brand-muted">Aún no tienes jobs registrados. Cuando aceptes o recibas una cotización, aparecera aqui.</p>
+            <p className="text-brand-muted">AÃºn no tienes jobs registrados. Cuando aceptes o recibas una cotizaciÃ³n, aparecera aqui.</p>
             <Link href="/dashboard" className="premium-btn-secondary mt-4 inline-block">
               Volver al dashboard
             </Link>
@@ -120,7 +120,7 @@ export default function MisJobsPage() {
                   <Link href={`/dashboard/job/${job.id}`} className="text-brand-accent hover:underline">
                     Ver job
                   </Link>
-                  <Link href={`/dashboard/job/${job.id}/chat`} className="text-sky-300 hover:underline">
+                  <Link href={`/dashboard/job/${job.id}/chat`} className="text-orange-300 hover:underline">
                     Abrir chat
                   </Link>
                 </div>
@@ -132,4 +132,5 @@ export default function MisJobsPage() {
     </main>
   );
 }
+
 

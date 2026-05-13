@@ -77,10 +77,10 @@ const categoryEmojiMap: Record<string, string> = {
 };
 
 const categoryGlowPalette = [
-  "from-cyan-400/20 via-sky-400/10 to-transparent",
-  "from-fuchsia-400/20 via-rose-400/10 to-transparent",
-  "from-emerald-400/20 via-teal-400/10 to-transparent",
+  "from-orange-400/25 via-orange-500/10 to-transparent",
+  "from-rose-400/20 via-orange-400/10 to-transparent",
   "from-amber-400/20 via-orange-400/10 to-transparent",
+  "from-emerald-400/15 via-orange-400/10 to-transparent",
 ];
 
 function normalizeCategoryName(value: string) {

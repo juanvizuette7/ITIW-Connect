@@ -2,7 +2,6 @@ import { JobPaymentStatus, JobStatus, NotificationType, PaymentStatus } from "@p
 import cron from "node-cron";
 import { env } from "../config/env";
 import { sendEmailSafe } from "../config/mailer";
-import { capturePaymentIntent } from "../config/stripe";
 import { prisma } from "../config/prisma";
 import {
   aiRetrainCompletedTemplate,
@@ -68,8 +67,6 @@ async function releaseEscrowJobs() {
       if (!job.payment) {
         continue;
       }
-
-      await capturePaymentIntent(job.payment.stripePaymentIntentId);
 
       const updated = await prisma.$transaction(async (tx) => {
         await tx.payment.update({

@@ -5,7 +5,6 @@
 :root {
   color-scheme: dark;
   --orange: #FF6B2C;
-  --teal: #FF6B2C;
   --navy: #0D2137;
   --dark: #0A0F1A;
   --card: #111827;
@@ -71,7 +70,7 @@ a {
   100% { transform: scale(1); }
 }
 
-@keyframes teal-pulse {
+@keyframes orange-pulse {
   0%,
   100% {
     opacity: 0.8;
@@ -108,8 +107,8 @@ a {
   animation: badge-bounce 0.5s ease;
 }
 
-.animate-teal-pulse {
-  animation: teal-pulse 1.3s ease infinite;
+.animate-orange-pulse {
+  animation: orange-pulse 1.3s ease infinite;
 }
 
 .animate-pin-pulse {

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -46,7 +46,7 @@ function formatCop(value: number): string {
 
 function statusClass(status: JobDetail["paymentStatus"]) {
   if (status === "PENDIENTE") return "bg-amber-500/20 border-amber-500/35 text-amber-300";
-  if (status === "RETENIDO") return "bg-sky-500/20 border-sky-500/35 text-sky-300";
+  if (status === "RETENIDO") return "bg-orange-500/20 border-orange-500/35 text-orange-200";
   if (status === "LIBERADO") return "bg-emerald-500/20 border-emerald-500/35 text-emerald-300";
   return "bg-slate-500/20 border-slate-500/35 text-slate-300";
 }
@@ -185,7 +185,7 @@ export default function JobDetailPage() {
         <p className="mt-2 text-[#d5dded]">{job.request.description}</p>
         <p className="mt-4 font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(job.amountCop)}</p>
 
-        {remainingEscrowText && <p className="mt-2 text-sm text-sky-300">{remainingEscrowText}</p>}
+        {remainingEscrowText && <p className="mt-2 text-sm text-orange-300">{remainingEscrowText}</p>}
 
         {error && <p className="premium-error mt-4">{error}</p>}
         {message && <p className="premium-success mt-4">{message}</p>}
@@ -254,4 +254,5 @@ export default function JobDetailPage() {
     </main>
   );
 }
+
 
