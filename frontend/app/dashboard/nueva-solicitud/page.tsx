@@ -440,7 +440,7 @@ export default function NuevaSolicitudPage() {
             )}
 
             <button disabled={loading} className="premium-btn-primary w-full py-4 text-base">
-              {loading ? "Publicando solicitud..." : "Publicar solicitud"}
+              {"Publicar solicitud"}
             </button>
 
             <Link href="/dashboard/mis-solicitudes" className="inline-flex text-sm text-brand-accent hover:underline">

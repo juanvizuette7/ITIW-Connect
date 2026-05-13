@@ -183,7 +183,7 @@ export default function RegisterPage() {
         {message && <p className="premium-success">{message}</p>}
 
         <button disabled={loading} className="premium-btn-primary w-full">
-          {loading ? "Creando cuenta..." : "Crear cuenta ->"}
+          Crear cuenta
         </button>
       </form>
 

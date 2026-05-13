@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type ProfileMeResponse = {
   name: string;
@@ -149,7 +150,7 @@ export default function NuevaDisputaPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando formulario de disputa...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type DisputeStatus = "ABIERTA" | "EN_REVISION" | "RESUELTA" | "CERRADA";
 
@@ -142,7 +143,7 @@ export default function AdminDisputasPage() {
   );
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-5 py-10 text-brand-muted">Cargando panel admin de disputas...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (
@@ -225,7 +226,7 @@ export default function AdminDisputasPage() {
                           shakeId === item.id ? "animate-dispute-shake" : ""
                         }`}
                       >
-                        {isWorking ? "Procesando..." : "Liberar pago al profesional"}
+                        Liberar pago al profesional
                       </button>
 
                       <button
@@ -236,7 +237,7 @@ export default function AdminDisputasPage() {
                           shakeId === item.id ? "animate-dispute-shake" : ""
                         }`}
                       >
-                        {isWorking ? "Procesando..." : "Reembolsar al cliente"}
+                        Reembolsar al cliente
                       </button>
                     </div>
                   </article>
@@ -249,4 +250,3 @@ export default function AdminDisputasPage() {
     </main>
   );
 }
-

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type JobDetail = {
   id: string;
@@ -128,7 +129,7 @@ export default function JobChatPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando chat...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (
@@ -175,7 +176,7 @@ export default function JobChatPage() {
               placeholder="Escribe tu mensaje..."
             />
             <button disabled={sending} className="premium-btn-primary px-5">
-              {sending ? "Enviando..." : "Enviar"}
+              Enviar
             </button>
           </div>
         </form>

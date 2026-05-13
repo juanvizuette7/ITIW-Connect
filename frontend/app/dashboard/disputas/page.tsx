@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type DisputeStatus = "ABIERTA" | "EN_REVISION" | "RESUELTA" | "CERRADA";
 
@@ -80,7 +81,7 @@ export default function DisputasPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-5 py-10 text-brand-muted">Cargando disputas...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type JobItem = {
   id: string;
@@ -81,7 +82,7 @@ export default function MisJobsPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando jobs...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

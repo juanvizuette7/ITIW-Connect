@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type ProfileMeResponse = {
   id: string;
@@ -342,7 +343,7 @@ export default function ProfilePage() {
     : 0;
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando perfil...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

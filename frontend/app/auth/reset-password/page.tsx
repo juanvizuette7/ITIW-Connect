@@ -90,7 +90,7 @@ export default function ResetPasswordPage() {
           {message && <p className="premium-success">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            {loading ? "Actualizando..." : "Guardar contraseña"}
+            Guardar contraseña
           </button>
         </form>
 

@@ -6,7 +6,7 @@ import { getRole, saveSession } from "@/lib/auth";
 
 export default function OauthSuccessPage() {
   const router = useRouter();
-  const [message, setMessage] = useState("Validando autenticación...");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");

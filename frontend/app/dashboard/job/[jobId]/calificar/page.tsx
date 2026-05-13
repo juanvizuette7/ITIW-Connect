@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { showToast } from "@/lib/toast";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type JobDetail = {
   id: string;
@@ -225,7 +226,7 @@ export default function CalificarJobPage() {
   const alreadyReviewed = role === "CLIENTE" ? job?.hasReviewedProfessional ?? false : job?.hasReviewedClient ?? false;
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando calificación...</main>;
+    return <ScreenSkeleton />;
   }
 
   if (!job || !role) {
@@ -313,7 +314,7 @@ export default function CalificarJobPage() {
             disabled={sending}
             className="premium-btn-primary px-5 py-3"
           >
-            {sending ? "Enviando..." : "Enviar calificación"}
+            Enviar calificación
           </button>
         </form>
       </section>

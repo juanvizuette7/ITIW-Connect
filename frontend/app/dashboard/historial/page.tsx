@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type PaymentItem = {
   id: string;
@@ -218,7 +219,7 @@ export default function HistorialPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-5 py-10 text-brand-muted">Cargando historial...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

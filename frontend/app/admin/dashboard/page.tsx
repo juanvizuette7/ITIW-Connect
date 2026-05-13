@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type ProfileMeResponse = {
   name: string;
@@ -164,7 +165,7 @@ export default function AdminDashboardPage() {
   }, [stats]);
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-5 py-10 text-brand-muted">Cargando panel admin...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

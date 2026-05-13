@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type ProfessionalPublicProfile = {
   id: string;
@@ -159,7 +160,7 @@ export default function ProfessionalPublicPage() {
   }, [profile]);
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando perfil profesional...</main>;
+    return <ScreenSkeleton />;
   }
 
   if (!profile) {

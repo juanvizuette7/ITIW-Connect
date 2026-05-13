@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -311,7 +311,7 @@ export default function HomePage() {
           )}
 
           {loadingCategories ? (
-            <p className="mt-6 text-brand-muted">Cargando categorias...</p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => (<div key={index} className="h-20 animate-pulse rounded-2xl border border-white/10 bg-white/[0.045]" />))}</div>
           ) : orderedCategories.length === 0 ? (
             <div className="mt-6 premium-panel p-6 text-center">
               <p className="text-brand-muted">Aun no hay categorias disponibles. Intenta nuevamente.</p>
@@ -374,4 +374,5 @@ export default function HomePage() {
     </main>
   );
 }
+
 

@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { showToast } from "@/lib/toast";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type JobDetail = {
   id: string;
@@ -179,7 +180,7 @@ function PayForm({
       {error && <p className="premium-error">{error}</p>}
 
       <button disabled={loading} className="premium-btn-primary w-full py-3.5 text-base">
-        {loading ? "Procesando pago..." : "Pagar de forma segura"}
+        {"Pagar de forma segura"}
       </button>
     </form>
   );
@@ -239,7 +240,7 @@ export default function JobPayPage() {
   const canPay = useMemo(() => job?.paymentStatus === "PENDIENTE", [job]);
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando pago...</main>;
+    return <ScreenSkeleton />;
   }
 
   if (!job) {

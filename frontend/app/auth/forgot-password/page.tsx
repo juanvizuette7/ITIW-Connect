@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
           {message && <p className="premium-success">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            {loading ? "Enviando..." : "Enviar enlace"}
+            {"Enviar enlace"}
           </button>
         </form>
 

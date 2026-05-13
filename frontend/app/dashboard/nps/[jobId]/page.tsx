@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type ProfileMeResponse = {
   name: string;
@@ -83,7 +84,7 @@ export default function NpsPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando encuesta NPS...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (
@@ -129,7 +130,7 @@ export default function NpsPage() {
           </div>
 
           <button disabled={saving} className="rounded-xl bg-[#e94560] px-5 py-3 font-semibold text-[#04271f] transition hover:-translate-y-0.5 hover:bg-[#36e4c6] disabled:cursor-not-allowed disabled:opacity-60">
-            {saving ? "Enviando..." : "Enviar"}
+            Enviar
           </button>
         </form>
       </section>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type NotificationType =
   | "SOLICITUD"
@@ -252,7 +253,7 @@ export default function NotificacionesPage() {
   };
 
   if (loading) {
-    return <main className="mx-auto max-w-6xl px-5 py-10 text-brand-muted">Cargando notificaciones...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

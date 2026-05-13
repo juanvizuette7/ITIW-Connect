@@ -141,7 +141,7 @@ export default function LoginPage() {
         )}
 
         <button disabled={loading} className="premium-btn-primary w-full">
-          {loading ? "Ingresando..." : "Iniciar sesión ->"}
+          Iniciar sesión
         </button>
       </form>
 

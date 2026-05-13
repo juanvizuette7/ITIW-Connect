@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type QuoteItem = {
   id: string;
@@ -84,7 +85,7 @@ export default function MisCotizacionesPage() {
   }
 
   if (loading) {
-    return <main className="mx-auto max-w-5xl px-5 py-10 text-brand-muted">Cargando cotizaciones...</main>;
+    return <ScreenSkeleton />;
   }
 
   return (

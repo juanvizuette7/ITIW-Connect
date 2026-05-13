@@ -134,7 +134,7 @@ export default function VerifyOtpPage() {
           {message && <p className="premium-success text-left">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            {loading ? "Validando..." : "Confirmar código"}
+            Confirmar código
           </button>
         </form>
 

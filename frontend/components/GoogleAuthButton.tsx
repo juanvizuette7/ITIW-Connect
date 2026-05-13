@@ -45,7 +45,7 @@ export function GoogleAuthButton({ onError, role }: GoogleAuthButtonProps) {
     >
       <span className="inline-flex items-center gap-2">
         <GoogleIcon />
-        <span>{loading ? "Cargando..." : "Continuar con Google"}</span>
+        <span>{"Continuar con Google"}</span>
       </span>
     </button>
   );

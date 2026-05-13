@@ -225,7 +225,7 @@ export default function SolicitudesDisponiblesPage() {
                     <textarea rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Explica que incluye tu servicio y cuando puedes atender." className="premium-input" />
                     <div className="flex gap-2">
                       <button type="button" onClick={() => setSelectedRequestId(null)} className="premium-btn-secondary w-full py-2.5 text-sm">Cancelar</button>
-                      <button disabled={submitting} className="premium-btn-primary w-full py-2.5 text-sm">{submitting ? "Enviando..." : "Enviar cotizacion"}</button>
+                      <button disabled={submitting} className="premium-btn-primary w-full py-2.5 text-sm">Enviar cotizacion</button>
                     </div>
                   </form>
                 )}
