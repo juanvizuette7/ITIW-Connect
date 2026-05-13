@@ -7,8 +7,9 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
-type OnboardingStatusResponse = {
+ type OnboardingStatusResponse = {
   onboardingCompleted: boolean;
   steps: {
     perfilCompleto: boolean;
@@ -28,6 +29,22 @@ type OnboardingStatusResponse = {
 type ProfileMeResponse = {
   name: string;
   role: "CLIENTE" | "PROFESIONAL" | "ADMIN";
+  professionalProfile?: {
+    name: string | null;
+    photoUrl?: string | null;
+    specialties: string[];
+    hourlyRate: number | null;
+    coverageRadiusKm: number | null;
+  } | null;
+};
+
+type StepItem = {
+  key: keyof OnboardingStatusResponse["steps"];
+  icon: string;
+  title: string;
+  description: string;
+  done: boolean;
+  href: string;
 };
 
 export default function OnboardingPage() {
@@ -39,6 +56,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [status, setStatus] = useState<OnboardingStatusResponse | null>(null);
+  const [profile, setProfile] = useState<ProfileMeResponse["professionalProfile"]>(null);
   const autoCompleteTriggered = useRef(false);
 
   async function loadStatus(authToken: string) {
@@ -49,7 +67,7 @@ export default function OnboardingPage() {
 
     setStatus(onboardingStatus);
     if (onboardingStatus.onboardingCompleted) {
-      setMessage("Tu onboarding ya esta completÃ³. Excelente trabajo.");
+      setMessage("Perfil completo. Ya puedes recibir solicitudes.");
     }
   }
 
@@ -75,6 +93,7 @@ export default function OnboardingPage() {
         }
 
         setUserName(me.name);
+        setProfile(me.professionalProfile || null);
         await loadStatus(authToken);
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible cargar el onboarding.");
@@ -86,40 +105,52 @@ export default function OnboardingPage() {
     void init();
   }, [router]);
 
-  const steps = useMemo(() => {
+  const steps = useMemo<StepItem[]>(() => {
     if (!status) return [];
+
+    const hasBasicInfo = Boolean(profile?.name?.trim());
+    const hasServicesAndRate = Boolean(profile?.specialties?.length) && Number(profile?.hourlyRate || 0) > 0;
+    const hasCoverage = Number(profile?.coverageRadiusKm || 0) > 0;
 
     return [
       {
         key: "perfilCompleto",
-        title: "Completa tu perfil",
-        detail: "Nombre, bio y especialidades.",
-        done: status.steps.perfilCompleto,
-        href: "/dashboard/profile",
-      },
-      {
-        key: "zonaConfigurada",
-        title: "Configura tu zona de cobertura",
-        detail: "Define kilometros de cobertura.",
-        done: status.steps.zonaConfigurada,
+        icon: "persona",
+        title: "Completa tu informacion basica",
+        description: "Agrega tu nombre completo y una foto profesional para que los clientes te reconozcan.",
+        done: hasBasicInfo,
         href: "/dashboard/profile",
       },
       {
         key: "identidadVerificada",
-        title: "Verifica tu identidad",
-        detail: "La verificaciÃ³n es gestionada por administracion.",
-        done: status.steps.identidadVerificada,
+        icon: "herramienta",
+        title: "Define tus servicios y tarifa",
+        description: "Selecciona hasta 5 especialidades y define tu tarifa por hora para aparecer en busquedas relevantes.",
+        done: hasServicesAndRate,
+        href: "/dashboard/profile",
+      },
+      {
+        key: "zonaConfigurada",
+        icon: "pin",
+        title: "Configura tu zona de trabajo",
+        description: "Define el radio en kilometros donde atiendes solicitudes. Solo recibiras solicitudes dentro de esa area.",
+        done: hasCoverage,
         href: "/dashboard/profile",
       },
       {
         key: "fotoPortafolio",
-        title: "Agrega al menos una foto al portafolio",
-        detail: "Muestra evidencia visual de tus trabajos.",
+        icon: "foto",
+        title: "Sube fotos de trabajos anteriores",
+        description: "Los profesionales con portafolio reciben 3 veces mas solicitudes. Sube al menos una foto para empezar.",
         done: status.steps.fotoPortafolio,
         href: "/dashboard/profile",
       },
     ];
-  }, [status]);
+  }, [profile, status]);
+
+  const completedSteps = steps.filter((step) => step.done).length;
+  const totalSteps = steps.length || 4;
+  const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
 
   async function onCompleteOnboarding() {
     if (!token) return;
@@ -133,7 +164,7 @@ export default function OnboardingPage() {
         method: "PUT",
         token,
       });
-      setMessage(response.message);
+      setMessage(response.message || "Perfil completo. Ya puedes recibir solicitudes.");
       await loadStatus(token);
       setTimeout(() => {
         router.push("/dashboard");
@@ -161,109 +192,132 @@ export default function OnboardingPage() {
   }
 
   if (loading) {
-    return <ScreenSkeleton />;
+    return <ScreenSkeleton variant="profile" />;
   }
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-8">
       <DashboardHeader userName={userName} onLogout={onLogout} />
 
-      <section className="rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
-        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Onboarding profesional</h1>
-        <p className="mt-2 text-sm text-brand-muted">Completa estos pasos para recibir solicitudes relevantes.</p>
+      <section className="premium-panel-strong relative overflow-hidden p-6 md:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[var(--brand-accent)]/16 blur-3xl" />
+        <div className="relative z-10">
+          <span className="inline-flex rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-[#ffd0bd]">
+            Onboarding profesional
+          </span>
+          <h1 className="mt-4 font-[var(--font-heading)] text-3xl font-extrabold text-white md:text-5xl">
+            Prepara tu perfil para recibir mejores solicitudes
+          </h1>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-brand-muted md:text-base">
+            Completa estos cuatro puntos para que los clientes entiendan que haces, cuanto cobras, donde atiendes y que trabajos puedes demostrar.
+          </p>
 
-        {status && (
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-xs text-[#9db2cf]">
-              <span>Progreso</span>
-              <span>{status.progress.percentage}%</span>
+          <div className="mt-7 rounded-2xl border border-white/10 bg-[#0D1117] p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-white">Progreso real del perfil</p>
+                <p className="text-xs text-brand-muted">{completedSteps} de {totalSteps} pasos completados</p>
+              </div>
+              <span className="font-[var(--font-heading)] text-3xl font-extrabold text-[var(--brand-accent)]">{progressPercentage}%</span>
             </div>
-            <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-[#0A0F1A]">
+            <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/8">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#e94560] to-[#5df2db] transition-all duration-700"
-                style={{ width: `${status.progress.percentage}%` }}
+                className="h-full rounded-full bg-[var(--brand-accent)] shadow-[0_0_24px_rgba(255,107,44,0.35)] transition-all duration-700 ease-out"
+                style={{ width: `${progressPercentage}%` }}
               />
             </div>
           </div>
-        )}
 
-        {error && <p className="premium-error mt-4">{error}</p>}
-        {message && <p className="premium-success mt-4">{message}</p>}
+          {error && <p className="premium-error mt-4">{error}</p>}
+          {message && <p className="premium-success mt-4">{message}</p>}
 
-        <div className="mt-6 space-y-3">
-          {steps.map((step, index) => (
-            <article
-              key={step.key}
-              className="rounded-xl border border-[#263245] bg-[#0A0F1A] p-4 opacity-0"
-              style={{
-                animation: "onboarding-step-in 420ms ease forwards",
-                animationDelay: `${index * 90}ms`,
-              }}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-white">{step.title}</p>
-                  <p className="mt-1 text-xs text-brand-muted">{step.detail}</p>
+          <div className="relative mt-8 space-y-4">
+            <div className="absolute bottom-8 left-7 top-8 hidden w-px bg-white/10 md:block" />
+            {steps.map((step, index) => (
+              <article
+                key={step.key}
+                className="relative rounded-2xl border border-white/[0.06] bg-[#0D1117] p-5 opacity-0 transition duration-200 hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/35 hover:shadow-[0_0_20px_rgba(255,107,44,0.15)]"
+                style={{ animation: "onboarding-step-in 420ms ease forwards", animationDelay: `${index * 90}ms` }}
+              >
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex gap-4">
+                    <div className={`relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full border font-[var(--font-heading)] text-lg font-extrabold transition duration-300 ${step.done ? "border-emerald-400/50 bg-emerald-400/16 text-emerald-200 shadow-[0_0_24px_rgba(16,185,129,0.2)] animate-check-scale" : "border-[var(--brand-accent)]/45 bg-[var(--brand-accent)]/12 text-[#ffd0bd]"}`}>
+                      {step.done ? "✓" : index + 1}
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-[var(--font-heading)] text-xl font-bold text-white">{step.title}</p>
+                        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${step.done ? "border-emerald-400/35 bg-emerald-400/12 text-emerald-200" : "border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 text-[#ffd0bd]"}`}>
+                          {step.done ? "Completado" : "Pendiente"}
+                        </span>
+                      </div>
+                      <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-muted">{step.description}</p>
+                    </div>
+                  </div>
+
+                  {step.done ? (
+                    <span className="inline-flex items-center justify-center rounded-xl border border-emerald-400/35 bg-emerald-400/12 px-4 py-2 text-sm font-semibold text-emerald-200">
+                      Listo
+                    </span>
+                  ) : (
+                    <Link href={step.href} className="premium-btn-primary text-center text-sm">
+                      Completar
+                    </Link>
+                  )}
                 </div>
-
-                {step.done ? (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/35 bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-200">
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-300 text-[10px] text-[#093025]">?</span>
-                    Completado
-                  </span>
-                ) : (
-                  <Link href={step.href} className="rounded-lg border border-[#e94560]/35 bg-[#e94560]/12 px-3 py-2 text-xs font-semibold text-[#83fce5] transition hover:bg-[#e94560]/20">
-                    Ir a completar
-                  </Link>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={onCompleteOnboarding}
-            disabled={saving || !status?.allCompleted}
-            className="rounded-xl bg-[#e94560] px-5 py-3 font-semibold text-[#03261d] transition hover:-translate-y-0.5 hover:bg-[#35e0c3] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {"Finalizar onboarding"}
-          </button>
-
-          <Link href="/dashboard" className="premium-btn-secondary px-5 py-3">
-            Ir al dashboard
-          </Link>
-        </div>
-
-        {status?.allCompleted && (
-          <div className="relative mt-6 overflow-hidden rounded-xl border border-[#e94560]/35 bg-[#e94560]/10 p-4">
-            <p className="text-sm font-semibold text-[#9cffec]">Celebracion: onboarding completado.</p>
-            <div className="pointer-events-none absolute inset-0">
-              <span className="absolute left-[12%] top-2 h-2 w-2 animate-ping rounded-full bg-[#e94560]" />
-              <span className="absolute left-[35%] top-3 h-2 w-2 animate-ping rounded-full bg-[#7efbe7] [animation-delay:120ms]" />
-              <span className="absolute left-[58%] top-2 h-2 w-2 animate-ping rounded-full bg-[#e94560] [animation-delay:260ms]" />
-              <span className="absolute left-[81%] top-3 h-2 w-2 animate-ping rounded-full bg-[#7efbe7] [animation-delay:380ms]" />
-            </div>
+              </article>
+            ))}
           </div>
-        )}
+
+          {status?.allCompleted ? (
+            <div className="relative mt-7 overflow-hidden rounded-2xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 p-5">
+              <p className="font-[var(--font-heading)] text-2xl font-bold text-white">Perfil completo. Ya puedes recibir solicitudes.</p>
+              <p className="mt-2 text-sm text-brand-muted">Tu perfil tiene la informacion clave para que el sistema te recomiende en solicitudes relevantes.</p>
+              <Link href="/dashboard" className="premium-btn-primary mt-4 inline-flex">Ir al dashboard</Link>
+              <div className="pointer-events-none absolute inset-0">
+                {Array.from({ length: 14 }).map((_, index) => (
+                  <span
+                    key={index}
+                    className="absolute h-2 w-2 rounded-full bg-[var(--brand-accent)] confetti-dot"
+                    style={{ left: `${8 + index * 6}%`, top: `${18 + (index % 4) * 16}%`, animationDelay: `${index * 70}ms` }}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-7 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={onCompleteOnboarding}
+                disabled={saving || !status?.allCompleted}
+                className="premium-btn-primary min-w-48 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {saving ? <LoadingDots label="Actualizando" /> : "Finalizar onboarding"}
+              </button>
+              <Link href="/dashboard" className="premium-btn-secondary px-5 py-3">Ir al dashboard</Link>
+            </div>
+          )}
+        </div>
       </section>
 
       <style jsx global>{`
         @keyframes onboarding-step-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes check-scale {
+          0% { transform: scale(0.75); }
+          65% { transform: scale(1.08); }
+          100% { transform: scale(1); }
+        }
+        @keyframes confetti-pop {
+          0% { opacity: 0; transform: translateY(18px) scale(0.7) rotate(0deg); }
+          45% { opacity: 1; }
+          100% { opacity: 0; transform: translateY(-60px) scale(1.1) rotate(160deg); }
+        }
+        .animate-check-scale { animation: check-scale 360ms ease both; }
+        .confetti-dot { animation: confetti-pop 1.4s ease-in-out infinite; }
       `}</style>
     </main>
   );
 }
-
-
-

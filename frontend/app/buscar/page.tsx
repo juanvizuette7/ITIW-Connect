@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type Category = {
   id: string;
@@ -56,10 +57,10 @@ function SearchSkeleton() {
           key={index}
           className="rounded-2xl border border-[#263245] bg-[#111827] p-4"
         >
-          <div className="h-4 w-2/3 animate-pulse rounded bg-white/10" />
-          <div className="mt-3 h-3 w-full animate-pulse rounded bg-white/10" />
-          <div className="mt-2 h-3 w-4/5 animate-pulse rounded bg-white/10" />
-          <div className="mt-4 h-9 w-28 animate-pulse rounded bg-white/10" />
+          <div className="h-4 w-2/3 skeleton-shimmer rounded bg-white/10" />
+          <div className="mt-3 h-3 w-full skeleton-shimmer rounded bg-white/10" />
+          <div className="mt-2 h-3 w-4/5 skeleton-shimmer rounded bg-white/10" />
+          <div className="mt-4 h-9 w-28 skeleton-shimmer rounded bg-white/10" />
         </article>
       ))}
     </div>
@@ -236,7 +237,7 @@ export default function BuscarPage() {
         )}
 
         <div className="mt-4 text-sm text-[#9cb0cd]">
-          {searching ? "Buscando..." : `Resultados: ${total}`}
+          {searching ? <LoadingDots label="Buscando" /> : `Resultados: ${total}`}
         </div>
 
         <div className="mt-5">

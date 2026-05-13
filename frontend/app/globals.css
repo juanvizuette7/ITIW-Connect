@@ -103,6 +103,37 @@ a {
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes loading-dot-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  45% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
+@keyframes button-processing-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(255, 107, 44, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(255, 107, 44, 0.26);
+  }
+}
+
 .animate-badge-bounce {
   animation: badge-bounce 0.5s ease;
 }
@@ -182,6 +213,10 @@ a {
     filter: brightness(1.05);
   }
 
+  .premium-btn-primary:disabled {
+    animation: button-processing-pulse 1.2s ease-in-out infinite;
+  }
+
   .premium-btn-secondary {
     @apply rounded-xl border px-5 py-3 font-medium text-white transition duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98];
     border-color: rgba(255, 255, 255, 0.2);
@@ -243,6 +278,26 @@ a {
 
   .brand-shine:hover::after {
     transform: translateX(120%);
+  }
+
+  .skeleton-shimmer {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        rgba(255, 255, 255, 0.03) 100%
+      );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .loading-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--brand-accent);
+    animation: loading-dot-bounce 0.75s ease-in-out infinite;
   }
 }
 

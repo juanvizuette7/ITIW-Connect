@@ -8,6 +8,7 @@ import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { showToast } from "@/lib/toast";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type ServiceRequest = {
   id: string;
@@ -270,7 +271,7 @@ export default function MisSolicitudesPage() {
                 disabled={cancelling}
                 className="w-full rounded-xl border border-rose-400/45 bg-rose-400/15 px-4 py-2.5 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25 disabled:opacity-60"
               >
-                {cancelling ? "Cancelando..." : "Confirmar"}
+                {cancelling ? <LoadingDots label="Cancelando" /> : "Confirmar"}
               </button>
             </div>
           </div>

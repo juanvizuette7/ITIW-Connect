@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type ProfileMeResponse = {
   name: string;
@@ -216,7 +217,7 @@ export default function NuevaDisputaPage() {
               shake ? "animate-dispute-shake" : ""
             }`}
           >
-            {saving ? "Abriendo disputa..." : "Abrir disputa"}
+            {saving ? <LoadingDots label="Abriendo" /> : "Abrir disputa"}
           </button>
         </form>
       </section>

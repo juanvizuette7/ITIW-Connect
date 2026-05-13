@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
+import { LoadingDots } from "@/components/LoadingDots";
 
 interface MessageResponse {
   message: string;
@@ -58,7 +59,7 @@ export default function ForgotPasswordPage() {
           {message && <p className="premium-success">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            {"Enviar enlace"}
+            {loading ? <LoadingDots label="Enviando" /> : "Enviar enlace"}
           </button>
         </form>
 

@@ -7,6 +7,8 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { showToast } from "@/lib/toast";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type AvailableRequest = {
   id: string;
@@ -126,11 +128,7 @@ export default function SolicitudesDisponiblesPage() {
   }
 
   if (loading) {
-    return (
-      <main className="mx-auto min-h-screen max-w-5xl px-5 py-10">
-        <div className="premium-panel h-52 animate-pulse" />
-      </main>
-    );
+    return <ScreenSkeleton variant="list" />;
   }
 
   return (
@@ -225,7 +223,7 @@ export default function SolicitudesDisponiblesPage() {
                     <textarea rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Explica que incluye tu servicio y cuando puedes atender." className="premium-input" />
                     <div className="flex gap-2">
                       <button type="button" onClick={() => setSelectedRequestId(null)} className="premium-btn-secondary w-full py-2.5 text-sm">Cancelar</button>
-                      <button disabled={submitting} className="premium-btn-primary w-full py-2.5 text-sm">Enviar cotizacion</button>
+                      <button disabled={submitting} className="premium-btn-primary w-full py-2.5 text-sm">{submitting ? <LoadingDots label="Enviando" /> : "Enviar cotizacion"}</button>
                     </div>
                   </form>
                 )}

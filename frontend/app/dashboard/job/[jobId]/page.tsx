@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type JobDetail = {
   id: string;
@@ -199,7 +200,7 @@ export default function JobDetailPage() {
 
           {showConfirmButton && (
             <button onClick={onConfirmJob} disabled={processing} className="premium-btn-primary">
-              {processing ? "Confirmando..." : "Confirmar trabajo completado"}
+              {processing ? <LoadingDots label="Confirmando" /> : "Confirmar trabajo completado"}
             </button>
           )}
 

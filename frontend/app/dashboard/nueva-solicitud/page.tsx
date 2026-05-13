@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -7,6 +7,8 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { showToast } from "@/lib/toast";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type Category = { id: string; name: string; iconUrl?: string | null };
 type ProfileMeResponse = { name: string };
@@ -20,25 +22,25 @@ const scheduleOptions = [
 ];
 
 const categoryIcons: Record<string, string> = {
-  Electricidad: "⚡",
-  Plomeria: "🚰",
-  Carpinteria: "🪚",
-  Pintura: "🎨",
-  "Aires acondicionados": "❄️",
-  Cerrajeria: "🔐",
-  Reformas: "🏗️",
-  Jardineria: "🌿",
-  Limpieza: "✨",
-  Mudanzas: "📦",
-  Fumigacion: "🛡️",
-  Impermeabilizacion: "☔",
-  "Instalacion de pisos": "🧱",
-  "Techos y cubiertas": "🏠",
-  Soldadura: "🔥",
-  Vidrieria: "🪟",
-  "Alarmas y CCTV": "📹",
-  Electrodomesticos: "🔌",
-  Otro: "🧩",
+  Electricidad: "\u26A1",
+  Plomeria: "\u{1F527}",
+  Carpinteria: "\u{1FAB5}",
+  Pintura: "\u{1F3A8}",
+  "Aires acondicionados": "\u2744\uFE0F",
+  Cerrajeria: "\u{1F510}",
+  Reformas: "\u{1F3D7}\uFE0F",
+  Jardineria: "\u{1F33F}",
+  Limpieza: "\u2728",
+  Mudanzas: "\u{1F4E6}",
+  Fumigacion: "\u{1F6E1}\uFE0F",
+  Impermeabilizacion: "\u2614",
+  "Instalacion de pisos": "\u{1F9F1}",
+  "Techos y cubiertas": "\u{1F3E0}",
+  Soldadura: "\u{1F525}",
+  Vidrieria: "\u{1FA9F}",
+  "Alarmas y CCTV": "\u{1F4F9}",
+  Electrodomesticos: "\u{1F50C}",
+  Otro: "\u{1F9E9}",
 };
 
 function normalizeKey(value: string) {
@@ -303,11 +305,7 @@ export default function NuevaSolicitudPage() {
   }
 
   if (initialLoading) {
-    return (
-      <main className="mx-auto min-h-screen max-w-5xl px-5 py-10 text-brand-muted">
-        <div className="premium-panel h-40 animate-pulse" />
-      </main>
-    );
+    return <ScreenSkeleton variant="form" />;
   }
 
   return (
@@ -343,7 +341,7 @@ export default function NuevaSolicitudPage() {
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--brand-accent)]">Paso 1</p>
                   <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Categoria</h2>
                 </div>
-                {selectedCategory && <span className="text-2xl">{categoryIcons[normalizeKey(selectedCategory.name)] || "🧩"}</span>}
+                {selectedCategory && <span className="text-2xl">{categoryIcons[normalizeKey(selectedCategory.name)] || "\u{1F9E9}"}</span>}
               </div>
               {categories.length === 0 ? (
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-brand-muted">
@@ -365,7 +363,7 @@ export default function NuevaSolicitudPage() {
                         }`}
                       >
                         <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl border border-white/12 bg-[#0A0F1A] text-xl">
-                          {categoryIcons[normalizeKey(category.name)] || "🧩"}
+                          {categoryIcons[normalizeKey(category.name)] || "\u{1F9E9}"}
                         </div>
                         <p className="font-bold text-white">{category.name}</p>
                         <p className="mt-1 text-xs text-brand-muted">Categoria general</p>
@@ -439,14 +437,14 @@ export default function NuevaSolicitudPage() {
                         onClick={() => setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
                         className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
                       >
-                        ‹
+                        â€¹
                       </button>
                       <button
                         type="button"
                         onClick={() => setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
                         className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
                       >
-                        ›
+                        â€º
                       </button>
                     </div>
                   </div>
@@ -515,7 +513,7 @@ export default function NuevaSolicitudPage() {
                     <PinIcon />
                   </span>
                   <div>
-                    <p className="font-semibold text-white">{detectingLocation ? "Detectando ubicacion..." : "Compartir ubicacion GPS"}</p>
+                    <p className="font-semibold text-white">{detectingLocation ? <LoadingDots label="Detectando" /> : "Compartir ubicacion GPS"}</p>
                     <p className="text-xs text-brand-muted">Se guarda aparte de la descripcion. Nunca se muestra como coordenadas al cliente.</p>
                   </div>
                 </div>
@@ -530,7 +528,7 @@ export default function NuevaSolicitudPage() {
             )}
 
             <button disabled={loading} className="premium-btn-primary w-full py-4 text-base">
-              {"Publicar solicitud"}
+              {loading ? <LoadingDots label="Publicando" /> : "Publicar solicitud"}
             </button>
 
             <Link href="/dashboard/mis-solicitudes" className="inline-flex text-sm text-brand-accent hover:underline">
@@ -542,3 +540,4 @@ export default function NuevaSolicitudPage() {
     </main>
   );
 }
+

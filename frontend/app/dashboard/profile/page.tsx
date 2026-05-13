@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type ProfileMeResponse = {
   id: string;
@@ -423,7 +424,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-brand-muted">Guarda varias direcciones para reutilizarlas cuando publiques solicitudes nuevas.</p>
-              <button disabled={saving} className="premium-btn-primary mt-5 w-full">{"Guardar cambios"}</button>
+              <button disabled={saving} className="premium-btn-primary mt-5 w-full">{saving ? <LoadingDots label="Guardando" /> : "Guardar cambios"}</button>
             </aside>
           </form>
         )}
@@ -490,7 +491,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
 
-                <button disabled={saving} className="premium-btn-primary mt-6 w-full">{"Guardar perfil profesional"}</button>
+                <button disabled={saving} className="premium-btn-primary mt-6 w-full">{saving ? <LoadingDots label="Guardando" /> : "Guardar perfil profesional"}</button>
               </aside>
             </form>
 
@@ -519,7 +520,7 @@ export default function ProfilePage() {
                   {portfolioPreview && <img src={portfolioPreview} alt="Preview portafolio" className="h-40 w-full rounded-xl border border-white/10 object-cover" />}
 
                   <button type="button" onClick={onUploadPortfolio} disabled={portfolioSaving || !portfolioBase64 || portfolioPhotos.length >= 10} className="rounded-xl bg-[var(--brand-accent)] px-4 py-2 text-sm font-semibold text-[#2a1106] transition hover:-translate-y-0.5 hover:bg-[#ff824d] disabled:cursor-not-allowed disabled:opacity-60">
-                    {"Subir al portafolio"}
+                    {portfolioSaving ? <LoadingDots label="Subiendo" /> : "Subir al portafolio"}
                   </button>
                 </div>
 
@@ -547,7 +548,7 @@ export default function ProfilePage() {
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" onClick={() => setConfirmDeletePhotoId(null)} className="premium-btn-secondary px-4 py-2 text-sm">Volver</button>
               <button type="button" onClick={async () => { await onDeletePortfolio(confirmDeletePhotoId); setConfirmDeletePhotoId(null); }} disabled={portfolioDeletingId === confirmDeletePhotoId} className="rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25 disabled:opacity-60">
-                {portfolioDeletingId === confirmDeletePhotoId ? "Eliminando..." : "Eliminar"}
+                {portfolioDeletingId === confirmDeletePhotoId ? <LoadingDots label="Eliminando" /> : "Eliminar"}
               </button>
             </div>
           </div>

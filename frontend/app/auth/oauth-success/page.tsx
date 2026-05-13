@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,14 +12,14 @@ export default function OauthSuccessPage() {
     const token = new URLSearchParams(window.location.search).get("token");
 
     if (!token) {
-      setMessage("No se recibió token de autenticación.");
+      setMessage("No se recibiÃ³ token de autenticaciÃ³n.");
       setTimeout(() => router.replace("/auth/login"), 900);
       return;
     }
 
     saveSession(token);
     const role = getRole();
-    setMessage("Autenticación completada. Redirigiendo...");
+    setMessage("Autenticacion completada. Entrando al dashboard");
 
     setTimeout(() => {
       if (role === "PROFESIONAL") {
@@ -40,3 +40,5 @@ export default function OauthSuccessPage() {
     </main>
   );
 }
+
+

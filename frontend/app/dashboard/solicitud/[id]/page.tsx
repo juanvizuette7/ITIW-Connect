@@ -7,6 +7,8 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { showToast } from "@/lib/toast";
+import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type QuoteItem = {
   id: string;
@@ -229,11 +231,7 @@ export default function SolicitudDetailPage() {
   }
 
   if (loading) {
-    return (
-      <main className="mx-auto min-h-screen max-w-5xl px-5 py-10">
-        <div className="premium-panel h-64 animate-pulse" />
-      </main>
-    );
+    return <ScreenSkeleton variant="dashboard" />;
   }
 
   if (!requestDetail) {
@@ -353,7 +351,7 @@ export default function SolicitudDetailPage() {
                   </div>
                   {canAccept && quote.status === "PENDIENTE" && (
                     <button type="button" onClick={() => setConfirmQuote(quote)} disabled={acceptingQuoteId === quote.id} className="premium-btn-primary mt-4 px-5 py-2.5 text-sm">
-                      {acceptingQuoteId === quote.id ? "Aceptando..." : "Aceptar presupuesto"}
+                      {acceptingQuoteId === quote.id ? <LoadingDots label="Aceptando" /> : "Aceptar presupuesto"}
                     </button>
                   )}
                 </article>
@@ -415,7 +413,7 @@ export default function SolicitudDetailPage() {
             <div className="mt-5 flex gap-2">
               <button type="button" onClick={() => setConfirmQuote(null)} className="premium-btn-secondary w-full py-3 text-sm">Cancelar</button>
               <button type="button" onClick={() => void onAcceptQuote(confirmQuote.id)} disabled={acceptingQuoteId === confirmQuote.id} className="premium-btn-primary w-full py-3 text-sm">
-                {acceptingQuoteId === confirmQuote.id ? "Confirmando..." : "Confirmar"}
+                {acceptingQuoteId === confirmQuote.id ? <LoadingDots label="Confirmando" /> : "Confirmar"}
               </button>
             </div>
           </div>

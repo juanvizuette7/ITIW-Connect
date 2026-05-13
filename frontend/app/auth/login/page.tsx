@@ -7,6 +7,7 @@ import { AuthSplitLayout } from "@/components/AuthSplitLayout";
 import { apiRequest } from "@/lib/api";
 import { saveSession } from "@/lib/auth";
 import { GoogleAuthButton } from "@/components/GoogleAuthButton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 interface LoginResponse {
   message: string;

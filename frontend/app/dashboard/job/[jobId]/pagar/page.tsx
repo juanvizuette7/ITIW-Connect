@@ -7,6 +7,7 @@ import { clearSession, getRole, getToken } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { showToast } from "@/lib/toast";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
  type JobDetail = {
   id: string;
@@ -150,7 +151,7 @@ function PayForm({ token, job, onPaid }: { token: string; job: JobDetail; onPaid
       {error && <p className="premium-error">{error}</p>}
 
       <button disabled={loading} className="premium-btn-primary w-full py-3.5 text-base disabled:cursor-not-allowed disabled:opacity-60">
-        Pagar de forma segura
+        {loading ? <LoadingDots label="Procesando" /> : "Pagar de forma segura"}
       </button>
     </form>
   );

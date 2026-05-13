@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getApiUrl } from "@/lib/api";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type GoogleAuthButtonProps = {
   onError: (message: string) => void;
@@ -45,7 +46,7 @@ export function GoogleAuthButton({ onError, role }: GoogleAuthButtonProps) {
     >
       <span className="inline-flex items-center gap-2">
         <GoogleIcon />
-        <span>{"Continuar con Google"}</span>
+        {loading ? <LoadingDots label="Conectando" /> : <span>{"Continuar con Google"}</span>}
       </span>
     </button>
   );

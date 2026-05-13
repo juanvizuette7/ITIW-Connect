@@ -266,7 +266,7 @@ export default function NotificacionesPage() {
             <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Notificaciones</h1>
             <p className="mt-2 text-sm text-brand-muted">
               Polling automatico cada 10 segundos. No leidas: {unreadCount}
-              {refreshing ? " Â· sincronizando..." : ""}
+              {refreshing ? " - sincronizando" : ""}
             </p>
           </div>
 
@@ -354,6 +354,7 @@ export default function NotificacionesPage() {
     </main>
   );
 }
+
 
 
 

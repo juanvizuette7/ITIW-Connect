@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { LoadingDots } from "@/components/LoadingDots";
 
 interface MessageResponse {
   message: string;
@@ -134,7 +135,7 @@ export default function VerifyOtpPage() {
           {message && <p className="premium-success text-left">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            Confirmar código
+            {loading ? <LoadingDots label="Validando" /> : "Confirmar codigo"}
           </button>
         </form>
 
@@ -144,7 +145,7 @@ export default function VerifyOtpPage() {
           disabled={resending}
           className="mt-5 text-sm font-medium text-brand-accent transition hover:underline disabled:opacity-60"
         >
-          ¿No llegó? Reenviar código
+          {resending ? <LoadingDots label="Reenviando" /> : "No llego? Reenviar codigo"}
         </button>
 
         <p className="mt-5 text-sm text-brand-muted">
