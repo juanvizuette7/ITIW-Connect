@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { BrandLogo } from "./BrandLogo";
 import { LoadingDots } from "./LoadingDots";
 import { InlineLoader } from "./LoadingScreen";
@@ -61,6 +62,75 @@ type HeaderProfileResponse = {
 };
 
 type RoleType = "CLIENTE" | "PROFESIONAL" | "ADMIN" | null;
+
+type HeaderProfileCache = {
+  token: string;
+  id: string;
+  name: string;
+  role: Exclude<RoleType, null>;
+  photoUrl: string | null;
+  loadedAt: number;
+};
+
+const PROFILE_CACHE_MS = 5 * 60_000;
+const NOTIFICATIONS_CACHE_MS = 15_000;
+
+let profileCache: HeaderProfileCache | null = null;
+let profilePromise: Promise<HeaderProfileCache | null> | null = null;
+let notificationsCache: { token: string; data: HeaderNotification[]; loadedAt: number } | null = null;
+
+async function loadProfileShellCached(token: string) {
+  const now = Date.now();
+  if (profileCache?.token === token && now - profileCache.loadedAt < PROFILE_CACHE_MS) {
+    return profileCache;
+  }
+
+  if (profilePromise) return profilePromise;
+
+  profilePromise = apiRequest<HeaderProfileResponse>("/profile/me", {
+    method: "GET",
+    token,
+  })
+    .then((profile) => {
+      const cachedProfile: HeaderProfileCache = {
+        token,
+        id: profile.id,
+        name: profile.name || profile.clientProfile?.name || profile.professionalProfile?.name || "",
+        role: profile.role || "CLIENTE",
+        photoUrl: profile.clientProfile?.photoUrl || getStoredProfilePhoto(profile.id) || null,
+        loadedAt: Date.now(),
+      };
+
+      profileCache = cachedProfile;
+      return cachedProfile;
+    })
+    .catch(() => null)
+    .finally(() => {
+      profilePromise = null;
+    });
+
+  return profilePromise;
+}
+
+async function loadHeaderNotificationsCached(token: string, force = false) {
+  const now = Date.now();
+  if (!force && notificationsCache?.token === token && now - notificationsCache.loadedAt < NOTIFICATIONS_CACHE_MS) {
+    return notificationsCache.data;
+  }
+
+  const response = await apiRequest<PaginatedNotificationsResponse>("/notifications?page=1&limit=6", {
+    method: "GET",
+    token,
+  });
+
+  notificationsCache = {
+    token,
+    data: response.data,
+    loadedAt: Date.now(),
+  };
+
+  return response.data;
+}
 
 type MobileNavItem = {
   href: string;
@@ -199,8 +269,11 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
+  const [portalReady, setPortalReady] = useState(false);
+  const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
   const previousUnread = useRef(0);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
+  const bellButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const currentRole = getRole();
@@ -212,23 +285,19 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
     let mounted = true;
 
     const loadProfileShell = async () => {
-      try {
-        const profile = await apiRequest<HeaderProfileResponse>("/profile/me", {
-          method: "GET",
-          token,
-        });
+      const profile = await loadProfileShellCached(token);
 
-        if (!mounted) return;
-
-        setRole(profile.role);
-        setResolvedName(profile.name || profile.clientProfile?.name || profile.professionalProfile?.name || "");
-        setResolvedPhotoUrl(profile.clientProfile?.photoUrl || getStoredProfilePhoto(profile.id) || null);
-      } catch {
+      if (!mounted || !profile) {
         if (mounted) {
           setResolvedName("");
           setResolvedPhotoUrl(null);
         }
+        return;
       }
+
+      setRole(profile.role);
+      setResolvedName(profile.name);
+      setResolvedPhotoUrl(profile.photoUrl);
     };
 
     void loadProfileShell();
@@ -244,12 +313,43 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
   }, [userPhotoUrl, resolvedPhotoUrl]);
 
   useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  const updateNotificationPanelPosition = useCallback(() => {
+    const rect = bellButtonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const width = Math.min(392, window.innerWidth - 24);
+    const left =
+      window.innerWidth < 640
+        ? 12
+        : Math.min(Math.max(12, rect.right - width), window.innerWidth - width - 12);
+    const top = Math.min(rect.bottom + 10, window.innerHeight - 96);
+
+    setPanelStyle({ left, top, width });
+  }, []);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    updateNotificationPanelPosition();
+    window.addEventListener("resize", updateNotificationPanelPosition);
+    window.addEventListener("scroll", updateNotificationPanelPosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updateNotificationPanelPosition);
+      window.removeEventListener("scroll", updateNotificationPanelPosition, true);
+    };
+  }, [notificationsOpen, updateNotificationPanelPosition]);
+
+  useEffect(() => {
     if (!notificationsOpen) return;
 
     const onPointerDown = (event: MouseEvent) => {
-      if (!notificationsRef.current?.contains(event.target as Node)) {
-        setNotificationsOpen(false);
-      }
+      const target = event.target as Node;
+      if (notificationsRef.current?.contains(target) || bellButtonRef.current?.contains(target)) return;
+      setNotificationsOpen(false);
     };
 
     document.addEventListener("mousedown", onPointerDown);
@@ -296,7 +396,7 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
     };
   }, [showNotifications]);
 
-  const loadHeaderNotifications = async () => {
+  const loadHeaderNotifications = useCallback(async (force = false) => {
     const token = getToken();
     if (!token) return;
 
@@ -304,23 +404,22 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
     setNotificationsError(null);
 
     try {
-      const response = await apiRequest<PaginatedNotificationsResponse>("/notifications?page=1&limit=6", {
-        method: "GET",
-        token,
-      });
-
-      setNotifications(response.data);
+      const items = await loadHeaderNotificationsCached(token, force);
+      setNotifications(items);
     } catch {
       setNotificationsError("No se pudieron cargar las notificaciones.");
     } finally {
       setNotificationsLoading(false);
     }
-  };
+  }, []);
 
   const openNotificationsPanel = () => {
     setNotificationsOpen((current) => {
       const next = !current;
-      if (next) void loadHeaderNotifications();
+      if (next) {
+        updateNotificationPanelPosition();
+        void loadHeaderNotifications();
+      }
       return next;
     });
   };
@@ -336,6 +435,14 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
         current.map((item) => (item.id === notification.id ? { ...item, isRead: true } : item)),
       );
       setUnread((current) => Math.max(0, current - 1));
+      if (notificationsCache?.token === token) {
+        notificationsCache = {
+          ...notificationsCache,
+          data: notificationsCache.data.map((item) =>
+            item.id === notification.id ? { ...item, isRead: true } : item,
+          ),
+        };
+      }
 
       try {
         await apiRequest<{ message: string }>(`/notifications/${notification.id}/read`, {
@@ -347,7 +454,9 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
       }
     }
 
-    router.push(href);
+    if (href !== pathname) {
+      router.push(href);
+    }
   };
 
   const crumbs = useMemo(() => {
@@ -412,8 +521,70 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
     ];
   }, [role]);
 
+  const notificationPanel = notificationsOpen ? (
+    <div
+      ref={notificationsRef}
+      style={{
+        ...panelStyle,
+        opacity: panelStyle.top ? 1 : 0,
+        pointerEvents: panelStyle.top ? "auto" : "none",
+      }}
+      className="fixed z-[9999] max-h-[calc(100vh-5.5rem)] overflow-hidden rounded-2xl border border-white/10 bg-[#0A0F1A]/98 p-3 shadow-[0_28px_90px_rgba(0,0,0,0.62)] backdrop-blur-xl"
+    >
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <div>
+          <p className="font-[var(--font-heading)] text-base font-bold text-white">Notificaciones</p>
+          <p className="text-xs text-brand-muted">{unread > 0 ? `${unread} sin leer` : "Todo al día"}</p>
+        </div>
+        <Link
+          href="/dashboard/notificaciones"
+          onClick={() => setNotificationsOpen(false)}
+          className="rounded-lg border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 px-3 py-1.5 text-xs font-semibold text-[#ffd0bd] transition hover:bg-[var(--brand-accent)]/18"
+        >
+          Ver todas
+        </Link>
+      </div>
+
+      {notificationsLoading && <InlineLoader label="Cargando información..." />}
+      {notificationsError && (
+        <p className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 p-3 text-sm text-[#ffc4ce]">
+          {notificationsError}
+        </p>
+      )}
+
+      {!notificationsLoading && !notificationsError && (
+        <div className="max-h-[min(26rem,calc(100vh-12rem))] space-y-2 overflow-y-auto pr-1">
+          {notifications.length === 0 ? (
+            <p className="rounded-xl bg-white/[0.04] p-3 text-sm text-brand-muted">Aún no tienes notificaciones.</p>
+          ) : (
+            notifications.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => void openNotification(item)}
+                className={`w-full rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/10 ${
+                  item.isRead ? "border-white/10 bg-white/[0.03]" : "border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#d7e2f4]">
+                    {typeLabel(item.type)}
+                  </span>
+                  <span className="text-[11px] text-[#8fa0b9]">{relativeTime(item.createdAt)}</span>
+                </div>
+                <p className="mt-2 line-clamp-1 text-sm font-semibold text-white">{item.title}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-brand-muted">{item.body}</p>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  ) : null;
+
   return (
     <>
+      {portalReady && notificationPanel ? createPortal(notificationPanel, document.body) : null}
       <header className="mb-8 premium-panel-strong px-4 py-3 md:px-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <BrandLogo href="/dashboard" imgClassName="h-12 w-auto md:h-[3.5rem]" />
@@ -436,8 +607,9 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
             )}
 
             {showNotifications && (
-              <div ref={notificationsRef} className="relative">
+              <div className="relative">
                 <button
+                  ref={bellButtonRef}
                   type="button"
                   onClick={openNotificationsPanel}
                   className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[#d6e2f5] transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12"
@@ -453,55 +625,6 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
                     </span>
                   )}
                 </button>
-
-                {notificationsOpen && (
-                  <div className="fixed left-3 right-3 top-20 z-50 rounded-2xl border border-white/10 bg-[#0A0F1A]/98 p-3 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96">
-                    <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
-                      <div>
-                        <p className="font-[var(--font-heading)] text-base font-bold text-white">Notificaciones</p>
-                        <p className="text-xs text-brand-muted">{unread > 0 ? `${unread} sin leer` : "Todo al día"}</p>
-                      </div>
-                      <Link
-                        href="/dashboard/notificaciones"
-                        onClick={() => setNotificationsOpen(false)}
-                        className="rounded-lg border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 px-3 py-1.5 text-xs font-semibold text-[#ffd0bd] transition hover:bg-[var(--brand-accent)]/18"
-                      >
-                        Ver todas
-                      </Link>
-                    </div>
-
-                    {notificationsLoading && <InlineLoader label="Cargando información..." />}
-                    {notificationsError && <p className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 p-3 text-sm text-[#ffc4ce]">{notificationsError}</p>}
-
-                    {!notificationsLoading && !notificationsError && (
-                      <div className="max-h-[70vh] space-y-2 overflow-y-auto pr-1 sm:max-h-96">
-                        {notifications.length === 0 ? (
-                          <p className="rounded-xl bg-white/[0.04] p-3 text-sm text-brand-muted">Aún no tienes notificaciones.</p>
-                        ) : (
-                          notifications.map((item) => (
-                            <button
-                              key={item.id}
-                              type="button"
-                              onClick={() => void openNotification(item)}
-                              className={`w-full rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/10 ${
-                                item.isRead ? "border-white/10 bg-white/[0.03]" : "border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#d7e2f4]">
-                                  {typeLabel(item.type)}
-                                </span>
-                                <span className="text-[11px] text-[#8fa0b9]">{relativeTime(item.createdAt)}</span>
-                              </div>
-                              <p className="mt-2 line-clamp-1 text-sm font-semibold text-white">{item.title}</p>
-                              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-brand-muted">{item.body}</p>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 

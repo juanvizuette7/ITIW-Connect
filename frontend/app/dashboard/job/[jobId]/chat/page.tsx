@@ -44,15 +44,36 @@ export default function JobChatPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const messagesSignatureRef = useRef("");
+  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  async function loadMessages(authToken: string, currentRequestId: string) {
+  async function loadMessages(
+    authToken: string,
+    currentRequestId: string,
+    options: { scroll?: boolean; smooth?: boolean } = {},
+  ) {
     const items = await apiRequest<MessageItem[]>(`/messages/${currentRequestId}`, {
       method: "GET",
       token: authToken,
     });
+
+    const nextSignature = items.map((item) => `${item.id}:${item.createdAt}`).join("|");
+    if (nextSignature === messagesSignatureRef.current) return;
+
+    const container = messagesContainerRef.current;
+    const isNearBottom = container
+      ? container.scrollHeight - container.scrollTop - container.clientHeight < 140
+      : true;
+
+    messagesSignatureRef.current = nextSignature;
     setMessages(items);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 30);
+
+    if (options.scroll || isNearBottom) {
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: options.smooth ? "smooth" : "auto" });
+      });
+    }
   }
 
   useEffect(() => {
@@ -66,20 +87,21 @@ export default function JobChatPage() {
       setToken(authToken);
 
       try {
-        const profile = await apiRequest<ProfileMeResponse>("/profile/me", {
-          method: "GET",
-          token: authToken,
-        });
-
-        const job = await apiRequest<JobDetail>(`/jobs/${params.jobId}`, {
-          method: "GET",
-          token: authToken,
-        });
+        const [profile, job] = await Promise.all([
+          apiRequest<ProfileMeResponse>("/profile/me", {
+            method: "GET",
+            token: authToken,
+          }),
+          apiRequest<JobDetail>(`/jobs/${params.jobId}`, {
+            method: "GET",
+            token: authToken,
+          }),
+        ]);
 
         setUserId(profile.id);
         setUserName(profile.name);
         setRequestId(job.request.id);
-        await loadMessages(authToken, job.request.id);
+        await loadMessages(authToken, job.request.id, { scroll: true });
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible cargar el chat.");
       } finally {
@@ -95,7 +117,7 @@ export default function JobChatPage() {
 
     const interval = setInterval(() => {
       void loadMessages(token, requestId);
-    }, 5000);
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [token, requestId]);
@@ -120,7 +142,7 @@ export default function JobChatPage() {
       });
 
       setContent("");
-      await loadMessages(token, requestId);
+      await loadMessages(token, requestId, { scroll: true, smooth: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible enviar el mensaje.");
     } finally {
@@ -136,34 +158,45 @@ export default function JobChatPage() {
     <main className="mx-auto min-h-screen w-full max-w-5xl px-5 py-8">
       <DashboardHeader userName={userName} onLogout={onLogout} />
 
-      <section className="premium-panel flex h-[72vh] flex-col overflow-hidden p-0">
+      <section className="premium-panel flex min-h-[560px] flex-col overflow-hidden p-0 md:h-[72vh]">
         <header className="border-b border-white/10 px-5 py-4">
           <h1 className="font-[var(--font-heading)] text-2xl font-bold text-white">Chat del job</h1>
         </header>
 
         {error && <p className="premium-error mx-5 mt-4">{error}</p>}
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
-          {messages.map((message) => {
-            const own = message.sender.id === userId;
-            return (
-              <div key={message.id} className={`flex ${own ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                    own
-                      ? "bg-[#14b8a6] text-white"
-                      : "border border-white/10 bg-[#0D2137] text-[#d5dded]"
-                  }`}
-                >
-                  <p className="mb-1 text-xs opacity-80">{message.sender.name}</p>
-                  <p>{message.content}</p>
-                  <p className="mt-2 text-[11px] opacity-70">
-                    {new Date(message.createdAt).toLocaleString("es-CO")}
-                  </p>
-                </div>
+        <div ref={messagesContainerRef} className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
+          {messages.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center">
+                <p className="font-[var(--font-heading)] text-lg font-bold text-white">Sin mensajes todavía</p>
+                <p className="mt-2 text-sm text-brand-muted">
+                  Escribe el primer mensaje para coordinar detalles del trabajo.
+                </p>
               </div>
-            );
-          })}
+            </div>
+          ) : (
+            messages.map((message) => {
+              const own = message.sender.id === userId;
+              return (
+                <div key={message.id} className={`flex ${own ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                      own
+                        ? "bg-[var(--brand-accent)]/90 text-white shadow-[0_12px_30px_rgba(255,107,44,0.18)]"
+                        : "border border-white/10 bg-[#1F2937] text-[#d5dded]"
+                    }`}
+                  >
+                    <p className="mb-1 text-xs opacity-80">{message.sender.name}</p>
+                    <p>{message.content}</p>
+                    <p className="mt-2 text-[11px] opacity-70">
+                      {new Date(message.createdAt).toLocaleString("es-CO")}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
           <div ref={bottomRef} />
         </div>
 
