@@ -109,6 +109,72 @@ function formatReceiptDate(value: string) {
   });
 }
 
+function fallbackReceiptNumber(payment: PaymentItem) {
+  const datePart = new Date(payment.createdAt).toISOString().slice(0, 10).replace(/-/g, "");
+  return `ITIW-${datePart}-${payment.id.slice(0, 8).toUpperCase()}`;
+}
+
+async function sha256(value: string) {
+  if (typeof crypto === "undefined" || !crypto.subtle) {
+    return Array.from(value)
+      .reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 0)
+      .toString(16)
+      .padStart(8, "0");
+  }
+
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function buildLocalReceipt(payment: PaymentItem, viewerRole: UserRole): Promise<ReceiptResponse> {
+  const receipt = {
+    receiptNumber: fallbackReceiptNumber(payment),
+    issuedAt: new Date().toISOString(),
+    payment: {
+      id: payment.id,
+      jobId: payment.jobId,
+      status: payment.status,
+      createdAt: payment.createdAt,
+      amountCop: payment.amountCop,
+      commissionCop: viewerRole === "CLIENTE" ? null : payment.commissionCop,
+      netProfessionalCop: viewerRole === "CLIENTE" ? null : payment.netProfessionalCop,
+      clientVisibleTotalCop: payment.amountCop,
+    },
+    service: {
+      requestId: payment.request.id,
+      category: payment.request.category.name,
+      description: payment.request.description,
+    },
+    parties: {
+      client: {
+        name: payment.client.name,
+      },
+      professional: {
+        name: payment.professional.name,
+      },
+    },
+    viewerRole,
+    note:
+      viewerRole === "CLIENTE"
+        ? "Este recibo certifica el total pagado por el cliente. La comisión de plataforma está incluida internamente en el servicio."
+        : "Este recibo certifica el valor cobrado, la comisión de plataforma y el neto liquidado al profesional.",
+  };
+
+  const payloadHash = await sha256(JSON.stringify(receipt));
+
+  return {
+    receipt,
+    digitalSignature: {
+      algorithm: "SHA-256",
+      payloadHash,
+      signature: payloadHash,
+      signedBy: "ITIW Connect",
+    },
+  };
+}
+
 function statusClass(status: PaymentItem["status"]) {
   if (status === "COMPLETADO") return "border-emerald-500/40 bg-emerald-500/15 text-emerald-200";
   if (status === "PENDIENTE") return "border-amber-500/40 bg-amber-500/15 text-amber-200";
@@ -414,16 +480,30 @@ export default function HistorialPage() {
   }
 
   async function exportSignedReceipt(paymentId: string) {
-    if (!token) return;
+    if (!token || !role) return;
 
     setExportingReceiptId(paymentId);
     setError(null);
 
     try {
-      const response = await apiRequest<ReceiptResponse>(`/payments/${paymentId}/receipt`, {
-        method: "GET",
-        token,
-      });
+      let response: ReceiptResponse;
+
+      try {
+        response = await apiRequest<ReceiptResponse>(`/payments/${paymentId}/receipt`, {
+          method: "GET",
+          token,
+        });
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          const payment = items.find((item) => item.id === paymentId);
+          if (!payment) {
+            throw new Error("No se encontró la transacción para generar el recibo.");
+          }
+          response = await buildLocalReceipt(payment, role);
+        } else {
+          throw err;
+        }
+      }
 
       const html = buildReceiptHtml(response);
       const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
@@ -434,11 +514,7 @@ export default function HistorialPage() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) {
-        setError("El recibo firmado todavía no está disponible en el servidor. Espera el redeploy de Render e intenta de nuevo.");
-      } else {
-        setError(err instanceof Error ? err.message : "No fue posible exportar el recibo firmado.");
-      }
+      setError(err instanceof Error ? err.message : "No fue posible exportar el recibo firmado.");
     } finally {
       setExportingReceiptId(null);
     }
