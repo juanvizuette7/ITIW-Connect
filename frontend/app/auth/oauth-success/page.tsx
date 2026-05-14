@@ -12,7 +12,7 @@ export default function OauthSuccessPage() {
     const token = new URLSearchParams(window.location.search).get("token");
 
     if (!token) {
-      setMessage("No se recibiÃ³ token de autenticaciÃ³n.");
+      setMessage("No se recibió token de autenticación.");
       setTimeout(() => router.replace("/auth/login"), 900);
       return;
     }

@@ -114,7 +114,7 @@ export default function NuevaDisputaPage() {
     if (!token || !job) return;
 
     if (!reason || !description.trim() || description.trim().length < 20) {
-      setError("Completa el motivo y una descripcion de al menos 20 caracteres.");
+      setError("Completa el motivo y una descripción de al menos 20 caracteres.");
       setShake(true);
       setTimeout(() => setShake(false), 500);
       return;
@@ -200,7 +200,7 @@ export default function NuevaDisputaPage() {
               rows={6}
               maxLength={1200}
               className="premium-input mt-1 resize-none"
-              placeholder="Explica lo ocurrido con detalle (minimo 20 caracteres)."
+              placeholder="Explica lo ocurrido con detalle (mínimo 20 caracteres)."
               disabled={saving}
             />
           </label>

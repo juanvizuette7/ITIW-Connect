@@ -5,17 +5,57 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { BrandLogo } from "./BrandLogo";
+import { LoadingDots } from "./LoadingDots";
+import { InlineLoader } from "./LoadingScreen";
 import { apiRequest } from "@/lib/api";
 import { getRole, getToken } from "@/lib/auth";
 
 interface DashboardHeaderProps {
   userName?: string;
+  userPhotoUrl?: string | null;
   onLogout: () => void;
   showNotifications?: boolean;
 }
 
 type UnreadCountResponse = {
   unread: number;
+};
+
+type NotificationType =
+  | "SOLICITUD"
+  | "PRESUPUESTO"
+  | "MENSAJE"
+  | "PAGO"
+  | "CALIFICACION"
+  | "BADGE"
+  | "DISPUTA"
+  | "SISTEMA";
+
+type HeaderNotification = {
+  id: string;
+  title: string;
+  body: string;
+  type: NotificationType;
+  isRead: boolean;
+  createdAt: string;
+  href?: string | null;
+  targetUrl?: string | null;
+};
+
+type PaginatedNotificationsResponse = {
+  data: HeaderNotification[];
+};
+
+type HeaderProfileResponse = {
+  name: string;
+  role: RoleType;
+  clientProfile?: {
+    name?: string | null;
+    photoUrl?: string | null;
+  } | null;
+  professionalProfile?: {
+    name?: string | null;
+  } | null;
 };
 
 type RoleType = "CLIENTE" | "PROFESIONAL" | "ADMIN" | null;
@@ -102,17 +142,120 @@ function BellIcon() {
   );
 }
 
-export function DashboardHeader({ userName, onLogout, showNotifications = true }: DashboardHeaderProps) {
+function typeLabel(type: NotificationType) {
+  if (type === "SOLICITUD") return "Solicitud";
+  if (type === "PRESUPUESTO") return "Cotización";
+  if (type === "MENSAJE") return "Mensaje";
+  if (type === "PAGO") return "Pago";
+  if (type === "CALIFICACION") return "Calificación";
+  if (type === "BADGE") return "Badge";
+  if (type === "DISPUTA") return "Disputa";
+  return "Sistema";
+}
+
+function relativeTime(dateValue: string) {
+  const minutes = Math.floor(Math.max(0, Date.now() - new Date(dateValue).getTime()) / 60_000);
+  if (minutes < 1) return "hace unos segundos";
+  if (minutes < 60) return `hace ${minutes} minuto${minutes === 1 ? "" : "s"}`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} hora${hours === 1 ? "" : "s"}`;
+
+  const days = Math.floor(hours / 24);
+  return `hace ${days} día${days === 1 ? "" : "s"}`;
+}
+
+function resolveNotificationHref(item: Pick<HeaderNotification, "type" | "href" | "targetUrl" | "title" | "body">, role: RoleType) {
+  const explicitHref = item.href || item.targetUrl;
+  if (explicitHref?.startsWith("/")) return explicitHref;
+
+  if (item.type === "SOLICITUD") return role === "PROFESIONAL" ? "/dashboard/solicitudes-disponibles" : "/dashboard/mis-solicitudes";
+  if (item.type === "PRESUPUESTO") return role === "PROFESIONAL" ? "/dashboard/mis-cotizaciones" : "/dashboard/mis-solicitudes";
+  if (item.type === "MENSAJE") return "/dashboard/mis-jobs";
+  if (item.type === "PAGO") return "/dashboard/mis-jobs";
+  if (item.type === "CALIFICACION") return "/dashboard/profile";
+  if (item.type === "BADGE") return "/dashboard/profile";
+  if (item.type === "DISPUTA") return "/dashboard/disputas";
+
+  const text = `${item.title} ${item.body}`.toLowerCase();
+  if (text.includes("perfil") || text.includes("cuenta")) return "/dashboard/profile";
+
+  return "/dashboard/notificaciones";
+}
+
+export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifications = true }: DashboardHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [unread, setUnread] = useState(0);
   const [bounce, setBounce] = useState(false);
   const [role, setRole] = useState<RoleType>(null);
+  const [resolvedName, setResolvedName] = useState("");
+  const [resolvedPhotoUrl, setResolvedPhotoUrl] = useState<string | null>(null);
+  const [photoIsValid, setPhotoIsValid] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<HeaderNotification[]>([]);
   const previousUnread = useRef(0);
+  const notificationsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setRole(getRole());
+    const currentRole = getRole();
+    const token = getToken();
+    setRole(currentRole);
+
+    if (!token) return;
+
+    let mounted = true;
+
+    const loadProfileShell = async () => {
+      try {
+        const profile = await apiRequest<HeaderProfileResponse>("/profile/me", {
+          method: "GET",
+          token,
+        });
+
+        if (!mounted) return;
+
+        setRole(profile.role);
+        setResolvedName(profile.name || profile.clientProfile?.name || profile.professionalProfile?.name || "");
+        setResolvedPhotoUrl(profile.clientProfile?.photoUrl || null);
+      } catch {
+        if (mounted) {
+          setResolvedName("");
+          setResolvedPhotoUrl(null);
+        }
+      }
+    };
+
+    void loadProfileShell();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  useEffect(() => {
+    const nextPhotoUrl = userPhotoUrl?.trim() || resolvedPhotoUrl?.trim() || "";
+    setPhotoIsValid(Boolean(nextPhotoUrl));
+  }, [userPhotoUrl, resolvedPhotoUrl]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (!notificationsRef.current?.contains(event.target as Node)) {
+        setNotificationsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+    };
+  }, [notificationsOpen]);
 
   useEffect(() => {
     if (!showNotifications) return;
@@ -151,6 +294,60 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
     };
   }, [showNotifications]);
 
+  const loadHeaderNotifications = async () => {
+    const token = getToken();
+    if (!token) return;
+
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+
+    try {
+      const response = await apiRequest<PaginatedNotificationsResponse>("/notifications?page=1&limit=6", {
+        method: "GET",
+        token,
+      });
+
+      setNotifications(response.data);
+    } catch {
+      setNotificationsError("No se pudieron cargar las notificaciones.");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const openNotificationsPanel = () => {
+    setNotificationsOpen((current) => {
+      const next = !current;
+      if (next) void loadHeaderNotifications();
+      return next;
+    });
+  };
+
+  const openNotification = async (notification: HeaderNotification) => {
+    const token = getToken();
+    const href = resolveNotificationHref(notification, role);
+
+    setNotificationsOpen(false);
+
+    if (token && !notification.isRead) {
+      setNotifications((current) =>
+        current.map((item) => (item.id === notification.id ? { ...item, isRead: true } : item)),
+      );
+      setUnread((current) => Math.max(0, current - 1));
+
+      try {
+        await apiRequest<{ message: string }>(`/notifications/${notification.id}/read`, {
+          method: "PUT",
+          token,
+        });
+      } catch {
+        // La navegación no debe bloquearse si solo falla marcar como leída.
+      }
+    }
+
+    router.push(href);
+  };
+
   const crumbs = useMemo(() => {
     const parts = pathname.split("/").filter(Boolean);
     if (parts.length === 0) return [] as Array<{ label: string; href: string }>;
@@ -173,7 +370,15 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
   }, [pathname]);
 
   const showBack = pathname !== "/dashboard" && pathname !== "/admin/dashboard";
-  const displayName = userName?.trim() ? userName.trim() : "Bienvenido";
+  const displayName = userName?.trim() || resolvedName.trim() || "Bienvenido";
+  const headerPhotoUrl = userPhotoUrl?.trim() || resolvedPhotoUrl?.trim() || "";
+  const initials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const mobileItems = useMemo<MobileNavItem[]>(() => {
     if (role === "ADMIN") {
@@ -229,33 +434,111 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
             )}
 
             {showNotifications && (
-              <Link
-                href="/dashboard/notificaciones"
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[#d6e2f5] transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12"
-                aria-label="Ver notificaciones"
-              >
-                <BellIcon />
-                {unread > 0 && (
-                  <span
-                    className={`absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#ff526e] px-1.5 text-[10px] font-bold text-white ${bounce ? "animate-badge-bounce" : ""}`}
-                  >
-                    {unread > 99 ? "99+" : unread}
-                  </span>
+              <div ref={notificationsRef} className="relative">
+                <button
+                  type="button"
+                  onClick={openNotificationsPanel}
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[#d6e2f5] transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12"
+                  aria-label="Ver notificaciones"
+                  aria-expanded={notificationsOpen}
+                >
+                  <BellIcon />
+                  {unread > 0 && (
+                    <span
+                      className={`absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#ff526e] px-1.5 text-[10px] font-bold text-white ${bounce ? "animate-badge-bounce" : ""}`}
+                    >
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </button>
+
+                {notificationsOpen && (
+                  <div className="fixed left-3 right-3 top-20 z-50 rounded-2xl border border-white/10 bg-[#0A0F1A]/98 p-3 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-96">
+                    <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                      <div>
+                        <p className="font-[var(--font-heading)] text-base font-bold text-white">Notificaciones</p>
+                        <p className="text-xs text-brand-muted">{unread > 0 ? `${unread} sin leer` : "Todo al día"}</p>
+                      </div>
+                      <Link
+                        href="/dashboard/notificaciones"
+                        onClick={() => setNotificationsOpen(false)}
+                        className="rounded-lg border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 px-3 py-1.5 text-xs font-semibold text-[#ffd0bd] transition hover:bg-[var(--brand-accent)]/18"
+                      >
+                        Ver todas
+                      </Link>
+                    </div>
+
+                    {notificationsLoading && <InlineLoader label="Cargando información..." />}
+                    {notificationsError && <p className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 p-3 text-sm text-[#ffc4ce]">{notificationsError}</p>}
+
+                    {!notificationsLoading && !notificationsError && (
+                      <div className="max-h-[70vh] space-y-2 overflow-y-auto pr-1 sm:max-h-96">
+                        {notifications.length === 0 ? (
+                          <p className="rounded-xl bg-white/[0.04] p-3 text-sm text-brand-muted">Aún no tienes notificaciones.</p>
+                        ) : (
+                          notifications.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => void openNotification(item)}
+                              className={`w-full rounded-xl border p-3 text-left transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/10 ${
+                                item.isRead ? "border-white/10 bg-white/[0.03]" : "border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#d7e2f4]">
+                                  {typeLabel(item.type)}
+                                </span>
+                                <span className="text-[11px] text-[#8fa0b9]">{relativeTime(item.createdAt)}</span>
+                              </div>
+                              <p className="mt-2 line-clamp-1 text-sm font-semibold text-white">{item.title}</p>
+                              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-brand-muted">{item.body}</p>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
-              </Link>
+              </div>
             )}
 
-            <span className="hidden rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-[#c5d0e3] md:inline-flex">
-              {displayName}
-            </span>
-            <button type="button" onClick={onLogout} className="premium-btn-secondary px-3 py-2 text-xs md:text-sm">
-              Cerrar sesión
+            <Link
+              href="/dashboard/profile"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-2.5 py-2 text-sm text-[#c5d0e3] transition hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12 hover:text-white"
+              aria-label="Abrir perfil"
+            >
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/12 text-xs font-extrabold text-[#ffd0bd]">
+                {headerPhotoUrl && photoIsValid ? (
+                  <img
+                    src={headerPhotoUrl}
+                    alt={displayName}
+                    loading="lazy"
+                    onError={() => setPhotoIsValid(false)}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  initials || "IC"
+                )}
+              </span>
+              <span className="hidden max-w-40 truncate md:inline">{displayName}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setLoggingOut(true);
+                onLogout();
+              }}
+              disabled={loggingOut}
+              className="premium-btn-secondary px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-70 md:text-sm"
+            >
+              {loggingOut ? <LoadingDots label="Cerrando" /> : "Cerrar sesión"}
             </button>
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[#a9b9d2]">
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-3 border-t border-white/10 pt-3 sm:items-center">
+          <div className="min-w-0 flex flex-wrap items-center gap-2 text-xs text-[#a9b9d2]">
             {crumbs.map((crumb, index) => {
               const isLast = index === crumbs.length - 1;
               return (
@@ -283,7 +566,7 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
                 }
                 router.push("/dashboard");
               }}
-              className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#d6e2f5] transition hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12"
+              className="ml-auto shrink-0 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#d6e2f5] transition hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/12"
             >
               Volver
             </button>
@@ -317,4 +600,3 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
     </>
   );
 }
-

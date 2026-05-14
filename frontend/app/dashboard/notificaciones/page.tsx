@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
-import { clearSession, getToken } from "@/lib/auth";
+import { clearSession, getRole, getToken } from "@/lib/auth";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 
 type NotificationType =
@@ -24,6 +24,8 @@ type NotificationItem = {
   type: NotificationType;
   isRead: boolean;
   createdAt: string;
+  href?: string | null;
+  targetUrl?: string | null;
 };
 
 type PaginatedNotificationsResponse = {
@@ -43,10 +45,29 @@ function typeLabel(type: NotificationType) {
   if (type === "PRESUPUESTO") return "Presupuesto";
   if (type === "MENSAJE") return "Mensaje";
   if (type === "PAGO") return "Pago";
-  if (type === "CALIFICACION") return "Calificacion";
+  if (type === "CALIFICACION") return "Calificación";
   if (type === "BADGE") return "Badge";
   if (type === "DISPUTA") return "Disputa";
   return "Sistema";
+}
+
+function resolveNotificationHref(item: NotificationItem) {
+  const explicitHref = item.href || item.targetUrl;
+  if (explicitHref?.startsWith("/")) return explicitHref;
+
+  const role = getRole();
+  if (item.type === "SOLICITUD") return role === "PROFESIONAL" ? "/dashboard/solicitudes-disponibles" : "/dashboard/mis-solicitudes";
+  if (item.type === "PRESUPUESTO") return role === "PROFESIONAL" ? "/dashboard/mis-cotizaciones" : "/dashboard/mis-solicitudes";
+  if (item.type === "MENSAJE") return "/dashboard/mis-jobs";
+  if (item.type === "PAGO") return "/dashboard/mis-jobs";
+  if (item.type === "CALIFICACION") return "/dashboard/profile";
+  if (item.type === "BADGE") return "/dashboard/profile";
+  if (item.type === "DISPUTA") return "/dashboard/disputas";
+
+  const text = `${item.title} ${item.body}`.toLowerCase();
+  if (text.includes("perfil") || text.includes("cuenta")) return "/dashboard/profile";
+
+  return "/dashboard";
 }
 
 function typeIcon(type: NotificationType) {
@@ -137,7 +158,7 @@ function relativeTime(dateValue: string) {
   if (hours < 24) return `hace ${hours} hora${hours === 1 ? "" : "s"}`;
 
   const days = Math.floor(hours / 24);
-  return `hace ${days} dia${days === 1 ? "" : "s"}`;
+  return `hace ${days} día${days === 1 ? "" : "s"}`;
 }
 
 export default function NotificacionesPage() {
@@ -233,9 +254,32 @@ export default function NotificacionesPage() {
         setFadingIds((current) => current.filter((itemId) => itemId !== id));
       }, 220);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible marcar la notificacion.");
+      setError(err instanceof Error ? err.message : "No fue posible marcar la notificación.");
       setFadingIds((current) => current.filter((itemId) => itemId !== id));
     }
+  };
+
+  const onOpenNotification = async (item: NotificationItem) => {
+    const href = resolveNotificationHref(item);
+
+    if (token && !item.isRead) {
+      setNotifications((current) =>
+        current.map((notification) =>
+          notification.id === item.id ? { ...notification, isRead: true } : notification,
+        ),
+      );
+
+      try {
+        await apiRequest<{ message: string }>(`/notifications/${item.id}/read`, {
+          method: "PUT",
+          token,
+        });
+      } catch {
+        // La navegación no debe bloquearse si solo falla marcar como leída.
+      }
+    }
+
+    router.push(href);
   };
 
   const onMarkAllRead = async () => {
@@ -248,7 +292,7 @@ export default function NotificacionesPage() {
       });
       setNotifications((current) => current.map((item) => ({ ...item, isRead: true })));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible marcar todas como leidas.");
+      setError(err instanceof Error ? err.message : "No fue posible marcar todas como leídas.");
     }
   };
 
@@ -265,7 +309,7 @@ export default function NotificacionesPage() {
           <div>
             <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Notificaciones</h1>
             <p className="mt-2 text-sm text-brand-muted">
-              Polling automatico cada 10 segundos. No leidas: {unreadCount}
+              Actualización automática cada 10 segundos. No leídas: {unreadCount}
               {refreshing ? " - sincronizando" : ""}
             </p>
           </div>
@@ -276,7 +320,7 @@ export default function NotificacionesPage() {
             disabled={unreadCount === 0}
             className="rounded-xl border border-[#e94560]/35 bg-[#e94560]/12 px-4 py-2 text-sm font-semibold text-[#ffd0bd] transition hover:bg-[#e94560]/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Marcar todas como leidas
+            Marcar todas como leídas
           </button>
         </div>
 
@@ -285,7 +329,7 @@ export default function NotificacionesPage() {
         <div className="mt-6 space-y-3">
           {notifications.length === 0 ? (
             <article className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-brand-muted">
-              AÃºn no tienes notificaciones.
+              Aún no tienes notificaciones.
             </article>
           ) : (
             notifications.map((item, index) => {
@@ -294,11 +338,20 @@ export default function NotificacionesPage() {
               return (
                 <article
                   key={item.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => void onOpenNotification(item)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      void onOpenNotification(item);
+                    }
+                  }}
                   className={`rounded-xl border p-4 transition-all duration-300 ${
                     item.isRead
                       ? "border-white/10 bg-white/[0.03]"
                       : "border-[#e94560]/35 bg-[#e94560]/12"
-                  } ${isFading ? "opacity-40" : "opacity-100"}`}
+                  } ${isFading ? "opacity-40" : "opacity-100"} cursor-pointer hover:-translate-y-0.5 hover:border-[var(--brand-accent)]/45 hover:bg-[var(--brand-accent)]/10`}
                   style={{
                     animation: `notif-slide-in 400ms ease both`,
                     animationDelay: `${Math.min(index * 70, 420)}ms`,
@@ -326,10 +379,13 @@ export default function NotificacionesPage() {
                   {!item.isRead && (
                     <button
                       type="button"
-                      onClick={() => onMarkRead(item.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        void onMarkRead(item.id);
+                      }}
                       className="mt-3 rounded-lg border border-[#e94560]/40 bg-[#e94560]/10 px-3 py-1.5 text-xs font-semibold text-[#83fce5] transition hover:bg-[#e94560]/20"
                     >
-                      Marcar como leida
+                      Marcar como leída
                     </button>
                   )}
                 </article>
@@ -354,7 +410,3 @@ export default function NotificacionesPage() {
     </main>
   );
 }
-
-
-
-

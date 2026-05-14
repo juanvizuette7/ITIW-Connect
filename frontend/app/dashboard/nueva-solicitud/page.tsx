@@ -150,7 +150,7 @@ export default function NuevaSolicitudPage() {
   const [preferredSchedule, setPreferredSchedule] = useState("TARDE");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [location, setLocation] = useState<LocationState | null>(null);
-  const [locationLabel, setLocationLabel] = useState("Bogota, Colombia");
+  const [locationLabel, setLocationLabel] = useState("Bogotá, Colombia");
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -219,7 +219,7 @@ export default function NuevaSolicitudPage() {
 
     const slots = Math.max(0, 5 - photos.length);
     if (slots === 0) {
-      setError("Ya alcanzaste el maximo de 5 fotos adjuntas.");
+      setError("Ya alcanzaste el máximo de 5 fotos adjuntas.");
       return;
     }
 
@@ -240,7 +240,7 @@ export default function NuevaSolicitudPage() {
   function onDetectLocation() {
     if (detectingLocation) return;
     if (!("geolocation" in navigator)) {
-      setError("Tu navegador no soporta ubicacion GPS. Puedes escribir tu ubicacion manualmente.");
+      setError("Tu navegador no soporta ubicación GPS. Puedes escribir tu ubicación manualmente.");
       return;
     }
     setDetectingLocation(true);
@@ -251,7 +251,7 @@ export default function NuevaSolicitudPage() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           accuracy: position.coords.accuracy,
-          label: locationLabel.trim() || "Bogota, Colombia",
+          label: locationLabel.trim() || "Bogotá, Colombia",
         };
         setLocation(nextLocation);
         setLocationLabel(nextLocation.label);
@@ -260,7 +260,7 @@ export default function NuevaSolicitudPage() {
       },
       () => {
         setDetectingLocation(false);
-        setError("No pudimos leer tu GPS. Escribe la ubicacion manualmente y continua.");
+        setError("No pudimos leer tu GPS. Escribe la ubicación manualmente y continúa.");
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 },
     );
@@ -290,7 +290,7 @@ export default function NuevaSolicitudPage() {
           photosUrls: photos.map((photo) => photo.preview),
           preferredDateTime: preferredDate ? new Date(`${preferredDate}T12:00:00`).toISOString() : undefined,
           preferredSchedule,
-          locationLabel: locationLabel.trim() || "Bogota, Colombia",
+          locationLabel: locationLabel.trim() || "Bogotá, Colombia",
           location: location ? { ...location, label: locationLabel.trim() || location.label } : undefined,
         }),
       });
@@ -322,10 +322,10 @@ export default function NuevaSolicitudPage() {
               Publica lo que necesitas sin datos tecnicos mezclados.
             </h1>
             <p className="mt-4 text-base text-[#aab8cf]">
-              Categoria, descripcion, fotos, fecha y ubicacion quedan ordenados para que el profesional entienda rapido el trabajo.
+              Categoría, descripción, fotos, fecha y ubicación quedan ordenadas para que el profesional entienda rápido el trabajo.
             </p>
             <div className="mt-8 space-y-3">
-              {["Elige una categoria general", "Describe el problema con detalle", "Define fecha, horario y ubicacion"].map((step, index) => (
+              {["Elige una categoría general", "Describe el problema con detalle", "Define fecha, horario y ubicación"].map((step, index) => (
                 <div key={step} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-accent)] font-bold text-white">{index + 1}</span>
                   <span className="text-sm font-semibold text-white">{step}</span>
@@ -339,7 +339,7 @@ export default function NuevaSolicitudPage() {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--brand-accent)]">Paso 1</p>
-                  <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Categoria</h2>
+                  <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Categoría</h2>
                 </div>
                 {selectedCategory && <span className="text-2xl">{categoryIcons[normalizeKey(selectedCategory.name)] || "\u{1F9E9}"}</span>}
               </div>
@@ -366,7 +366,7 @@ export default function NuevaSolicitudPage() {
                           {categoryIcons[normalizeKey(category.name)] || "\u{1F9E9}"}
                         </div>
                         <p className="font-bold text-white">{category.name}</p>
-                        <p className="mt-1 text-xs text-brand-muted">Categoria general</p>
+                        <p className="mt-1 text-xs text-brand-muted">Categoría general</p>
                       </button>
                     );
                   })}
@@ -376,7 +376,7 @@ export default function NuevaSolicitudPage() {
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--brand-accent)]">Paso 2</p>
-              <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Descripcion y fotos</h2>
+              <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Descripción y fotos</h2>
               <p className="mt-1 text-sm text-brand-muted">No pegues coordenadas ni datos tecnicos. La app guarda eso aparte.</p>
               <textarea
                 value={description}
@@ -391,7 +391,7 @@ export default function NuevaSolicitudPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-white">Fotos adjuntas</p>
-                    <p className="text-xs text-brand-muted">Hasta 5 fotos, cada una comprimida a maximo 2 MB.</p>
+                    <p className="text-xs text-brand-muted">Hasta 5 fotos, cada una comprimida a máximo 2 MB.</p>
                   </div>
                   <label className="premium-btn-secondary inline-flex cursor-pointer items-center gap-2 px-4 py-2 text-sm">
                     <CameraIcon /> Agregar fotos
@@ -423,13 +423,13 @@ export default function NuevaSolicitudPage() {
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.025] p-5">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--brand-accent)]">Paso 3</p>
-              <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Fecha, horario y ubicacion</h2>
+              <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Fecha, horario y ubicación</h2>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-white/10 bg-[#111827] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <label className="block text-sm font-semibold text-white">Fecha preferida</label>
-                      <p className="text-xs text-brand-muted">Elige un dia disponible. Los dias pasados se bloquean.</p>
+                      <p className="text-xs text-brand-muted">Elige un día disponible. Los días pasados se bloquean.</p>
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -437,14 +437,14 @@ export default function NuevaSolicitudPage() {
                         onClick={() => setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
                         className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
                       >
-                        â€¹
+                        &lsaquo;
                       </button>
                       <button
                         type="button"
                         onClick={() => setCalendarCursor((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
                         className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white transition hover:border-[var(--brand-accent)] hover:text-[var(--brand-accent)]"
                       >
-                        â€º
+                        &rsaquo;
                       </button>
                     </div>
                   </div>
@@ -484,7 +484,7 @@ export default function NuevaSolicitudPage() {
                 </div>
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-white">Ubicacion legible</label>
-                  <input value={locationLabel} onChange={(event) => setLocationLabel(event.target.value)} className="premium-input" placeholder="Ej: Bogota, Chapinero" />
+                  <input value={locationLabel} onChange={(event) => setLocationLabel(event.target.value)} className="premium-input" placeholder="Ej: Bogotá, Chapinero" />
                 </div>
               </div>
 
@@ -513,8 +513,8 @@ export default function NuevaSolicitudPage() {
                     <PinIcon />
                   </span>
                   <div>
-                    <p className="font-semibold text-white">{detectingLocation ? <LoadingDots label="Detectando" /> : "Compartir ubicacion GPS"}</p>
-                    <p className="text-xs text-brand-muted">Se guarda aparte de la descripcion. Nunca se muestra como coordenadas al cliente.</p>
+                    <p className="font-semibold text-white">{detectingLocation ? <LoadingDots label="Detectando" /> : "Compartir ubicación GPS"}</p>
+                    <p className="text-xs text-brand-muted">Se guarda aparte de la descripción. Nunca se muestra como coordenadas al cliente.</p>
                   </div>
                 </div>
               </button>
@@ -540,4 +540,3 @@ export default function NuevaSolicitudPage() {
     </main>
   );
 }
-

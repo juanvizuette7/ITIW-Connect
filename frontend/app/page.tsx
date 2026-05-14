@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { InlineLoader } from "@/components/LoadingScreen";
 import { getApiUrl } from "@/lib/api";
 
 type Category = {
@@ -114,7 +115,7 @@ export default function HomePage() {
     async function loadCategories() {
       try {
         const response = await fetch(`${getApiUrl()}/categories`);
-        if (!response.ok) throw new Error("Categorias no disponibles");
+        if (!response.ok) throw new Error("Categorías no disponibles");
 
         const data = (await response.json()) as Category[];
         if (Array.isArray(data) && data.length > 0) {
@@ -209,9 +210,9 @@ export default function HomePage() {
 
           <div className="hidden items-center justify-center gap-8 text-sm text-brand-muted md:flex">
             <a href="#como-funciona" className="transition hover:text-white">Como funciona</a>
-            <a href="#categorias" className="transition hover:text-white">Categorias</a>
+            <a href="#categorias" className="transition hover:text-white">Categorías</a>
             <Link href="/buscar" className="transition hover:text-white">Buscar</Link>
-            <Link href="/auth/login" className="transition hover:text-white">Iniciar sesion</Link>
+            <Link href="/auth/login" className="transition hover:text-white">Iniciar sesión</Link>
           </div>
 
           <Link href="/auth/register" className="premium-btn-primary brand-shine px-4 py-2 text-sm">
@@ -231,11 +232,11 @@ export default function HomePage() {
 
             <p className="mt-5 max-w-2xl text-[1.06rem] text-brand-muted md:text-lg">
               Encuentra electricistas, plomeros, carpinteros y mas profesionales verificados cerca de ti.
-              Publica tu solicitud en minutos, recibe varias cotizaciones y elige con informacion clara.
+              Publica tu solicitud en minutos, recibe varias cotizaciones y elige con información clara.
             </p>
 
             <p className="mt-3 max-w-2xl text-sm text-[#b8c3d7] md:text-base">
-              ITIW Connect organiza cada etapa del servicio: solicitud, cotizacion, pago seguro y seguimiento
+              ITIW Connect organiza cada etapa del servicio: solicitud, cotización, pago seguro y seguimiento
               hasta la entrega final del trabajo.
             </p>
 
@@ -266,7 +267,7 @@ export default function HomePage() {
                 Publica mejor, cotiza mejor
               </h2>
               <p className="mt-2 text-sm text-brand-muted">
-                Una solicitud clara aumenta la calidad de cotizaciones y acelera la contratacion correcta.
+                Una solicitud clara aumenta la calidad de cotizaciones y acelera la contratación correcta.
               </p>
 
               <div id="como-funciona" className="mt-5 space-y-3">
@@ -297,10 +298,10 @@ export default function HomePage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white md:text-3xl">
-                Categorias generales de servicios
+                Categorías generales de servicios
               </h2>
               <p className="mt-2 text-sm text-brand-muted md:text-base">
-                Selecciona la categoria que mas se acerque al trabajo. Si no aplica, usa "Otro" y especifica el caso en la descripcion.
+                Selecciona la categoría que más se acerque al trabajo. Si no aplica, usa "Otro" y especifica el caso en la descripción.
               </p>
             </div>
             <span className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs text-[#d5dded]">18 principales + Otro</span>
@@ -311,7 +312,9 @@ export default function HomePage() {
           )}
 
           {loadingCategories ? (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, index) => (<div key={index} className="h-20 skeleton-shimmer rounded-2xl border border-white/10 bg-white/[0.045]" />))}</div>
+            <div className="mt-6">
+              <InlineLoader label="Cargando categorías..." />
+            </div>
           ) : orderedCategories.length === 0 ? (
             <div className="mt-6 premium-panel p-6 text-center">
               <p className="text-brand-muted">Aun no hay categorias disponibles. Intenta nuevamente.</p>
@@ -353,7 +356,7 @@ export default function HomePage() {
                     <div className="relative z-10 min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-white">{category.name}</p>
                       <p className="text-xs text-brand-muted transition group-hover:text-[#d9e3f7]">
-                        Categoria general - {categoryInitials(category.name)}
+                        Categoría general - {categoryInitials(category.name)}
                       </p>
                     </div>
                   </article>
@@ -374,5 +377,4 @@ export default function HomePage() {
     </main>
   );
 }
-
 

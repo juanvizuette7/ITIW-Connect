@@ -274,14 +274,14 @@ export default function HistorialPage() {
           </select>
           <input
             type="number"
-            placeholder="Monto minimo"
+            placeholder="Monto mínimo"
             value={filters.montoMinimo}
             onChange={(event) => setFilters((current) => ({ ...current, montoMinimo: event.target.value }))}
             className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none placeholder:text-[#94a3b8] focus:border-[#e94560]"
           />
           <input
             type="number"
-            placeholder="Monto maximo"
+            placeholder="Monto máximo"
             value={filters.montoMaximo}
             onChange={(event) => setFilters((current) => ({ ...current, montoMaximo: event.target.value }))}
             className="rounded-xl border border-[#334155] bg-[#0A0F1A] px-3 py-2 text-sm text-white outline-none placeholder:text-[#94a3b8] focus:border-[#e94560]"

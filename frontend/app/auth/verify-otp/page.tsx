@@ -135,7 +135,7 @@ export default function VerifyOtpPage() {
           {message && <p className="premium-success text-left">{message}</p>}
 
           <button disabled={loading} className="premium-btn-primary w-full">
-            {loading ? <LoadingDots label="Validando" /> : "Confirmar codigo"}
+            {loading ? <LoadingDots label="Validando" /> : "Confirmar código"}
           </button>
         </form>
 
@@ -145,7 +145,7 @@ export default function VerifyOtpPage() {
           disabled={resending}
           className="mt-5 text-sm font-medium text-brand-accent transition hover:underline disabled:opacity-60"
         >
-          {resending ? <LoadingDots label="Reenviando" /> : "No llego? Reenviar codigo"}
+          {resending ? <LoadingDots label="Reenviando" /> : "¿No llegó? Reenviar código"}
         </button>
 
         <p className="mt-5 text-sm text-brand-muted">

@@ -83,7 +83,7 @@ function timeAgo(value: string): string {
   if (minutes < 60) return `Publicado hace ${minutes} min`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `Publicado hace ${hours} h`;
-  return `Publicado hace ${Math.floor(hours / 24)} dias`;
+  return `Publicado hace ${Math.floor(hours / 24)} días`;
 }
 
 function formatDate(value: string | null) {
@@ -282,7 +282,7 @@ export default function SolicitudDetailPage() {
           <aside className="grid gap-3">
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-accent)]">Ubicacion</p>
-              <p className="mt-1 font-semibold text-white">{requestDetail.locationLabel || "Bogota, Colombia"}</p>
+              <p className="mt-1 font-semibold text-white">{requestDetail.locationLabel || "Bogotá, Colombia"}</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--brand-accent)]">Horario preferido</p>
@@ -322,7 +322,7 @@ export default function SolicitudDetailPage() {
             {requestDetail.quotes.length === 0 ? (
               <div className="rounded-3xl border border-dashed border-white/12 bg-white/[0.02] p-8 text-center">
                 <p className="font-[var(--font-heading)] text-2xl font-bold text-white">Aun no hay presupuestos</p>
-                <p className="mx-auto mt-2 max-w-md text-sm text-brand-muted">Cuando un profesional envie una cotizacion, aparecera aqui con monto, tiempo estimado y reputacion.</p>
+                <p className="mx-auto mt-2 max-w-md text-sm text-brand-muted">Cuando un profesional envíe una cotización, aparecerá aquí con monto, tiempo estimado y reputación.</p>
               </div>
             ) : (
               requestDetail.quotes.map((quote) => (
@@ -367,7 +367,7 @@ export default function SolicitudDetailPage() {
                   <p className="font-[var(--font-heading)] text-2xl font-bold text-white">Sin mensajes todavia</p>
                   <p className="mt-2 max-w-md text-sm text-brand-muted">
                     {role === "PROFESIONAL" && !hasOwnQuote
-                      ? "Envia tu cotizacion primero para poder chatear con el cliente."
+                      ? "Envía tu cotización primero para poder chatear con el cliente."
                       : "Inicia la conversacion para coordinar detalles del servicio."}
                   </p>
                 </div>

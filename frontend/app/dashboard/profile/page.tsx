@@ -62,6 +62,7 @@ export default function ProfilePage() {
     photoUrl: "",
     savedAddresses: "",
   });
+  const [clientImageOk, setClientImageOk] = useState(false);
 
   const [professionalForm, setProfessionalForm] = useState({
     name: "",
@@ -143,6 +144,10 @@ export default function ProfilePage() {
     void loadProfile();
   }, [token, router]);
 
+  useEffect(() => {
+    setClientImageOk(Boolean(clientForm.photoUrl.trim()));
+  }, [clientForm.photoUrl]);
+
   const profileTitle = useMemo(() => {
     if (role === "CLIENTE") return "Perfil de Cliente";
     if (role === "PROFESIONAL") return "Perfil Profesional";
@@ -212,6 +217,7 @@ export default function ProfilePage() {
       });
 
       localStorage.setItem(savedAddressesKey, clientForm.savedAddresses);
+      setUserName(clientForm.name.trim());
       setMessage(result.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar tu perfil.");
@@ -241,6 +247,7 @@ export default function ProfilePage() {
         }),
       });
 
+      setUserName(professionalForm.name.trim());
       setMessage(result.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar tu perfil.");
@@ -344,19 +351,33 @@ export default function ProfilePage() {
     : 0;
 
   if (loading) {
-    return <ScreenSkeleton />;
+    return <ScreenSkeleton variant="profile" title="Cargando perfil..." subtitle="Estamos preparando tus datos y preferencias." />;
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-8">
-      <DashboardHeader userName={userName} onLogout={onLogout} />
+    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
+      <DashboardHeader
+        userName={visibleName || userName}
+        userPhotoUrl={role === "CLIENTE" ? clientForm.photoUrl : null}
+        onLogout={onLogout}
+      />
 
-      <section className="premium-panel-strong relative mb-6 overflow-hidden p-6 md:p-8">
+      <section className="premium-panel-strong relative mb-6 overflow-hidden p-5 md:p-8">
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[var(--brand-accent)]/18 blur-3xl" />
         <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 font-[var(--font-heading)] text-2xl font-extrabold text-[#ffd0bd] shadow-[0_0_32px_rgba(255,107,44,0.12)]">
-              {initials || "IC"}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 font-[var(--font-heading)] text-xl font-extrabold text-[#ffd0bd] shadow-[0_0_32px_rgba(255,107,44,0.12)] sm:h-20 sm:w-20 sm:rounded-3xl sm:text-2xl">
+              {role === "CLIENTE" && clientForm.photoUrl && clientImageOk ? (
+                <img
+                  src={clientForm.photoUrl}
+                  alt={visibleName || "Foto de perfil"}
+                  loading="lazy"
+                  onError={() => setClientImageOk(false)}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                initials || "IC"
+              )}
             </div>
             <div>
               <span className="inline-flex rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#9fb0ca]">
@@ -364,7 +385,7 @@ export default function ProfilePage() {
               </span>
               <h1 className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-white md:text-4xl">{profileTitle}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-muted">
-                MantÃ©n tu informaciÃ³n lista para que la plataforma pueda conectar solicitudes, cotizaciones y pagos sin fricciÃ³n.
+                Mantén tu información lista para que la plataforma pueda conectar solicitudes, cotizaciones y pagos sin fricción.
               </p>
             </div>
           </div>
@@ -380,19 +401,19 @@ export default function ProfilePage() {
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                 <div className="h-full rounded-full bg-[var(--brand-accent)] transition-all" style={{ width: `${Math.round((professionalProgress / 6) * 100)}%` }} />
               </div>
-              <p className="mt-2 text-xs text-brand-muted">{professionalProgress}/6 elementos completados. Completa cada seccion para recibir solicitudes mejor filtradas.</p>
+              <p className="mt-2 text-xs text-brand-muted">{professionalProgress}/6 elementos completados. Completa cada sección para recibir solicitudes mejor filtradas.</p>
             </div>
           )}
         </div>
       </section>
 
-      <section className="premium-panel p-6 md:p-8">
+      <section className="premium-panel p-4 sm:p-6 md:p-8">
         {error && <p className="premium-error mb-4">{error}</p>}
         {message && <p className="premium-success mb-4">{message}</p>}
 
         {role === "CLIENTE" && (
           <form className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]" onSubmit={onSaveClient}>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
               <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Datos personales</h2>
               <p className="mt-2 text-sm text-brand-muted">Estos datos se usan para identificarte dentro de tus solicitudes.</p>
 
@@ -409,15 +430,27 @@ export default function ProfilePage() {
 
                 <div>
                   <label className="mb-1.5 block text-sm text-[#d5dded]">Direcciones guardadas</label>
-                  <textarea rows={5} value={clientForm.savedAddresses} onChange={(e) => setClientForm((prev) => ({ ...prev, savedAddresses: e.target.value }))} className="premium-input" placeholder="Una direcciÃ³n por lÃ­nea" />
+                  <textarea rows={5} value={clientForm.savedAddresses} onChange={(e) => setClientForm((prev) => ({ ...prev, savedAddresses: e.target.value }))} className="premium-input min-h-36 resize-y leading-relaxed" placeholder="Una dirección por línea" />
                 </div>
               </div>
             </div>
 
-            <aside className="rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-5">
-              <p className="text-sm font-semibold text-white">Vista rÃ¡pida</p>
+            <aside className="h-fit rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-4 sm:p-5">
+              <p className="text-sm font-semibold text-white">Vista rápida</p>
               <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0A0F1A]/70 p-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--brand-accent)]/15 font-bold text-[#ffd0bd]">{initials || "IC"}</div>
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[var(--brand-accent)]/15 font-bold text-[#ffd0bd]">
+                  {clientForm.photoUrl && clientImageOk ? (
+                    <img
+                      src={clientForm.photoUrl}
+                      alt={clientForm.name || "Foto de perfil"}
+                      loading="lazy"
+                      onError={() => setClientImageOk(false)}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    initials || "IC"
+                  )}
+                </div>
                 <div>
                   <p className="font-semibold text-white">{clientForm.name || "Sin nombre"}</p>
                   <p className="text-xs text-brand-muted">Cliente ITIW Connect</p>
@@ -432,9 +465,9 @@ export default function ProfilePage() {
         {role === "PROFESIONAL" && (
           <>
             <form className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]" onSubmit={onSaveProfessional}>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
-                <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Perfil pÃºblico</h2>
-                <p className="mt-2 text-sm text-brand-muted">Esta informaciÃ³n aparece cuando un cliente revisa tus cotizaciones.</p>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
+                <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Perfil público</h2>
+                <p className="mt-2 text-sm text-brand-muted">Esta información aparece cuando un cliente revisa tus cotizaciones.</p>
 
                 <div className="mt-5 space-y-4">
                   <div>
@@ -447,7 +480,7 @@ export default function ProfilePage() {
                       <span>Bio profesional</span>
                       <span className={`${bioCount > 300 ? "text-[#ff9bac]" : "text-brand-muted"}`}>{bioCount}/300</span>
                     </div>
-                    <textarea rows={5} maxLength={300} value={professionalForm.bio} onChange={(e) => setProfessionalForm((prev) => ({ ...prev, bio: e.target.value }))} className="premium-input" placeholder="Ej: Electricista certificado con 10 aÃ±os de experiencia en instalaciones residenciales." />
+                    <textarea rows={5} maxLength={300} value={professionalForm.bio} onChange={(e) => setProfessionalForm((prev) => ({ ...prev, bio: e.target.value }))} className="premium-input min-h-36 resize-y leading-relaxed" placeholder="Ej: Electricista certificado con 10 años de experiencia en instalaciones residenciales." />
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
@@ -468,25 +501,25 @@ export default function ProfilePage() {
                         className="mt-3 h-2 w-full cursor-pointer accent-[var(--brand-accent)]"
                       />
                       <p className="mt-2 text-xs text-brand-muted">
-                        Ajusta cuantos kilometros puedes cubrir. Una zona real evita solicitudes que no puedes atender.
+                        Ajusta cuántos kilómetros puedes cubrir. Una zona real evita solicitudes que no puedes atender.
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <aside className="rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-5 lg:sticky lg:top-6">
+              <aside className="h-fit rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-4 sm:p-5 lg:sticky lg:top-6">
                 <h3 className="font-[var(--font-heading)] text-xl font-bold text-white">Especialidades</h3>
-                <p className="mt-2 text-sm text-brand-muted">Agrega hasta 5 servicios principales. Usa categorÃ­as claras para aparecer mejor en bÃºsqueda.</p>
+                <p className="mt-2 text-sm text-brand-muted">Agrega hasta 5 servicios principales. Usa categorías claras para aparecer mejor en búsqueda.</p>
 
                 <input value={specialtyInput} onChange={(e) => setSpecialtyInput(e.target.value)} onKeyDown={onSpecialtyKeyDown} onBlur={() => addSpecialty(specialtyInput)} className="premium-input mt-4" placeholder="Ej: Electricidad" />
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {specialties.length === 0 && <p className="text-sm text-brand-muted">AÃºn no agregas especialidades.</p>}
+                  {specialties.length === 0 && <p className="text-sm text-brand-muted">Aún no agregas especialidades.</p>}
                   {specialties.map((specialty) => (
                     <span key={specialty} className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 px-3 py-1 text-xs text-[#ffd0bd]">
                       {specialty}
-                      <button type="button" onClick={() => removeSpecialty(specialty)} className="font-bold text-white/80 transition hover:text-white">Ã—</button>
+                      <button type="button" onClick={() => removeSpecialty(specialty)} className="font-bold text-white/80 transition hover:text-white">×</button>
                     </span>
                   ))}
                 </div>
@@ -499,9 +532,9 @@ export default function ProfilePage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h2 className="font-[var(--font-heading)] text-2xl font-bold text-white">Portafolio</h2>
-                  <p className="mt-1 text-sm text-brand-muted">Sube trabajos reales para que los clientes confÃ­en mÃ¡s rÃ¡pido.</p>
+                  <p className="mt-1 text-sm text-brand-muted">Sube trabajos reales para que los clientes confíen más rápido.</p>
                 </div>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-brand-muted">MÃ¡ximo 10 fotos</span>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-brand-muted">Máximo 10 fotos</span>
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1.2fr]">
@@ -513,7 +546,7 @@ export default function ProfilePage() {
                   <input id="portfolio-file-input" type="file" accept="image/*" onChange={onPickPortfolioFile} className="hidden" />
 
                   <label className="block text-sm text-[#d5dded]">
-                    DescripciÃ³n (opcional)
+                    Descripción (opcional)
                     <input value={portfolioDescription} onChange={(event) => setPortfolioDescription(event.target.value)} maxLength={180} className="premium-input mt-1" placeholder="Describe el trabajo mostrado" />
                   </label>
 
@@ -528,11 +561,11 @@ export default function ProfilePage() {
                   {portfolioPhotos.map((photo, index) => (
                     <article key={photo.id} className="group relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] opacity-0" style={{ animation: "portfolio-fade-in 360ms ease forwards", animationDelay: `${index * 65}ms` }}>
                       <img src={photo.photoUrl} alt={photo.description || "Foto de portafolio"} className="h-28 w-full object-cover" />
-                      <button type="button" onClick={() => setConfirmDeletePhotoId(photo.id)} disabled={portfolioDeletingId === photo.id} className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-rose-300/50 bg-rose-500/70 text-xs font-bold text-white transition hover:bg-rose-500">Ã—</button>
+                      <button type="button" onClick={() => setConfirmDeletePhotoId(photo.id)} disabled={portfolioDeletingId === photo.id} className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full border border-rose-300/50 bg-rose-500/70 text-xs font-bold text-white transition hover:bg-rose-500">×</button>
                       {photo.description && <p className="line-clamp-2 px-2 py-1 text-[11px] text-[#dce6f7]">{photo.description}</p>}
                     </article>
                   ))}
-                  {portfolioPhotos.length === 0 && <p className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-brand-muted">AÃºn no has agregado fotos a tu portafolio.</p>}
+                  {portfolioPhotos.length === 0 && <p className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] p-5 text-sm text-brand-muted">Aún no has agregado fotos a tu portafolio.</p>}
                 </div>
               </div>
             </section>
@@ -544,7 +577,7 @@ export default function ProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4">
           <div className="w-full max-w-md rounded-2xl border border-[#30425a] bg-[#0A0F1A] p-5">
             <h2 className="font-[var(--font-heading)] text-xl font-bold text-white">Eliminar foto</h2>
-            <p className="mt-2 text-sm text-brand-muted">Esta acciÃ³n no se puede deshacer. La foto se eliminarÃ¡ de tu portafolio.</p>
+            <p className="mt-2 text-sm text-brand-muted">Esta acción no se puede deshacer. La foto se eliminará de tu portafolio.</p>
             <div className="mt-5 flex justify-end gap-2">
               <button type="button" onClick={() => setConfirmDeletePhotoId(null)} className="premium-btn-secondary px-4 py-2 text-sm">Volver</button>
               <button type="button" onClick={async () => { await onDeletePortfolio(confirmDeletePhotoId); setConfirmDeletePhotoId(null); }} disabled={portfolioDeletingId === confirmDeletePhotoId} className="rounded-lg border border-rose-400/45 bg-rose-400/15 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/25 disabled:opacity-60">
@@ -564,4 +597,3 @@ export default function ProfilePage() {
     </main>
   );
 }
-

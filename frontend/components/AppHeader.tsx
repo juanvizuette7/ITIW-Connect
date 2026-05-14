@@ -17,7 +17,7 @@ export function AppHeader() {
             Buscar
           </Link>
           <Link href="/auth/login" className="transition hover:text-white">
-            Iniciar sesion
+            Iniciar sesión
           </Link>
           <Link href="/auth/register" className="premium-btn-primary brand-shine px-4 py-2 text-sm">
             Registrarse

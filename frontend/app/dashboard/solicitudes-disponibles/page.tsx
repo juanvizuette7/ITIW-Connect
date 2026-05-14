@@ -35,7 +35,7 @@ function timeAgo(value: string): string {
   if (minutes < 60) return `hace ${minutes} min`;
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `hace ${hours} h`;
-  return `hace ${Math.floor(hours / 24)} dias`;
+  return `hace ${Math.floor(hours / 24)} días`;
 }
 
 function formatDate(value?: string | null) {
@@ -117,11 +117,11 @@ export default function SolicitudesDisponiblesPage() {
       setEstimatedHours("");
       setMessage("");
       setSelectedRequestId(null);
-      setSuccess("Cotizacion enviada correctamente.");
+      setSuccess("Cotización enviada correctamente.");
       showToast({ message: "Presupuesto enviado", kind: "success" });
       await loadRequests(token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible enviar la cotizacion.");
+      setError(err instanceof Error ? err.message : "No fue posible enviar la cotización.");
     } finally {
       setSubmitting(false);
     }
@@ -142,7 +142,7 @@ export default function SolicitudesDisponiblesPage() {
               Oportunidades disponibles
             </span>
             <h1 className="mt-4 font-[var(--font-heading)] text-4xl font-extrabold text-white">Solicitudes para cotizar</h1>
-            <p className="mt-2 max-w-2xl text-brand-muted">Elige solicitudes activas, revisa la ubicacion y envia una propuesta clara. Cuando cotices, podras chatear con el cliente.</p>
+            <p className="mt-2 max-w-2xl text-brand-muted">Elige solicitudes activas, revisa la ubicación y envía una propuesta clara. Cuando cotices, podrás chatear con el cliente.</p>
           </div>
           <Link href="/dashboard/mis-cotizaciones" className="premium-btn-secondary px-4 py-2 text-sm">Mis cotizaciones</Link>
         </div>
@@ -197,7 +197,7 @@ export default function SolicitudesDisponiblesPage() {
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-white/10 bg-[#0A0F1A]/55 p-3">
                     <p className="text-[11px] uppercase tracking-[0.14em] text-brand-muted">Ubicacion</p>
-                    <p className="mt-1 text-sm font-semibold text-white">{request.locationLabel || "Bogota, Colombia"}</p>
+                    <p className="mt-1 text-sm font-semibold text-white">{request.locationLabel || "Bogotá, Colombia"}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-[#0A0F1A]/55 p-3">
                     <p className="text-[11px] uppercase tracking-[0.14em] text-brand-muted">Horario</p>
@@ -223,7 +223,7 @@ export default function SolicitudesDisponiblesPage() {
                     <textarea rows={3} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Explica que incluye tu servicio y cuando puedes atender." className="premium-input" />
                     <div className="flex gap-2">
                       <button type="button" onClick={() => setSelectedRequestId(null)} className="premium-btn-secondary w-full py-2.5 text-sm">Cancelar</button>
-                      <button disabled={submitting} className="premium-btn-primary w-full py-2.5 text-sm">{submitting ? <LoadingDots label="Enviando" /> : "Enviar cotizacion"}</button>
+                      <button disabled={submitting} className="premium-btn-primary w-full py-2.5 text-sm">{submitting ? <LoadingDots label="Enviando" /> : "Enviar cotización"}</button>
                     </div>
                   </form>
                 )}

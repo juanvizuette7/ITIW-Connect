@@ -168,7 +168,7 @@ export default function AdminDisputasPage() {
 
         {role !== "ADMIN" ? (
           <article className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-brand-muted">
-            No tienes permisos para esta seccion.
+            No tienes permisos para esta sección.
           </article>
         ) : (
           <div className="mt-6 space-y-4">

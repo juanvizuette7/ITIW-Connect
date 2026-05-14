@@ -7,6 +7,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken } from "@/lib/auth";
 import { LoadingDots } from "@/components/LoadingDots";
+import { InlineLoader } from "@/components/LoadingScreen";
 
 type Category = {
   id: string;
@@ -46,23 +47,13 @@ function formatCop(value: number) {
 function stars(value: number) {
   const total = Math.max(0, Math.min(5, Math.round(value)));
   if (total === 0) return "Sin calificaciones";
-  return "★".repeat(total);
+  return "\u2605".repeat(total);
 }
 
 function SearchSkeleton() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, index) => (
-        <article
-          key={index}
-          className="rounded-2xl border border-[#263245] bg-[#111827] p-4"
-        >
-          <div className="h-4 w-2/3 skeleton-shimmer rounded bg-white/10" />
-          <div className="mt-3 h-3 w-full skeleton-shimmer rounded bg-white/10" />
-          <div className="mt-2 h-3 w-4/5 skeleton-shimmer rounded bg-white/10" />
-          <div className="mt-4 h-9 w-28 skeleton-shimmer rounded bg-white/10" />
-        </article>
-      ))}
+    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
+      <InlineLoader label="Buscando profesionales..." />
     </div>
   );
 }
@@ -178,7 +169,7 @@ export default function BuscarPage() {
       <section className="rounded-2xl border border-[#1f2a3a] bg-[#111827] p-6 md:p-8">
         <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Buscar profesionales</h1>
         <p className="mt-2 text-sm text-brand-muted">
-          Filtra por nombre, especialidad, categoría, calificacion y radio de cobertura.
+          Filtra por nombre, especialidad, categoría, calificación y radio de cobertura.
         </p>
 
         <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -319,5 +310,3 @@ export default function BuscarPage() {
     </main>
   );
 }
-
-

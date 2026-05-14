@@ -97,7 +97,7 @@ export default function MisJobsPage() {
 
         {jobs.length === 0 ? (
           <div className="mt-6 premium-panel p-5 text-center">
-            <p className="text-brand-muted">AÃºn no tienes jobs registrados. Cuando aceptes o recibas una cotizaciÃ³n, aparecera aqui.</p>
+            <p className="text-brand-muted">Aún no tienes jobs registrados. Cuando aceptes o recibas una cotización, aparecerá aquí.</p>
             <Link href="/dashboard" className="premium-btn-secondary mt-4 inline-block">
               Volver al dashboard
             </Link>

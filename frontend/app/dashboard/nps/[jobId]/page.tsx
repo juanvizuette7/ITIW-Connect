@@ -57,7 +57,7 @@ export default function NpsPage() {
 
     if (!token) return;
     if (!score) {
-      setError("Selecciona una calificacion entre 1 y 10.");
+      setError("Selecciona una calificación entre 1 y 10.");
       return;
     }
 

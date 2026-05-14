@@ -116,7 +116,7 @@ export default function OnboardingPage() {
       {
         key: "perfilCompleto",
         icon: "persona",
-        title: "Completa tu informacion basica",
+        title: "Completa tu información básica",
         description: "Agrega tu nombre completo y una foto profesional para que los clientes te reconozcan.",
         done: hasBasicInfo,
         href: "/dashboard/profile",
@@ -133,7 +133,7 @@ export default function OnboardingPage() {
         key: "zonaConfigurada",
         icon: "pin",
         title: "Configura tu zona de trabajo",
-        description: "Define el radio en kilometros donde atiendes solicitudes. Solo recibiras solicitudes dentro de esa area.",
+        description: "Define el radio en kilómetros donde atiendes solicitudes. Solo recibirás solicitudes dentro de esa área.",
         done: hasCoverage,
         href: "/dashboard/profile",
       },
@@ -272,7 +272,7 @@ export default function OnboardingPage() {
           {status?.allCompleted ? (
             <div className="relative mt-7 overflow-hidden rounded-2xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 p-5">
               <p className="font-[var(--font-heading)] text-2xl font-bold text-white">Perfil completo. Ya puedes recibir solicitudes.</p>
-              <p className="mt-2 text-sm text-brand-muted">Tu perfil tiene la informacion clave para que el sistema te recomiende en solicitudes relevantes.</p>
+              <p className="mt-2 text-sm text-brand-muted">Tu perfil tiene la información clave para que el sistema te recomiende en solicitudes relevantes.</p>
               <Link href="/dashboard" className="premium-btn-primary mt-4 inline-flex">Ir al dashboard</Link>
               <div className="pointer-events-none absolute inset-0">
                 {Array.from({ length: 14 }).map((_, index) => (
