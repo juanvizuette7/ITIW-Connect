@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { LoadingDots } from "@/components/LoadingDots";
 
 type PaymentItem = {
   id: string;
@@ -48,8 +49,64 @@ type ProfileMeResponse = {
   role: UserRole;
 };
 
+type ReceiptResponse = {
+  receipt: {
+    receiptNumber: string;
+    issuedAt: string;
+    payment: {
+      id: string;
+      jobId: string;
+      status: PaymentItem["status"];
+      createdAt: string;
+      amountCop: number;
+      commissionCop: number | null;
+      netProfessionalCop: number | null;
+      clientVisibleTotalCop: number;
+    };
+    service: {
+      requestId: string;
+      category: string;
+      description: string;
+    };
+    parties: {
+      client: {
+        name: string;
+        email?: string;
+      };
+      professional: {
+        name: string;
+        email?: string;
+      };
+    };
+    viewerRole: UserRole;
+    note: string;
+  };
+  digitalSignature: {
+    algorithm: string;
+    payloadHash: string;
+    signature: string;
+    signedBy: string;
+  };
+};
+
 function formatCop(value: number) {
   return `$${new Intl.NumberFormat("es-CO").format(Math.round(value))} COP`;
+}
+
+function escapeHtml(value: string | number | null | undefined) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function formatReceiptDate(value: string) {
+  return new Date(value).toLocaleString("es-CO", {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
 }
 
 function statusClass(status: PaymentItem["status"]) {
@@ -96,6 +153,7 @@ export default function HistorialPage() {
   const [error, setError] = useState<string | null>(null);
   const [items, setItems] = useState<PaymentItem[]>([]);
   const [totals, setTotals] = useState({ totalPagado: 0, totalComisiones: 0, totalNeto: 0 });
+  const [exportingReceiptId, setExportingReceiptId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
@@ -221,6 +279,167 @@ export default function HistorialPage() {
     URL.revokeObjectURL(url);
   }
 
+  function buildReceiptHtml(response: ReceiptResponse) {
+    const { receipt, digitalSignature } = response;
+    const isClient = receipt.viewerRole === "CLIENTE";
+    const safeDescription = escapeHtml(receipt.service.description).replace(/\n/g, "<br />");
+
+    return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Recibo ${escapeHtml(receipt.receiptNumber)} - ITIW Connect</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 40px;
+      background: #0A0F1A;
+      color: #f8fafc;
+      font-family: Arial, sans-serif;
+    }
+    .receipt {
+      max-width: 820px;
+      margin: 0 auto;
+      border: 1px solid rgba(255, 107, 44, 0.28);
+      border-radius: 24px;
+      background: linear-gradient(145deg, #111827, #0D2137);
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,0.42);
+    }
+    .header {
+      padding: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: radial-gradient(circle at top right, rgba(255,107,44,0.22), transparent 42%);
+    }
+    .brand { color: #FF6B2C; font-size: 14px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; }
+    h1 { margin: 12px 0 6px; font-size: 34px; line-height: 1.05; }
+    .muted { color: #a8b3c7; }
+    .content { padding: 30px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .card {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(255,255,255,0.035);
+    }
+    .label { color: #8892A4; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; }
+    .value { margin-top: 7px; font-size: 16px; font-weight: 700; }
+    .amount { color: #FF6B2C; font-size: 28px; }
+    .signature {
+      margin-top: 22px;
+      border: 1px dashed rgba(255,107,44,0.45);
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(255,107,44,0.08);
+    }
+    .hash {
+      margin-top: 8px;
+      color: #ffd0bd;
+      font-family: Consolas, monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
+    .footer {
+      padding: 20px 30px 30px;
+      color: #a8b3c7;
+      font-size: 12px;
+    }
+    @media (max-width: 640px) {
+      body { padding: 16px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: #fff; color: #111827; padding: 0; }
+      .receipt { box-shadow: none; border-color: #ddd; background: #fff; border-radius: 0; }
+      .card, .signature { background: #fff; border-color: #ddd; }
+      .muted, .label, .footer { color: #475569; }
+      .hash { color: #92400e; }
+    }
+  </style>
+</head>
+<body>
+  <main class="receipt">
+    <section class="header">
+      <div class="brand">ITIW Connect</div>
+      <h1>Recibo firmado</h1>
+      <p class="muted">Recibo No. ${escapeHtml(receipt.receiptNumber)} · Emitido ${escapeHtml(formatReceiptDate(receipt.issuedAt))}</p>
+    </section>
+    <section class="content">
+      <div class="grid">
+        <div class="card">
+          <div class="label">Servicio</div>
+          <div class="value">${escapeHtml(receipt.service.category)}</div>
+          <p class="muted">${safeDescription}</p>
+        </div>
+        <div class="card">
+          <div class="label">${isClient ? "Total pagado" : "Total cobrado"}</div>
+          <div class="value amount">${escapeHtml(formatCop(receipt.payment.amountCop))}</div>
+          <p class="muted">Estado: ${escapeHtml(receipt.payment.status)} · Fecha de pago: ${escapeHtml(formatReceiptDate(receipt.payment.createdAt))}</p>
+        </div>
+        <div class="card">
+          <div class="label">Cliente</div>
+          <div class="value">${escapeHtml(receipt.parties.client.name)}</div>
+        </div>
+        <div class="card">
+          <div class="label">Profesional</div>
+          <div class="value">${escapeHtml(receipt.parties.professional.name)}</div>
+        </div>
+        ${
+          isClient
+            ? ""
+            : `<div class="card">
+          <div class="label">Comisión ITIW</div>
+          <div class="value">${escapeHtml(formatCop(receipt.payment.commissionCop || 0))}</div>
+        </div>
+        <div class="card">
+          <div class="label">Neto profesional</div>
+          <div class="value">${escapeHtml(formatCop(receipt.payment.netProfessionalCop || 0))}</div>
+        </div>`
+        }
+      </div>
+      <div class="signature">
+        <div class="label">Firma digital</div>
+        <div class="value">${escapeHtml(digitalSignature.signedBy)} · ${escapeHtml(digitalSignature.algorithm)}</div>
+        <div class="hash">Hash: ${escapeHtml(digitalSignature.payloadHash)}</div>
+        <div class="hash">Firma: ${escapeHtml(digitalSignature.signature)}</div>
+      </div>
+    </section>
+    <footer class="footer">
+      ${escapeHtml(receipt.note)} Este documento fue generado automáticamente desde datos reales registrados en ITIW Connect.
+    </footer>
+  </main>
+</body>
+</html>`;
+  }
+
+  async function exportSignedReceipt(paymentId: string) {
+    if (!token) return;
+
+    setExportingReceiptId(paymentId);
+    setError(null);
+
+    try {
+      const response = await apiRequest<ReceiptResponse>(`/payments/${paymentId}/receipt`, {
+        method: "GET",
+        token,
+      });
+
+      const html = buildReceiptHtml(response);
+      const blob = new Blob([html], { type: "text/html;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `recibo-${response.receipt.receiptNumber}.html`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible exportar el recibo firmado.");
+    } finally {
+      setExportingReceiptId(null);
+    }
+  }
+
   if (loading) {
     return <ScreenSkeleton />;
   }
@@ -331,6 +550,16 @@ export default function HistorialPage() {
                     </>
                   )}
                 </div>
+                <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-white/10 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => void exportSignedReceipt(item.id)}
+                    disabled={exportingReceiptId === item.id}
+                    className="rounded-xl border border-[var(--brand-accent)]/45 bg-[var(--brand-accent)]/10 px-3 py-2 text-xs font-semibold text-[#ffd0bd] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/18 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {exportingReceiptId === item.id ? <LoadingDots label="Firmando" /> : "Exportar recibo firmado"}
+                  </button>
+                </div>
               </article>
             ))
           )}
@@ -387,3 +616,4 @@ export default function HistorialPage() {
     </main>
   );
 }
+
