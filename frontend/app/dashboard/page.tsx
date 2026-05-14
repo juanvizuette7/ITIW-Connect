@@ -7,6 +7,7 @@ import { ApiError, apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
+import { RoleIdentityBadge } from "@/components/RoleIdentityBadge";
 
 type ClientRequest = {
   id: string;
@@ -426,8 +427,13 @@ export default function DashboardPage() {
       )}
 
       <section className="premium-panel p-6 md:p-8">
-        <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel principal</h1>
-        <p className="mt-2 text-brand-muted">Resumen rápido de tu actividad y accesos principales.</p>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Panel principal</h1>
+            <p className="mt-2 text-brand-muted">Resumen rápido de tu actividad y accesos principales.</p>
+          </div>
+          <RoleIdentityBadge role={role} />
+        </div>
 
         {error && (
           <div className="premium-error mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -467,4 +473,3 @@ export default function DashboardPage() {
     </main>
   );
 }
-

@@ -95,26 +95,87 @@ export async function getPublicProfessionalProfile(req: Request, res: Response) 
 
 export async function updateClientProfile(req: Request, res: Response) {
   const userId = req.user!.userId;
-  const { name, photoUrl } = req.body as {
+  const { name, photoUrl, email, phone } = req.body as {
     name?: string;
     photoUrl?: string;
+    email?: string;
+    phone?: string;
   };
 
   if (!name || !name.trim()) {
     return res.status(400).json({ message: "El nombre es obligatorio." });
   }
 
-  const updatedProfile = await prisma.clientProfile.update({
-    where: { userId },
-    data: {
-      name: name.trim(),
-      photoUrl: photoUrl?.trim() || null,
-    },
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedPhone = phone?.trim();
+
+  if (!normalizedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ message: "Ingresa un correo válido." });
+  }
+
+  if (!normalizedPhone || normalizedPhone.length < 7 || normalizedPhone.length > 20) {
+    return res.status(400).json({ message: "Ingresa un teléfono válido." });
+  }
+
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, phone: true },
   });
+
+  if (!currentUser) {
+    return res.status(404).json({ message: "No encontramos tu usuario." });
+  }
+
+  const duplicatedUser = await prisma.user.findFirst({
+    where: {
+      id: { not: userId },
+      OR: [{ email: normalizedEmail }, { phone: normalizedPhone }],
+    },
+    select: { email: true, phone: true },
+  });
+
+  if (duplicatedUser?.email === normalizedEmail) {
+    return res.status(409).json({ message: "Ese correo ya está registrado en otra cuenta." });
+  }
+
+  if (duplicatedUser?.phone === normalizedPhone) {
+    return res.status(409).json({ message: "Ese teléfono ya está registrado en otra cuenta." });
+  }
+
+  const [updatedUser, updatedProfile] = await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        isEmailVerified: normalizedEmail === currentUser.email ? undefined : false,
+      },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        role: true,
+        isEmailVerified: true,
+      },
+    }),
+    prisma.clientProfile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        name: name.trim(),
+        photoUrl: photoUrl?.trim() || null,
+      },
+      update: {
+        name: name.trim(),
+        photoUrl: photoUrl?.trim() || null,
+      },
+    }),
+  ]);
 
   return res.status(200).json({
     message: "Perfil de cliente actualizado correctamente.",
     profile: updatedProfile,
+    user: updatedUser,
   });
 }
 

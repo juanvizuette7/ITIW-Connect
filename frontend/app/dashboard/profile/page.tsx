@@ -4,9 +4,10 @@ import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } f
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
-import { DashboardHeader } from "@/components/DashboardHeader";
+import { DashboardHeader, invalidateDashboardHeaderProfileCache } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 import { LoadingDots } from "@/components/LoadingDots";
+import { RoleIdentityBadge } from "@/components/RoleIdentityBadge";
 import { getStoredProfilePhoto, setStoredProfilePhoto } from "@/lib/profilePhoto";
 
 type ProfileMeResponse = {
@@ -49,6 +50,23 @@ type PortfolioResponse = {
 
 const savedAddressesKey = "itiw_saved_addresses";
 const maxProfilePhotoSizeBytes = 1_500_000;
+
+type ClientProfileSaveResponse = {
+  message: string;
+  profile: {
+    name: string;
+    photoUrl: string | null;
+  };
+  user: {
+    email: string;
+    phone: string;
+    isEmailVerified: boolean;
+  };
+};
+
+function getSavedAddressesKey(userId: string) {
+  return `${savedAddressesKey}:${userId}`;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -123,12 +141,16 @@ export default function ProfilePage() {
         });
         const storedPhotoUrl = getStoredProfilePhoto(profile.id);
 
-        if (profile.role === "CLIENTE" && profile.clientProfile) {
-          const photoUrl = profile.clientProfile.photoUrl || storedPhotoUrl || "";
+        if (profile.role === "CLIENTE") {
+          const clientProfile = profile.clientProfile;
+          const userAddressesKey = getSavedAddressesKey(profile.id);
+          const savedAddresses =
+            localStorage.getItem(userAddressesKey) || localStorage.getItem(savedAddressesKey) || "";
+          const photoUrl = clientProfile?.photoUrl || storedPhotoUrl || "";
           setClientForm({
-            name: profile.clientProfile.name || "",
+            name: clientProfile?.name || profile.name || "",
             photoUrl,
-            savedAddresses: localStorage.getItem(savedAddressesKey) || "",
+            savedAddresses,
           });
           setProfilePhotoUrl(photoUrl);
         }
@@ -172,6 +194,11 @@ export default function ProfilePage() {
   }, [role]);
 
   const bioCount = professionalForm.bio.length;
+
+  function clearStatusForEdit() {
+    if (message) setMessage(null);
+    if (error) setError(null);
+  }
 
   function onLogout() {
     clearSession();
@@ -292,21 +319,46 @@ export default function ProfilePage() {
         .map((line) => line.trim())
         .filter(Boolean);
 
-      const result = await apiRequest<{ message: string }>("/profile/client", {
+      const cleanName = clientForm.name.trim();
+      const cleanPhotoUrl = (profilePhotoUrl || clientForm.photoUrl).trim();
+      const cleanEmail = accountInfo.email.trim().toLowerCase();
+      const cleanPhone = accountInfo.phone.trim();
+
+      const result = await apiRequest<ClientProfileSaveResponse>("/profile/client", {
         method: "PUT",
         token,
         body: JSON.stringify({
-          name: clientForm.name,
-          photoUrl: profilePhotoUrl || clientForm.photoUrl || null,
+          name: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone,
+          photoUrl: cleanPhotoUrl || null,
           savedAddresses,
         }),
       });
 
-      localStorage.setItem(savedAddressesKey, clientForm.savedAddresses);
-      setStoredProfilePhoto(userId, profilePhotoUrl || clientForm.photoUrl);
-      setClientForm((prev) => ({ ...prev, photoUrl: profilePhotoUrl || prev.photoUrl }));
-      setUserName(clientForm.name.trim());
-      setMessage(result.message);
+      if (userId) {
+        localStorage.setItem(getSavedAddressesKey(userId), clientForm.savedAddresses);
+        localStorage.removeItem(savedAddressesKey);
+        setStoredProfilePhoto(userId, result.profile.photoUrl || "");
+      }
+
+      invalidateDashboardHeaderProfileCache();
+      setProfilePhotoUrl(result.profile.photoUrl || "");
+      setClientImageOk(Boolean(result.profile.photoUrl));
+      setClientForm((prev) => ({
+        ...prev,
+        name: result.profile.name,
+        photoUrl: result.profile.photoUrl || "",
+        savedAddresses: clientForm.savedAddresses,
+      }));
+      setAccountInfo((prev) => ({
+        ...prev,
+        email: result.user.email,
+        phone: result.user.phone,
+        isEmailVerified: result.user.isEmailVerified,
+      }));
+      setUserName(result.profile.name);
+      setMessage(result.message || "Perfil actualizado correctamente.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar tu perfil.");
     } finally {
@@ -337,6 +389,7 @@ export default function ProfilePage() {
 
       setUserName(professionalForm.name.trim());
       setStoredProfilePhoto(userId, profilePhotoUrl);
+      invalidateDashboardHeaderProfileCache();
       setMessage(result.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar tu perfil.");
@@ -350,7 +403,7 @@ export default function ProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Selecciona un archivo de imagen valido para el portafolio.");
+      setError("Selecciona un archivo de imagen válido para el portafolio.");
       return;
     }
 
@@ -375,7 +428,7 @@ export default function ProfilePage() {
     }
 
     if (portfolioPhotos.length >= 10) {
-      setError("Maximo 10 fotos en tu portafolio.");
+      setError("Máximo 10 fotos en tu portafolio.");
       return;
     }
 
@@ -469,9 +522,7 @@ export default function ProfilePage() {
               )}
             </div>
             <div>
-              <span className="inline-flex rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-[#9fb0ca]">
-                {role === "PROFESIONAL" ? "Perfil profesional" : "Perfil cliente"}
-              </span>
+              <RoleIdentityBadge role={role} compact />
               <h1 className="mt-2 font-[var(--font-heading)] text-3xl font-extrabold text-white md:text-4xl">{profileTitle}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-brand-muted">
                 Mantén tu información lista para que la plataforma pueda conectar solicitudes, cotizaciones y pagos sin fricción.
@@ -509,7 +560,47 @@ export default function ProfilePage() {
               <div className="mt-5 space-y-4">
                 <div>
                   <label className="mb-1.5 block text-sm text-[#d5dded]">Nombre</label>
-                  <input required value={clientForm.name} onChange={(e) => setClientForm((prev) => ({ ...prev, name: e.target.value }))} className="premium-input" placeholder="Nombre completo" />
+                  <input
+                    required
+                    value={clientForm.name}
+                    onChange={(e) => {
+                      clearStatusForEdit();
+                      setClientForm((prev) => ({ ...prev, name: e.target.value }));
+                    }}
+                    className="premium-input"
+                    placeholder="Nombre completo"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm text-[#d5dded]">Correo</label>
+                    <input
+                      required
+                      type="email"
+                      value={accountInfo.email}
+                      onChange={(event) => {
+                        clearStatusForEdit();
+                        setAccountInfo((prev) => ({ ...prev, email: event.target.value }));
+                      }}
+                      className="premium-input"
+                      placeholder="nombre@correo.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm text-[#d5dded]">Teléfono</label>
+                    <input
+                      required
+                      value={accountInfo.phone}
+                      onChange={(event) => {
+                        clearStatusForEdit();
+                        setAccountInfo((prev) => ({ ...prev, phone: event.target.value }));
+                      }}
+                      className="premium-input"
+                      placeholder="3001234567"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -517,6 +608,7 @@ export default function ProfilePage() {
                   <input
                     value={clientForm.photoUrl}
                     onChange={(e) => {
+                      clearStatusForEdit();
                       const value = e.target.value;
                       setClientForm((prev) => ({ ...prev, photoUrl: value }));
                       setProfilePhotoUrl(value);
@@ -539,7 +631,16 @@ export default function ProfilePage() {
 
                 <div>
                   <label className="mb-1.5 block text-sm text-[#d5dded]">Direcciones guardadas</label>
-                  <textarea rows={5} value={clientForm.savedAddresses} onChange={(e) => setClientForm((prev) => ({ ...prev, savedAddresses: e.target.value }))} className="premium-input min-h-36 resize-y leading-relaxed" placeholder="Una dirección por línea" />
+                  <textarea
+                    rows={5}
+                    value={clientForm.savedAddresses}
+                    onChange={(e) => {
+                      clearStatusForEdit();
+                      setClientForm((prev) => ({ ...prev, savedAddresses: e.target.value }));
+                    }}
+                    className="premium-input min-h-36 resize-y leading-relaxed"
+                    placeholder="Una dirección por línea"
+                  />
                 </div>
               </div>
             </div>
@@ -565,6 +666,7 @@ export default function ProfilePage() {
                   <p className="text-xs text-brand-muted">Cliente ITIW Connect</p>
                 </div>
               </div>
+              <RoleIdentityBadge role={role} compact className="mt-4 w-full" />
               <p className="mt-4 text-sm leading-relaxed text-brand-muted">Guarda varias direcciones para reutilizarlas cuando publiques solicitudes nuevas.</p>
 
               <div className="mt-5 space-y-3">
@@ -588,7 +690,9 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <button disabled={saving} className="premium-btn-primary mt-5 w-full">{saving ? <LoadingDots label="Guardando" /> : "Guardar cambios"}</button>
+              <button disabled={saving || photoUploading} className="premium-btn-primary mt-5 w-full">
+                {saving ? <LoadingDots label="Guardando" /> : "Guardar cambios"}
+              </button>
             </aside>
           </form>
         )}
@@ -641,9 +745,10 @@ export default function ProfilePage() {
 
               <aside className="h-fit rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-4 sm:p-5 lg:sticky lg:top-6">
                 <div className="mb-6 rounded-2xl border border-white/10 bg-[#0A0F1A]/70 p-4">
-                  <h3 className="font-[var(--font-heading)] text-xl font-bold text-white">Foto de perfil</h3>
-                  <p className="mt-2 text-sm text-brand-muted">
-                    Una foto clara ayuda a que los clientes identifiquen tu perfil profesional.
+                <h3 className="font-[var(--font-heading)] text-xl font-bold text-white">Foto de perfil</h3>
+                <RoleIdentityBadge role={role} compact className="mt-3 w-full" />
+                <p className="mt-2 text-sm text-brand-muted">
+                  Una foto clara ayuda a que los clientes identifiquen tu perfil profesional.
                   </p>
 
                   <div className="mt-4 flex items-center gap-3">

@@ -79,6 +79,11 @@ let profileCache: HeaderProfileCache | null = null;
 let profilePromise: Promise<HeaderProfileCache | null> | null = null;
 let notificationsCache: { token: string; data: HeaderNotification[]; loadedAt: number } | null = null;
 
+export function invalidateDashboardHeaderProfileCache() {
+  profileCache = null;
+  profilePromise = null;
+}
+
 async function loadProfileShellCached(token: string) {
   const now = Date.now();
   if (profileCache?.token === token && now - profileCache.loadedAt < PROFILE_CACHE_MS) {
