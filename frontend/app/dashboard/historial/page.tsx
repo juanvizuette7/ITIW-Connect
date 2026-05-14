@@ -181,29 +181,32 @@ export default function HistorialPage() {
   }
 
   function exportCsv() {
-    const headers = [
-      "Fecha",
-      "Estado",
-      "Categoría",
-      "Descripcion",
-      "Monto total",
-      "Comision",
-      "Neto",
-      "Cliente",
-      "Profesional",
-    ];
+    const isClient = role === "CLIENTE";
+    const headers = isClient
+      ? ["Fecha", "Estado", "Categoría", "Descripción", "Total pagado", "Profesional"]
+      : ["Fecha", "Estado", "Categoría", "Descripción", "Total cobrado", "Comisión plataforma", "Neto recibido", "Cliente"];
 
-    const rows = items.map((item) => [
-      new Date(item.createdAt).toLocaleString("es-CO"),
-      item.status,
-      item.request.category.name,
-      item.request.description.replace(/\n/g, " "),
-      item.amountCop.toString(),
-      item.commissionCop.toString(),
-      item.netProfessionalCop.toString(),
-      item.client.name,
-      item.professional.name,
-    ]);
+    const rows = items.map((item) =>
+      isClient
+        ? [
+            new Date(item.createdAt).toLocaleString("es-CO"),
+            item.status,
+            item.request.category.name,
+            item.request.description.replace(/\n/g, " "),
+            item.amountCop.toString(),
+            item.professional.name,
+          ]
+        : [
+            new Date(item.createdAt).toLocaleString("es-CO"),
+            item.status,
+            item.request.category.name,
+            item.request.description.replace(/\n/g, " "),
+            item.amountCop.toString(),
+            item.commissionCop.toString(),
+            item.netProfessionalCop.toString(),
+            item.client.name,
+          ],
+    );
 
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
@@ -230,7 +233,11 @@ export default function HistorialPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-[var(--font-heading)] text-3xl font-extrabold text-white">Historial de transacciones</h1>
-            <p className="mt-2 text-sm text-[#94a3b8]">Consulta pagos con filtros por fecha, estado y rango de monto.</p>
+            <p className="mt-2 text-sm text-[#94a3b8]">
+              {role === "CLIENTE"
+                ? "Consulta tus pagos realizados por servicio, con fecha, estado y profesional asignado."
+                : "Consulta tus ingresos, descuentos de plataforma y neto recibido por servicio."}
+            </p>
           </div>
           <button
             type="button"
@@ -310,10 +317,19 @@ export default function HistorialPage() {
                 </div>
 
                 <p className="mt-2 text-sm text-[#cbd5e1]">{item.request.description}</p>
-                <div className="mt-3 grid gap-2 text-sm text-[#cbd5e1] md:grid-cols-3">
-                  <p>Monto: {formatCop(item.amountCop)}</p>
-                  <p>Comision: {formatCop(item.commissionCop)}</p>
-                  <p>Neto: {formatCop(item.netProfessionalCop)}</p>
+                <div className={`mt-3 grid gap-2 text-sm text-[#cbd5e1] ${role === "CLIENTE" ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+                  {role === "CLIENTE" ? (
+                    <>
+                      <p>Total pagado: {formatCop(item.amountCop)}</p>
+                      <p>Profesional: {item.professional.name}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>Total cobrado: {formatCop(item.amountCop)}</p>
+                      <p>Comisión plataforma: {formatCop(item.commissionCop)}</p>
+                      <p>Neto recibido: {formatCop(item.netProfessionalCop)}</p>
+                    </>
+                  )}
                 </div>
               </article>
             ))
@@ -331,7 +347,7 @@ export default function HistorialPage() {
               Anterior
             </button>
             <span className="text-brand-muted">
-              Pagina {currentPage} de {totalPages}
+              Página {currentPage} de {totalPages}
             </span>
             <button
               type="button"
@@ -345,25 +361,29 @@ export default function HistorialPage() {
         )}
 
         <div className="mt-6 border-t border-[#253245] pt-6">
-          <p className="mb-3 text-sm font-semibold text-[#dbe6ff]">Totales del historial</p>
-          <div className="grid gap-3 md:grid-cols-3">
+          <p className="mb-3 text-sm font-semibold text-[#dbe6ff]">
+            {role === "CLIENTE" ? "Resumen de pagos" : "Totales del historial"}
+          </p>
+          <div className={`grid gap-3 ${role === "CLIENTE" ? "md:grid-cols-1" : "md:grid-cols-3"}`}>
             <div className="rounded-xl border border-[#263245] bg-[#0A0F1A] p-4">
-              <p className="text-xs text-[#9fb0c9]">{role === "CLIENTE" ? "Total pagado" : "Total facturado"}</p>
+              <p className="text-xs text-[#9fb0c9]">{role === "CLIENTE" ? "Total pagado por servicios" : "Total cobrado"}</p>
               <p className="mt-2 font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(animatedTotalPagado)}</p>
             </div>
-            <div className="rounded-xl border border-[#263245] bg-[#0A0F1A] p-4">
-              <p className="text-xs text-[#9fb0c9]">Total comisiones</p>
-              <p className="mt-2 font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(animatedTotalComisiones)}</p>
-            </div>
-            <div className="rounded-xl border border-[#263245] bg-[#0A0F1A] p-4">
-              <p className="text-xs text-[#9fb0c9]">Total neto</p>
-              <p className="mt-2 font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(animatedTotalNeto)}</p>
-            </div>
+            {role !== "CLIENTE" && (
+              <>
+                <div className="rounded-xl border border-[#263245] bg-[#0A0F1A] p-4">
+                  <p className="text-xs text-[#9fb0c9]">Comisión plataforma</p>
+                  <p className="mt-2 font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(animatedTotalComisiones)}</p>
+                </div>
+                <div className="rounded-xl border border-[#263245] bg-[#0A0F1A] p-4">
+                  <p className="text-xs text-[#9fb0c9]">Neto recibido</p>
+                  <p className="mt-2 font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(animatedTotalNeto)}</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
     </main>
   );
 }
-
-

@@ -223,7 +223,7 @@ export default function DashboardPage() {
 
         setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
         setCompletedJobs(jobs.filter((job) => job.status === "COMPLETADO").length);
-        setMonthTotal(currentMonthHistory.totals.totalPagado);
+        setMonthTotal(profile.role === "PROFESIONAL" ? currentMonthHistory.totals.totalNeto : currentMonthHistory.totals.totalPagado);
         setUnreadNotifications(unread.unread);
 
         if (profile.role === "CLIENTE") {
@@ -369,7 +369,7 @@ export default function DashboardPage() {
       {
         icon: <TileIcon name="history" />,
         title: "Mi historial",
-        description: "Controla ingresos, comisiones y movimiento mensual.",
+        description: "Controla ingresos netos y movimiento mensual.",
         countLabel: formatCop(monthTotal),
         href: "/dashboard/historial",
       },
@@ -467,5 +467,4 @@ export default function DashboardPage() {
     </main>
   );
 }
-
 

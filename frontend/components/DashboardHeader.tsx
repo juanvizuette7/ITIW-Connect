@@ -34,7 +34,7 @@ const pathLabels: Record<string, string> = {
   "solicitudes-disponibles": "Solicitudes disponibles",
   "mis-cotizaciones": "Mis cotizaciones",
   "mis-jobs": "Mis jobs",
-  job: "Job",
+  job: "Trabajo",
   pagar: "Pagar",
   chat: "Chat",
   calificar: "Calificar",
@@ -49,6 +49,15 @@ const pathLabels: Record<string, string> = {
   nps: "NPS",
   profesional: "Profesional",
 };
+
+function isTechnicalPathSegment(part: string) {
+  const decoded = decodeURIComponent(part);
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const cuidPattern = /^c[a-z0-9]{20,}$/i;
+  const longOpaqueIdPattern = /^(?=.*\d)[a-z0-9_-]{16,}$/i;
+
+  return uuidPattern.test(decoded) || cuidPattern.test(decoded) || longOpaqueIdPattern.test(decoded);
+}
 
 function HomeIcon() {
   return (
@@ -147,13 +156,20 @@ export function DashboardHeader({ userName, onLogout, showNotifications = true }
     if (parts.length === 0) return [] as Array<{ label: string; href: string }>;
 
     let currentPath = "";
-    return parts.map((part) => {
+    return parts.reduce<Array<{ label: string; href: string }>>((acc, part) => {
       currentPath += `/${part}`;
-      return {
+
+      if (isTechnicalPathSegment(part)) {
+        return acc;
+      }
+
+      acc.push({
         label: pathLabels[part] || part,
         href: currentPath,
-      };
-    });
+      });
+
+      return acc;
+    }, []);
   }, [pathname]);
 
   const showBack = pathname !== "/dashboard" && pathname !== "/admin/dashboard";

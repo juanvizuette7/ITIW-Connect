@@ -133,7 +133,7 @@ function PayForm({ token, job, onPaid }: { token: string; job: JobDetail; onPaid
           <span className="text-white">{formatCop(service)}</span>
         </div>
         <div className="mt-2 flex items-center justify-between text-sm">
-          <span className="text-brand-muted">Comision ITIW 10%</span>
+          <span className="text-brand-muted">Cargo de plataforma ITIW 10%</span>
           <span className="text-white">{formatCop(commission)}</span>
         </div>
         <div className="mt-4 border-t border-white/10 pt-4">
