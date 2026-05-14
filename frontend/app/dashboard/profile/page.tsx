@@ -7,9 +7,13 @@ import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
 import { LoadingDots } from "@/components/LoadingDots";
+import { getStoredProfilePhoto, setStoredProfilePhoto } from "@/lib/profilePhoto";
 
 type ProfileMeResponse = {
   id: string;
+  email: string;
+  phone: string;
+  isEmailVerified: boolean;
   role: UserRole;
   name: string;
   clientProfile: {
@@ -44,6 +48,7 @@ type PortfolioResponse = {
 };
 
 const savedAddressesKey = "itiw_saved_addresses";
+const maxProfilePhotoSizeBytes = 1_500_000;
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -52,6 +57,7 @@ export default function ProfilePage() {
   const [userId, setUserId] = useState("");
   const [role, setRole] = useState<UserRole | null>(null);
   const [userName, setUserName] = useState("");
+  const [accountInfo, setAccountInfo] = useState({ email: "", phone: "", isEmailVerified: false });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +68,9 @@ export default function ProfilePage() {
     photoUrl: "",
     savedAddresses: "",
   });
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
   const [clientImageOk, setClientImageOk] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
   const [professionalForm, setProfessionalForm] = useState({
     name: "",
@@ -108,16 +116,25 @@ export default function ProfilePage() {
         setUserId(profile.id);
         setRole(profile.role);
         setUserName(profile.name || "");
+        setAccountInfo({
+          email: profile.email || "",
+          phone: profile.phone || "",
+          isEmailVerified: Boolean(profile.isEmailVerified),
+        });
+        const storedPhotoUrl = getStoredProfilePhoto(profile.id);
 
         if (profile.role === "CLIENTE" && profile.clientProfile) {
+          const photoUrl = profile.clientProfile.photoUrl || storedPhotoUrl || "";
           setClientForm({
             name: profile.clientProfile.name || "",
-            photoUrl: profile.clientProfile.photoUrl || "",
+            photoUrl,
             savedAddresses: localStorage.getItem(savedAddressesKey) || "",
           });
+          setProfilePhotoUrl(photoUrl);
         }
 
         if (profile.role === "PROFESIONAL" && profile.professionalProfile) {
+          setProfilePhotoUrl(storedPhotoUrl);
           setProfessionalForm({
             name: profile.professionalProfile.name || "",
             bio: profile.professionalProfile.bio || "",
@@ -145,8 +162,8 @@ export default function ProfilePage() {
   }, [token, router]);
 
   useEffect(() => {
-    setClientImageOk(Boolean(clientForm.photoUrl.trim()));
-  }, [clientForm.photoUrl]);
+    setClientImageOk(Boolean(profilePhotoUrl.trim()));
+  }, [profilePhotoUrl]);
 
   const profileTitle = useMemo(() => {
     if (role === "CLIENTE") return "Perfil de Cliente";
@@ -192,6 +209,75 @@ export default function ProfilePage() {
     }
   }
 
+  async function compressProfilePhoto(file: File) {
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Selecciona un archivo de imagen válido.");
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error("La imagen es demasiado grande. Usa una foto menor a 5 MB.");
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("No fue posible leer la imagen seleccionada."));
+        img.src = objectUrl;
+      });
+
+      const maxSide = 720;
+      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const width = Math.max(1, Math.round(image.width * scale));
+      const height = Math.max(1, Math.round(image.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("No fue posible procesar la imagen seleccionada.");
+      }
+
+      context.drawImage(image, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+
+      if (dataUrl.length > maxProfilePhotoSizeBytes) {
+        throw new Error("La foto sigue siendo demasiado pesada. Usa una imagen más liviana.");
+      }
+
+      return dataUrl;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  async function onPickProfilePhotoFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setPhotoUploading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const dataUrl = await compressProfilePhoto(file);
+      setProfilePhotoUrl(dataUrl);
+      setClientImageOk(true);
+
+      if (role === "CLIENTE") {
+        setClientForm((prev) => ({ ...prev, photoUrl: dataUrl }));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No fue posible cargar la foto.");
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
+
   async function onSaveClient(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!token) return;
@@ -211,12 +297,14 @@ export default function ProfilePage() {
         token,
         body: JSON.stringify({
           name: clientForm.name,
-          photoUrl: clientForm.photoUrl || null,
+          photoUrl: profilePhotoUrl || clientForm.photoUrl || null,
           savedAddresses,
         }),
       });
 
       localStorage.setItem(savedAddressesKey, clientForm.savedAddresses);
+      setStoredProfilePhoto(userId, profilePhotoUrl || clientForm.photoUrl);
+      setClientForm((prev) => ({ ...prev, photoUrl: profilePhotoUrl || prev.photoUrl }));
       setUserName(clientForm.name.trim());
       setMessage(result.message);
     } catch (err) {
@@ -248,6 +336,7 @@ export default function ProfilePage() {
       });
 
       setUserName(professionalForm.name.trim());
+      setStoredProfilePhoto(userId, profilePhotoUrl);
       setMessage(result.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar tu perfil.");
@@ -358,7 +447,7 @@ export default function ProfilePage() {
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
       <DashboardHeader
         userName={visibleName || userName}
-        userPhotoUrl={role === "CLIENTE" ? clientForm.photoUrl : null}
+        userPhotoUrl={profilePhotoUrl}
         onLogout={onLogout}
       />
 
@@ -367,9 +456,9 @@ export default function ProfilePage() {
         <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/12 font-[var(--font-heading)] text-xl font-extrabold text-[#ffd0bd] shadow-[0_0_32px_rgba(255,107,44,0.12)] sm:h-20 sm:w-20 sm:rounded-3xl sm:text-2xl">
-              {role === "CLIENTE" && clientForm.photoUrl && clientImageOk ? (
+              {profilePhotoUrl && clientImageOk ? (
                 <img
-                  src={clientForm.photoUrl}
+                  src={profilePhotoUrl}
                   alt={visibleName || "Foto de perfil"}
                   loading="lazy"
                   onError={() => setClientImageOk(false)}
@@ -425,7 +514,27 @@ export default function ProfilePage() {
 
                 <div>
                   <label className="mb-1.5 block text-sm text-[#d5dded]">Foto (URL)</label>
-                  <input value={clientForm.photoUrl} onChange={(e) => setClientForm((prev) => ({ ...prev, photoUrl: e.target.value }))} className="premium-input" placeholder="https://..." />
+                  <input
+                    value={clientForm.photoUrl}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setClientForm((prev) => ({ ...prev, photoUrl: value }));
+                      setProfilePhotoUrl(value);
+                    }}
+                    className="premium-input"
+                    placeholder="https://ejemplo.com/mi-foto.jpg"
+                  />
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
+                  <p className="text-sm font-semibold text-white">Subir foto desde tu computador</p>
+                  <p className="mt-1 text-xs leading-relaxed text-brand-muted">
+                    Puedes usar una imagen JPG, PNG o WEBP. La optimizamos antes de guardarla.
+                  </p>
+                  <label className="mt-3 inline-flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[var(--brand-accent)]/45 bg-[var(--brand-accent)]/10 px-4 py-3 text-sm font-semibold text-[#ffd0bd] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/16">
+                    {photoUploading ? <LoadingDots label="Procesando" /> : "Elegir imagen"}
+                    <input type="file" accept="image/*" onChange={onPickProfilePhotoFile} className="hidden" />
+                  </label>
                 </div>
 
                 <div>
@@ -439,9 +548,9 @@ export default function ProfilePage() {
               <p className="text-sm font-semibold text-white">Vista rápida</p>
               <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0A0F1A]/70 p-4">
                 <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[var(--brand-accent)]/15 font-bold text-[#ffd0bd]">
-                  {clientForm.photoUrl && clientImageOk ? (
+                  {profilePhotoUrl && clientImageOk ? (
                     <img
-                      src={clientForm.photoUrl}
+                      src={profilePhotoUrl}
                       alt={clientForm.name || "Foto de perfil"}
                       loading="lazy"
                       onError={() => setClientImageOk(false)}
@@ -457,6 +566,28 @@ export default function ProfilePage() {
                 </div>
               </div>
               <p className="mt-4 text-sm leading-relaxed text-brand-muted">Guarda varias direcciones para reutilizarlas cuando publiques solicitudes nuevas.</p>
+
+              <div className="mt-5 space-y-3">
+                <div className="rounded-2xl border border-white/10 bg-[#0A0F1A]/65 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-muted">Información de cuenta</p>
+                  <p className="mt-2 break-all text-sm text-white">{accountInfo.email || "Correo no disponible"}</p>
+                  <p className="mt-1 text-xs text-brand-muted">Teléfono: {accountInfo.phone || "No registrado"}</p>
+                  <span className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${accountInfo.isEmailVerified ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200" : "border-amber-400/35 bg-amber-400/10 text-amber-200"}`}>
+                    {accountInfo.isEmailVerified ? "Correo verificado" : "Verificación pendiente"}
+                  </span>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#0A0F1A]/65 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-muted">Preferencias de contacto</p>
+                  <p className="mt-2 text-sm leading-relaxed text-white">Recibirás avisos por correo cuando haya cotizaciones, pagos o mensajes importantes.</p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#0A0F1A]/65 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-muted">Seguridad básica</p>
+                  <p className="mt-2 text-sm leading-relaxed text-white">Tu sesión se protege con token seguro y puedes cerrar sesión desde la barra superior.</p>
+                </div>
+              </div>
+
               <button disabled={saving} className="premium-btn-primary mt-5 w-full">{saving ? <LoadingDots label="Guardando" /> : "Guardar cambios"}</button>
             </aside>
           </form>
@@ -509,6 +640,46 @@ export default function ProfilePage() {
               </div>
 
               <aside className="h-fit rounded-2xl border border-[var(--brand-accent)]/20 bg-[var(--brand-accent)]/8 p-4 sm:p-5 lg:sticky lg:top-6">
+                <div className="mb-6 rounded-2xl border border-white/10 bg-[#0A0F1A]/70 p-4">
+                  <h3 className="font-[var(--font-heading)] text-xl font-bold text-white">Foto de perfil</h3>
+                  <p className="mt-2 text-sm text-brand-muted">
+                    Una foto clara ayuda a que los clientes identifiquen tu perfil profesional.
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[var(--brand-accent)]/30 bg-[var(--brand-accent)]/12 font-bold text-[#ffd0bd]">
+                      {profilePhotoUrl && clientImageOk ? (
+                        <img
+                          src={profilePhotoUrl}
+                          alt={professionalForm.name || "Foto de perfil"}
+                          loading="lazy"
+                          onError={() => setClientImageOk(false)}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        initials || "IC"
+                      )}
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-[var(--brand-accent)]/45 bg-[var(--brand-accent)]/10 px-4 py-3 text-sm font-semibold text-[#ffd0bd] transition hover:-translate-y-0.5 hover:bg-[var(--brand-accent)]/16">
+                      {photoUploading ? <LoadingDots label="Procesando" /> : "Cambiar foto"}
+                      <input type="file" accept="image/*" onChange={onPickProfilePhotoFile} className="hidden" />
+                    </label>
+                  </div>
+
+                  <label className="mt-4 block text-sm text-[#d5dded]">
+                    Foto (URL)
+                    <input
+                      value={profilePhotoUrl}
+                      onChange={(event) => {
+                        setProfilePhotoUrl(event.target.value);
+                        setClientImageOk(Boolean(event.target.value.trim()));
+                      }}
+                      className="premium-input mt-1"
+                      placeholder="https://ejemplo.com/mi-foto.jpg"
+                    />
+                  </label>
+                </div>
+
                 <h3 className="font-[var(--font-heading)] text-xl font-bold text-white">Especialidades</h3>
                 <p className="mt-2 text-sm text-brand-muted">Agrega hasta 5 servicios principales. Usa categorías claras para aparecer mejor en búsqueda.</p>
 

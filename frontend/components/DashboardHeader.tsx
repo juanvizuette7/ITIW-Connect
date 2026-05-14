@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,6 +9,7 @@ import { LoadingDots } from "./LoadingDots";
 import { InlineLoader } from "./LoadingScreen";
 import { apiRequest } from "@/lib/api";
 import { getRole, getToken } from "@/lib/auth";
+import { getStoredProfilePhoto } from "@/lib/profilePhoto";
 
 interface DashboardHeaderProps {
   userName?: string;
@@ -47,6 +48,7 @@ type PaginatedNotificationsResponse = {
 };
 
 type HeaderProfileResponse = {
+  id: string;
   name: string;
   role: RoleType;
   clientProfile?: {
@@ -220,7 +222,7 @@ export function DashboardHeader({ userName, userPhotoUrl, onLogout, showNotifica
 
         setRole(profile.role);
         setResolvedName(profile.name || profile.clientProfile?.name || profile.professionalProfile?.name || "");
-        setResolvedPhotoUrl(profile.clientProfile?.photoUrl || null);
+        setResolvedPhotoUrl(profile.clientProfile?.photoUrl || getStoredProfilePhoto(profile.id) || null);
       } catch {
         if (mounted) {
           setResolvedName("");
