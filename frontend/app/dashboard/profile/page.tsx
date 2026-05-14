@@ -49,7 +49,7 @@ type PortfolioResponse = {
 };
 
 const savedAddressesKey = "itiw_saved_addresses";
-const maxProfilePhotoSizeBytes = 1_500_000;
+const maxProfilePhotoSizeBytes = 2_000_000;
 
 type ClientProfileSaveResponse = {
   message: string;
@@ -241,8 +241,8 @@ export default function ProfilePage() {
       throw new Error("Selecciona un archivo de imagen válido.");
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error("La imagen es demasiado grande. Usa una foto menor a 5 MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error("La imagen es demasiado grande. Usa una foto menor a 10 MB.");
     }
 
     const objectUrl = URL.createObjectURL(file);
@@ -255,27 +255,43 @@ export default function ProfilePage() {
         img.src = objectUrl;
       });
 
-      const maxSide = 720;
-      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-      const width = Math.max(1, Math.round(image.width * scale));
-      const height = Math.max(1, Math.round(image.height * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
+      const attempts = [
+        { maxSide: 960, quality: 0.8 },
+        { maxSide: 800, quality: 0.74 },
+        { maxSide: 640, quality: 0.68 },
+        { maxSide: 520, quality: 0.62 },
+        { maxSide: 420, quality: 0.56 },
+        { maxSide: 360, quality: 0.5 },
+      ];
 
-      const context = canvas.getContext("2d");
-      if (!context) {
-        throw new Error("No fue posible procesar la imagen seleccionada.");
+      let lastDataUrl = "";
+
+      for (const attempt of attempts) {
+        const scale = Math.min(1, attempt.maxSide / Math.max(image.width, image.height));
+        const width = Math.max(1, Math.round(image.width * scale));
+        const height = Math.max(1, Math.round(image.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          throw new Error("No fue posible procesar la imagen seleccionada.");
+        }
+
+        context.drawImage(image, 0, 0, width, height);
+        lastDataUrl = canvas.toDataURL("image/jpeg", attempt.quality);
+
+        if (lastDataUrl.length <= maxProfilePhotoSizeBytes) {
+          return lastDataUrl;
+        }
       }
 
-      context.drawImage(image, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
-
-      if (dataUrl.length > maxProfilePhotoSizeBytes) {
-        throw new Error("La foto sigue siendo demasiado pesada. Usa una imagen más liviana.");
+      if (lastDataUrl) {
+        return lastDataUrl;
       }
 
-      return dataUrl;
+      throw new Error("No fue posible comprimir la foto seleccionada.");
     } finally {
       URL.revokeObjectURL(objectUrl);
     }

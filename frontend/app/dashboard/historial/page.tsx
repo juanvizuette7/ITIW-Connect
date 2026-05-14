@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest } from "@/lib/api";
+import { ApiError, apiRequest } from "@/lib/api";
 import { clearSession, getRole, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
@@ -434,7 +434,11 @@ export default function HistorialPage() {
       link.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No fue posible exportar el recibo firmado.");
+      if (err instanceof ApiError && err.status === 404) {
+        setError("El recibo firmado todavía no está disponible en el servidor. Espera el redeploy de Render e intenta de nuevo.");
+      } else {
+        setError(err instanceof Error ? err.message : "No fue posible exportar el recibo firmado.");
+      }
     } finally {
       setExportingReceiptId(null);
     }
