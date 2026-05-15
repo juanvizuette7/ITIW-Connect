@@ -1,4 +1,4 @@
-import { JobPaymentStatus, JobStatus, NotificationType, PaymentStatus, Prisma, Role } from "@prisma/client";
+import { JobPaymentStatus, JobStatus, NotificationType, PaymentStatus, Prisma, Role, ServiceRequestStatus } from "@prisma/client";
 import { Request, Response } from "express";
 import { env } from "../config/env";
 import { sendEmailSafe } from "../config/mailer";
@@ -236,8 +236,8 @@ export async function createOrConfirmEscrowPayment(req: Request, res: Response) 
   await notifyManyUsers(
     {
       userIds: [updated.updatedJob.clientId, updated.updatedJob.professionalId],
-      title: "Pago procesado en escrow",
-      body: `El pago del trabajo "${updated.updatedJob.quote.request.description}" esta retenido de forma segura.`,
+      title: "Pago recibido y retenido en escrow",
+      body: `El cliente ya pagó el trabajo "${updated.updatedJob.quote.request.description}". El dinero está retenido y el servicio puede realizarse.`,
       type: NotificationType.PAGO,
     },
     {
@@ -292,6 +292,13 @@ export async function confirmJobCompletion(req: Request, res: Response) {
       },
     });
 
+    await tx.serviceRequest.update({
+      where: { id: job.quote.request.id },
+      data: {
+        status: ServiceRequestStatus.COMPLETADA,
+      },
+    });
+
     const releasedJob = await tx.job.update({
       where: { id: job.id },
       data: {
@@ -325,8 +332,8 @@ export async function confirmJobCompletion(req: Request, res: Response) {
   await notifyManyUsers(
     {
       userIds: [updated.releasedJob.clientId, updated.releasedJob.professionalId],
-      title: "Pago liberado",
-      body: `El pago del trabajo "${updated.releasedJob.quote.request.description}" fue liberado correctamente.`,
+      title: "Trabajo completado y pago liberado",
+      body: `El trabajo "${updated.releasedJob.quote.request.description}" quedó completado. El pago fue liberado al profesional.`,
       type: NotificationType.PAGO,
     },
     {

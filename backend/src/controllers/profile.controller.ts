@@ -1,5 +1,34 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/prisma";
+import { recalculateProfessionalMetrics } from "../services/reviewBadge.service";
+
+async function resolveProfessionalUserId(id: string) {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      role: true,
+      professionalProfile: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  if (user?.role === "PROFESIONAL" && user.professionalProfile) {
+    return user.id;
+  }
+
+  const profile = await prisma.professionalProfile.findUnique({
+    where: { id },
+    select: {
+      userId: true,
+    },
+  });
+
+  return profile?.userId || null;
+}
 
 export async function getMyProfile(req: Request, res: Response) {
   const userId = req.user!.userId;
@@ -71,9 +100,16 @@ export async function getMyProfile(req: Request, res: Response) {
 
 export async function getPublicProfessionalProfile(req: Request, res: Response) {
   const { id } = req.params;
+  const professionalUserId = await resolveProfessionalUserId(id);
+
+  if (!professionalUserId) {
+    return res.status(404).json({ message: "No encontramos el perfil profesional solicitado." });
+  }
+
+  await recalculateProfessionalMetrics(professionalUserId);
 
   const professional = await prisma.user.findUnique({
-    where: { id },
+    where: { id: professionalUserId },
     select: {
       id: true,
       role: true,

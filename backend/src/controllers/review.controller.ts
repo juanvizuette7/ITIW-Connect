@@ -19,6 +19,34 @@ import { paginatedResponse, resolvePagination } from "../utils/pagination";
 
 const REVIEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
+async function resolveProfessionalUserId(id: string) {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      role: true,
+      professionalProfile: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  if (user?.role === "PROFESIONAL" && user.professionalProfile) {
+    return user.id;
+  }
+
+  const profile = await prisma.professionalProfile.findUnique({
+    where: { id },
+    select: {
+      userId: true,
+    },
+  });
+
+  return profile?.userId || null;
+}
+
 function resolveName(user: {
   role: Role;
   clientProfile: { name: string } | null;
@@ -338,25 +366,23 @@ export async function reviewClient(req: Request, res: Response) {
 export async function listProfessionalReviews(req: Request, res: Response) {
   const { professionalId } = req.params;
   const { page, limit, skip, take } = resolvePagination(req.query);
+  const professionalUserId = await resolveProfessionalUserId(professionalId);
 
-  const professional = await prisma.professionalProfile.findUnique({
-    where: { userId: professionalId },
-    select: { userId: true },
-  });
-
-  if (!professional) {
+  if (!professionalUserId) {
     return res.status(404).json({ message: "No encontramos el profesional indicado." });
   }
+
+  await recalculateProfessionalMetrics(professionalUserId);
 
   const [total, reviews] = await Promise.all([
     prisma.review.count({
       where: {
-        reviewedId: professionalId,
+        reviewedId: professionalUserId,
       },
     }),
     prisma.review.findMany({
       where: {
-        reviewedId: professionalId,
+        reviewedId: professionalUserId,
       },
       include: {
         reviewer: {

@@ -203,44 +203,47 @@ export default function DashboardPage() {
           return;
         }
 
-        const [jobs, currentMonthHistory, unread] = await Promise.all([
+        const monthStart = new Date();
+        monthStart.setDate(1);
+        monthStart.setHours(0, 0, 0, 0);
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
+        const query = `?fechaInicio=${encodeURIComponent(monthStart.toISOString())}&fechaFin=${encodeURIComponent(monthEnd.toISOString())}`;
+
+        const commonRequests = [
           optionalApi(apiRequest<JobItem[]>("/jobs", { method: "GET", token }), []),
-          (() => {
-            const monthStart = new Date();
-            monthStart.setDate(1);
-            monthStart.setHours(0, 0, 0, 0);
-            const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
-            const query = `?fechaInicio=${encodeURIComponent(monthStart.toISOString())}&fechaFin=${encodeURIComponent(monthEnd.toISOString())}`;
-            return optionalApi(
-              apiRequest<PaymentHistoryResponse>(`/payments/history${query}`, {
-                method: "GET",
-                token,
-              }),
-              emptyPaymentHistory(),
-            );
-          })(),
-          optionalApi(apiRequest<UnreadCountResponse>("/notifications/unread-count", { method: "GET", token }), { unread: 0 }),
-        ]);
-
-        setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
-        setCompletedJobs(jobs.filter((job) => job.status === "COMPLETADO").length);
-        setMonthTotal(profile.role === "PROFESIONAL" ? currentMonthHistory.totals.totalNeto : currentMonthHistory.totals.totalPagado);
-        setUnreadNotifications(unread.unread);
-
-        if (profile.role === "CLIENTE") {
-          const requests = await optionalApi(
-            apiRequest<PaginatedClientRequests>("/requests?page=1&limit=200", {
+          optionalApi(
+            apiRequest<PaymentHistoryResponse>(`/payments/history${query}`, {
               method: "GET",
               token,
             }),
-            { data: [] },
-          );
+            emptyPaymentHistory(),
+          ),
+          optionalApi(apiRequest<UnreadCountResponse>("/notifications/unread-count", { method: "GET", token }), { unread: 0 }),
+        ] as const;
+
+        if (profile.role === "CLIENTE") {
+          const [jobs, currentMonthHistory, unread, requests] = await Promise.all([
+            ...commonRequests,
+            optionalApi(
+              apiRequest<PaginatedClientRequests>("/requests?page=1&limit=50", {
+                method: "GET",
+                token,
+              }),
+              { data: [] },
+            ),
+          ]);
+
+          setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
+          setCompletedJobs(jobs.filter((job) => job.status === "COMPLETADO").length);
+          setMonthTotal(currentMonthHistory.totals.totalPagado);
+          setUnreadNotifications(unread.unread);
           setActiveRequestsCount(requests.data.filter((request) => request.status === "ACTIVA").length);
           setAvgRating(null);
         }
 
         if (profile.role === "PROFESIONAL") {
-          const [availableRequests, myQuotes, onboardingStatus, professionalPublic] = await Promise.all([
+          const [jobs, currentMonthHistory, unread, availableRequests, myQuotes, onboardingStatus, professionalPublic] = await Promise.all([
+            ...commonRequests,
             optionalApi(apiRequest<AvailableRequest[]>("/requests/available", { method: "GET", token }), []),
             optionalApi(apiRequest<ProfessionalQuote[]>("/requests/my-quotes", { method: "GET", token }), []),
             optionalApi(apiRequest<OnboardingStatusResponse>("/onboarding/status", { method: "GET", token }), {
@@ -257,6 +260,10 @@ export default function DashboardPage() {
               },
             }),
           ]);
+          setPendingPaymentsCount(jobs.filter((job) => job.paymentStatus === "PENDIENTE").length);
+          setCompletedJobs(jobs.filter((job) => job.status === "COMPLETADO").length);
+          setMonthTotal(currentMonthHistory.totals.totalNeto);
+          setUnreadNotifications(unread.unread);
           setAvailableRequestsCount(availableRequests.length);
           setPendingQuotesCount(myQuotes.filter((quote) => quote.status === "PENDIENTE").length);
           setOnboarding(onboardingStatus);

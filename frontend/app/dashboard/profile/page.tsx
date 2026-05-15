@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, invalidateApiCache } from "@/lib/api";
 import { clearSession, getToken, UserRole } from "@/lib/auth";
 import { DashboardHeader, invalidateDashboardHeaderProfileCache } from "@/components/DashboardHeader";
 import { ScreenSkeleton } from "@/components/ScreenSkeleton";
@@ -359,6 +359,7 @@ export default function ProfilePage() {
       }
 
       invalidateDashboardHeaderProfileCache();
+      invalidateApiCache("/profile/me");
       setProfilePhotoUrl(result.profile.photoUrl || "");
       setClientImageOk(Boolean(result.profile.photoUrl));
       setClientForm((prev) => ({
@@ -406,6 +407,7 @@ export default function ProfilePage() {
       setUserName(professionalForm.name.trim());
       setStoredProfilePhoto(userId, profilePhotoUrl);
       invalidateDashboardHeaderProfileCache();
+      invalidateApiCache("/profile/me");
       setMessage(result.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible guardar tu perfil.");

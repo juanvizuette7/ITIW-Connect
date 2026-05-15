@@ -271,6 +271,8 @@ export async function getClientRequests(req: Request, res: Response) {
             job: {
               select: {
                 id: true,
+                status: true,
+                paymentStatus: true,
               },
             },
           },
@@ -284,10 +286,14 @@ export async function getClientRequests(req: Request, res: Response) {
     }),
   ]);
 
-  const data = requests.map((request) => ({
-    ...request,
-    jobId: request.quotes[0]?.job?.id || null,
-  }));
+  const data = requests.map((request) => {
+    const acceptedJob = request.quotes[0]?.job || null;
+    return {
+      ...request,
+      status: acceptedJob?.status === JobStatus.COMPLETADO ? ServiceRequestStatus.COMPLETADA : request.status,
+      jobId: acceptedJob?.id || null,
+    };
+  });
 
   return res.status(200).json(
     paginatedResponse({
@@ -324,6 +330,8 @@ export async function getRequestDetail(req: Request, res: Response) {
           job: {
             select: {
               id: true,
+              status: true,
+              paymentStatus: true,
             },
           },
           professional: {
@@ -380,6 +388,8 @@ export async function getRequestDetail(req: Request, res: Response) {
         createdAt: quote.createdAt,
         score,
         jobId: quote.job?.id || null,
+        jobStatus: quote.job?.status || null,
+        jobPaymentStatus: quote.job?.paymentStatus || null,
         professional: {
           id: quote.professional.id,
           name: quote.professional.professionalProfile?.name || quote.professional.email,
@@ -396,7 +406,9 @@ export async function getRequestDetail(req: Request, res: Response) {
 
   return res.status(200).json({
     id: request.id,
-    status: request.status,
+    status: request.quotes.some((quote) => quote.job?.status === JobStatus.COMPLETADO)
+      ? ServiceRequestStatus.COMPLETADA
+      : request.status,
     description: request.description,
     photosUrls: request.photosUrls,
     preferredDateTime: request.preferredDateTime,
@@ -529,7 +541,7 @@ export async function getProfessionalQuotes(req: Request, res: Response) {
       request: {
         id: quote.request.id,
         description: quote.request.description,
-        status: quote.request.status,
+        status: quote.job?.status === JobStatus.COMPLETADO ? ServiceRequestStatus.COMPLETADA : quote.request.status,
         category: quote.request.category,
       },
       job: quote.job,

@@ -23,6 +23,32 @@ interface RequestOptions extends RequestInit {
   token?: string;
 }
 
+const requestCache = new Map<string, { expiresAt: number; promise: Promise<unknown> }>();
+
+function cacheKey(path: string, token?: string) {
+  return `${token || "public"}:${path}`;
+}
+
+function getCacheDuration(path: string, method: string) {
+  if (method !== "GET") return 0;
+  if (path === "/profile/me") return 20_000;
+  if (path === "/categories") return 60 * 60_000;
+  return 0;
+}
+
+export function invalidateApiCache(path?: string) {
+  if (!path) {
+    requestCache.clear();
+    return;
+  }
+
+  for (const key of Array.from(requestCache.keys())) {
+    if (key.endsWith(`:${path}`)) {
+      requestCache.delete(key);
+    }
+  }
+}
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -36,6 +62,35 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { token, headers, ...rest } = options;
+  const method = (rest.method || "GET").toUpperCase();
+  const cacheDuration = getCacheDuration(path, method);
+  const key = cacheDuration > 0 ? cacheKey(path, token) : "";
+
+  if (key) {
+    const cached = requestCache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.promise as Promise<T>;
+    }
+  }
+
+  const requestPromise = executeApiRequest<T>(path, { token, headers, ...rest });
+
+  if (key) {
+    requestCache.set(key, {
+      expiresAt: Date.now() + cacheDuration,
+      promise: requestPromise,
+    });
+
+    requestPromise.catch(() => {
+      requestCache.delete(key);
+    });
+  }
+
+  return requestPromise;
+}
+
+async function executeApiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { token, headers, ...rest } = options;
 
   let response: Response;

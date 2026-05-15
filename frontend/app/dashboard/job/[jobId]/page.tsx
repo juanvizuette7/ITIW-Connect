@@ -18,6 +18,7 @@ type JobDetail = {
   request: {
     id: string;
     description: string;
+    status: "ACTIVA" | "AGENDADA" | "COMPLETADA" | "CANCELADA";
     category: {
       name: string;
     };
@@ -57,11 +58,70 @@ function getRemainingEscrow(escrowReleaseAt: string) {
   const now = Date.now();
   const diff = end - now;
 
-  if (diff <= 0) return "Liberacion automatica en: 0h 0min";
+  if (diff <= 0) return "Liberación automática en: 0h 0min";
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `Liberacion automatica en: ${hours}h ${minutes}min`;
+  return `Liberación automática en: ${hours}h ${minutes}min`;
+}
+
+function readableJobStatus(job: JobDetail) {
+  if (job.paymentStatus === "PENDIENTE") return "Pendiente de pago";
+  if (job.paymentStatus === "RETENIDO") return "Pagado y listo para realizar";
+  if (job.paymentStatus === "LIBERADO" && job.status === "COMPLETADO") return "Completado y pagado";
+  if (job.paymentStatus === "REEMBOLSADO") return "Reembolsado";
+  return job.status;
+}
+
+function flowMessage(job: JobDetail, role: UserRole | null) {
+  if (job.paymentStatus === "PENDIENTE") {
+    return role === "CLIENTE"
+      ? "Aceptaste el presupuesto. El siguiente paso es pagar para que el profesional pueda iniciar con seguridad."
+      : "El cliente aceptó tu presupuesto. Aún falta que realice el pago para iniciar el trabajo.";
+  }
+
+  if (job.paymentStatus === "RETENIDO") {
+    return role === "CLIENTE"
+      ? "Ya pagaste. El dinero está protegido en escrow y el profesional fue notificado para realizar el servicio."
+      : "El cliente ya pagó. El dinero está retenido en escrow; puedes realizar el servicio y coordinar por chat.";
+  }
+
+  if (job.paymentStatus === "LIBERADO" && job.status === "COMPLETADO") {
+    return role === "CLIENTE"
+      ? "El trabajo quedó completado, la solicitud fue cerrada y el pago fue liberado al profesional."
+      : "Trabajo completado. El pago fue liberado y ya puedes ver el movimiento en tu historial.";
+  }
+
+  return "Revisa el estado del trabajo y coordina cualquier detalle desde el chat.";
+}
+
+function FlowSteps({ job }: { job: JobDetail }) {
+  const steps = [
+    { key: "accepted", label: "Presupuesto aceptado", done: true },
+    { key: "paid", label: "Pago en escrow", done: job.paymentStatus !== "PENDIENTE" },
+    { key: "work", label: "Trabajo en curso", done: job.status === "EN_PROGRESO" || job.status === "COMPLETADO" },
+    { key: "completed", label: "Completado y liberado", done: job.status === "COMPLETADO" && job.paymentStatus === "LIBERADO" },
+  ];
+
+  return (
+    <div className="mt-5 grid gap-3 md:grid-cols-4">
+      {steps.map((step, index) => (
+        <div
+          key={step.key}
+          className={`rounded-2xl border p-3 transition ${
+            step.done
+              ? "border-[var(--brand-accent)]/40 bg-[var(--brand-accent)]/12 text-white"
+              : "border-white/10 bg-white/[0.03] text-[#8fa0b9]"
+          }`}
+        >
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-current text-xs font-bold">
+            {step.done ? "✓" : index + 1}
+          </span>
+          <p className="mt-2 text-xs font-semibold">{step.label}</p>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function JobDetailPage() {
@@ -116,14 +176,6 @@ export default function JobDetailPage() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    if (!job || role !== "CLIENTE") return;
-
-    if (job.status === "COMPLETADO" && job.paymentStatus === "LIBERADO" && !job.hasReviewedProfessional) {
-      router.replace(`/dashboard/job/${job.id}/calificar`);
-    }
-  }, [job, role, router]);
-
   function onLogout() {
     clearSession();
     router.push("/");
@@ -141,6 +193,7 @@ export default function JobDetailPage() {
         token,
       });
       setMessage(response.message);
+      router.refresh();
       await loadJob(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible confirmar el trabajo.");
@@ -180,11 +233,20 @@ export default function JobDetailPage() {
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <span className={`rounded-full border px-3 py-1 text-xs ${statusClass(job.paymentStatus)}`}>{job.paymentStatus}</span>
           <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-[#c5d0e3]">{job.status}</span>
+          <span className="rounded-full border border-[var(--brand-accent)]/35 bg-[var(--brand-accent)]/10 px-3 py-1 text-xs font-semibold text-[#ffd0bd]">
+            {readableJobStatus(job)}
+          </span>
         </div>
 
         <p className="mt-4 text-brand-muted">{job.request.category.name}</p>
         <p className="mt-2 text-[#d5dded]">{job.request.description}</p>
         <p className="mt-4 font-[var(--font-heading)] text-2xl font-bold text-white">{formatCop(job.amountCop)}</p>
+
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <p className="text-sm font-semibold text-white">Estado del flujo</p>
+          <p className="mt-1 text-sm leading-6 text-brand-muted">{flowMessage(job, role)}</p>
+          <FlowSteps job={job} />
+        </div>
 
         {remainingEscrowText && <p className="mt-2 text-sm text-orange-300">{remainingEscrowText}</p>}
 
@@ -255,5 +317,4 @@ export default function JobDetailPage() {
     </main>
   );
 }
-
 

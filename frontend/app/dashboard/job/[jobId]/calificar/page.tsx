@@ -19,6 +19,7 @@ type JobDetail = {
     };
   };
   professional: {
+    id: string;
     name: string;
   };
   client: {
@@ -213,7 +214,9 @@ export default function CalificarJobPage() {
       setMessage(response.message || "Gracias por tu calificación.");
       showToast({ message: "Calificación enviada", kind: "success" });
       setTimeout(() => setShowConfetti(false), 2400);
-      setTimeout(() => router.push(`/dashboard/job/${job.id}`), 1600);
+      setTimeout(() => {
+        router.push(role === "CLIENTE" ? `/dashboard/profesional/${job.professional.id}` : `/dashboard/job/${job.id}`);
+      }, 1600);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No fue posible enviar la calificación.");
     } finally {
@@ -334,4 +337,3 @@ export default function CalificarJobPage() {
     </main>
   );
 }
-

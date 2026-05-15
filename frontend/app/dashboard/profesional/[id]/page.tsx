@@ -137,6 +137,9 @@ export default function ProfessionalPublicPage() {
         setReviewsPage(reviewsData.page);
         setReviewsTotalPages(reviewsData.totalPages);
         setPortfolioPhotos(portfolioData.photos);
+        if (reviewsData.total > 0 || Number(professionalData.professionalProfile.reviewCount || 0) > 0) {
+          setActiveTab("resenas");
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "No fue posible cargar el perfil profesional.");
       } finally {
@@ -404,5 +407,4 @@ export default function ProfessionalPublicPage() {
     </main>
   );
 }
-
 
